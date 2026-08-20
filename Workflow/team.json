@@ -1,0 +1,145 @@
+{
+  "workflow_name": "cumcm-c-front-half",
+  "version": "0.3.0",
+  "language": "zh-CN",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_slots": 1,
+    "worker_slots": 3,
+    "new_agent_for": ["blind_reading", "independent_review", "fresh_context_attack", "route_proposal"],
+    "reuse_original_agent_for": ["original_judgment_review", "route_proposer_response"]
+  },
+  "scope": {
+    "starts_at": "raw_problem_materials",
+    "ends_at": "route_handoff_report",
+    "forbidden": [
+      "formal_data_engineering",
+      "model_training",
+      "optimization_solving",
+      "formal_result_validation",
+      "answer_sheet_filling",
+      "paper_writing"
+    ]
+  },
+  "handoff": {
+    "primary_format": "open_markdown_memo",
+    "required_questions_are": "minimum_not_exhaustive",
+    "allow_extra_sections": true,
+    "retain_raw_submissions": true,
+    "leader_summary_may_replace_raw_submission": false,
+    "semantic_json_schema_allowed": false,
+    "json_allowed_for": ["run_metadata", "source_hashes", "task_status", "artifact_paths"]
+  },
+  "roles": {
+    "leader": {"prompt": "prompts/leader.md"},
+    "literal_contract": {"prompt": "prompts/roles/literal-contract.md", "blind_first_pass": true},
+    "dependency_architect": {"prompt": "prompts/roles/dependency-architect.md", "blind_first_pass": true},
+    "data_forensics": {"prompt": "prompts/roles/data-forensics.md", "blind_first_pass": true},
+    "formulation_analyst": {"prompt": "prompts/roles/formulation-analyst.md", "blind_first_pass": true},
+    "trap_hunter": {"prompt": "prompts/roles/trap-hunter.md", "blind_first_pass": true},
+    "answer_scope_reviewer": {"prompt": "prompts/roles/answer-scope-reviewer.md", "blind_first_pass": true},
+    "cross_examiner": {"prompt": "prompts/roles/cross-examiner.md"},
+    "original_judgment_reviewer": {"prompt": "prompts/roles/original-judgment-review.md", "reuse_original_agent": true},
+    "probe_designer": {"prompt": "prompts/roles/probe-designer.md"},
+    "fresh_context_reviewer": {"prompt": "prompts/roles/fresh-context-reviewer.md", "new_agent_required": true},
+    "route_a": {"prompt": "prompts/roles/route-proposer.md", "variant": "minimum_complete_route", "blind_first_pass": true},
+    "route_b": {"prompt": "prompts/roles/route-proposer.md", "variant": "structural_challenger", "blind_first_pass": true},
+    "route_critic": {"prompt": "prompts/roles/route-critic.md"},
+    "route_proposer_responder": {"prompt": "prompts/roles/route-proposer-response.md", "reuse_original_agent": true}
+  },
+  "waves": [
+    {
+      "id": "W0",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "raw_materials_only",
+      "handoff": "inputs/source-manifest.json"
+    },
+    {
+      "id": "W1",
+      "dispatch": "parallel_new_subagents",
+      "roles": ["literal_contract", "dependency_architect", "data_forensics"],
+      "visibility": "raw_materials_source_manifest_and_own_brief",
+      "handoff": "submissions/W1/*.md"
+    },
+    {
+      "id": "W2",
+      "dispatch": "parallel_new_subagents",
+      "roles": ["formulation_analyst", "trap_hunter", "answer_scope_reviewer"],
+      "visibility": "raw_materials_source_manifest_and_own_brief_not_W1",
+      "handoff": "submissions/W2/*.md"
+    },
+    {
+      "id": "W3",
+      "dispatch": "three_paired_new_reviewers",
+      "roles": ["cross_examiner"],
+      "visibility": "assigned_pair_and_minimum_sources",
+      "handoff": "reviews/W3/*.md"
+    },
+    {
+      "id": "W3R",
+      "dispatch": "reuse_original_judgment_agents",
+      "roles": ["original_judgment_reviewer"],
+      "visibility": "own_memo_assigned_review_and_sources",
+      "handoff": "submissions/W3R/*.md"
+    },
+    {
+      "id": "W4",
+      "dispatch": "leader_selected_new_subagents",
+      "roles": ["probe_designer", "fresh_context_reviewer"],
+      "visibility": "issue_specific_context",
+      "handoff": "reviews/W4/*.md"
+    },
+    {
+      "id": "L1",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_problem_understanding_memos",
+      "handoff": "synthesis/problem-baseline.md"
+    },
+    {
+      "id": "W5A",
+      "dispatch": "parallel_new_sealed_subagents",
+      "roles": ["route_a", "route_b"],
+      "visibility": "raw_materials_frozen_problem_baseline_and_own_brief",
+      "handoff": ["routes/route-a.md", "routes/route-b.md"]
+    },
+    {
+      "id": "W5B",
+      "dispatch": "new_independent_reviewer",
+      "roles": ["route_critic"],
+      "visibility": "problem_baseline_and_both_routes",
+      "handoff": "routes/route-review.md"
+    },
+    {
+      "id": "W5C",
+      "dispatch": "reuse_original_route_proposers",
+      "roles": ["route_proposer_responder"],
+      "visibility": "own_route_problem_baseline_and_route_review",
+      "handoff": "routes/responses/*.md"
+    },
+    {
+      "id": "L2",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_route_memos",
+      "handoff": "routes/route-handoff.md"
+    }
+  ],
+  "runtime_phases": [
+    "SOURCE_FREEZE",
+    "BLIND_READING",
+    "CROSS_REVIEW",
+    "AUTHOR_RESPONSE",
+    "PROBING",
+    "BASELINE",
+    "ROUTE_BIDDING",
+    "ROUTE_REVIEW",
+    "ROUTE_REBUTTAL",
+    "ROUTE_HANDOFF",
+    "REOPENED"
+  ],
+  "final_phase": "ROUTE_HANDOFF"
+}

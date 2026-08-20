@@ -1,0 +1,280 @@
+{
+  "workflow_name": "cumcm-c-modeling-construction",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/modeling-construction.md",
+  "implementation_plan": "Workflow/modeling-implementation-plan.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_slots": 1,
+    "worker_slots": 3,
+    "worker_base_prompt": "prompts/modeling/worker-base.md",
+    "leader_speaks_last_in_each_wave": true,
+    "new_agent_for": [
+      "M1_isolated_formulation",
+      "M1_isolated_computation_planning",
+      "M1_isolated_structural_challenge",
+      "M3_first_model_build_for_question",
+      "M4_first_high_impact_diagnosis"
+    ],
+    "reuse_original_agent_for": [
+      "M1_targeted_clarification",
+      "M4_builder_response",
+      "M4_authorized_revision",
+      "M5_producer_consumer_handoff",
+      "M5_interface_integration"
+    ]
+  },
+  "scope": {
+    "starts_at": "data_handoff",
+    "ends_at": "model_handoff",
+    "inputs": [
+      "synthesis/problem-baseline.md",
+      "routes/route-handoff.md",
+      "data/data-handoff.md",
+      "allowed_data_products",
+      "relevant_upstream_raw_memos"
+    ],
+    "forbidden": [
+      "silently_rewrite_problem_baseline",
+      "silently_rewrite_route_handoff",
+      "modify_canonical_data",
+      "use_reserved_validation_information_for_adjustment",
+      "formal_model_validation",
+      "paper_level_plotting",
+      "answer_sheet_generation",
+      "formal_paper_writing"
+    ]
+  },
+  "handoff": {
+    "primary_format": "open_markdown_memo",
+    "required_questions_are": "minimum_not_exhaustive",
+    "allow_extra_sections": true,
+    "retain_raw_reports": true,
+    "retain_failed_runs": true,
+    "retain_replaced_versions": true,
+    "leader_summary_may_replace_raw_report": false,
+    "semantic_json_schema_allowed": false,
+    "json_or_yaml_allowed_for": [
+      "team_configuration",
+      "run_metadata",
+      "artifact_paths",
+      "versions",
+      "task_status",
+      "run_parameters",
+      "solver_parameters",
+      "random_seeds"
+    ]
+  },
+  "roles": {
+    "leader": {
+      "agent": "current_primary_agent",
+      "prompt": "prompts/modeling/leader.md"
+    },
+    "mathematical_specification_architect": {
+      "prompt": "prompts/modeling/mathematical-specification-architect.md",
+      "new_agent_required": true,
+      "blind_M1": true,
+      "writes": [
+        "modeling/specs/qN-formulation.md"
+      ]
+    },
+    "computational_path_planner": {
+      "prompt": "prompts/modeling/computational-path-planner.md",
+      "new_agent_required": true,
+      "blind_M1": true,
+      "writes": [
+        "modeling/plans/qN-computation-plan.md"
+      ]
+    },
+    "structural_challenger": {
+      "prompt": "prompts/modeling/structural-challenger.md",
+      "new_agent_required": true,
+      "blind_M1": true,
+      "writes": [
+        "modeling/challenges/qN-structural-challenge.md"
+      ]
+    },
+    "model_builder": {
+      "prompt": "prompts/modeling/model-builder.md",
+      "new_agent_required_at_M3": true,
+      "single_owner_per_question": true,
+      "reuse_for_M4": true,
+      "writes": [
+        "modeling/src/",
+        "modeling/configs/",
+        "modeling/runs/",
+        "modeling/results/candidate-tables/",
+        "modeling/results/interfaces/",
+        "modeling/paper-notes/"
+      ]
+    },
+    "build_result_diagnostician": {
+      "prompt": "prompts/modeling/build-result-diagnostician.md",
+      "new_agent_required_on_first_high_impact_trigger": true,
+      "read_only_implementation": true,
+      "blind_to_builder_posthoc_interpretation_first_pass": true,
+      "writes": [
+        "modeling/diagnostics/qN-runK-diagnosis.md"
+      ]
+    },
+    "model_builder_responder": {
+      "prompt": "prompts/modeling/model-builder-response.md",
+      "reuse_original_agent": "model_builder",
+      "writes": [
+        "modeling/adjustments/qN-runK-builder-response.md",
+        "authorized_builder_owned_artifacts"
+      ]
+    },
+    "interface_handoff_owner": {
+      "prompt": "prompts/modeling/interface-handoff.md",
+      "reuse_original_agent": "relevant_model_builder",
+      "variants": [
+        "producer",
+        "consumer",
+        "integrator"
+      ],
+      "single_integrator_owner_when_code_changes": true,
+      "writes": [
+        "modeling/results/interfaces/",
+        "authorized_interface_code"
+      ]
+    }
+  },
+  "fixed_phases": [
+    {
+      "id": "M0",
+      "dispatch": "leader_only",
+      "roles": [
+        "leader"
+      ],
+      "handoff": "modeling/question-map.md"
+    },
+    {
+      "id": "M1",
+      "dispatch": "three_parallel_new_isolated_subagents_per_build_unit",
+      "roles": [
+        "mathematical_specification_architect",
+        "computational_path_planner",
+        "structural_challenger"
+      ],
+      "visibility": "frozen_handoffs_question_map_own_brief_not_peer_reports_or_leader_preference",
+      "handoff": [
+        "modeling/specs/qN-formulation.md",
+        "modeling/plans/qN-computation-plan.md",
+        "modeling/challenges/qN-structural-challenge.md"
+      ]
+    },
+    {
+      "id": "M2",
+      "dispatch": "leader_only",
+      "roles": [
+        "leader"
+      ],
+      "visibility": "all_M1_raw_reports_and_frozen_handoffs",
+      "handoff": "modeling/specs/qN-build-contract.md"
+    },
+    {
+      "id": "M3",
+      "dispatch": "one_new_builder_per_question_or_shared_build_unit",
+      "roles": [
+        "model_builder"
+      ],
+      "visibility": "build_contract_allowed_data_and_explicit_upstream_inputs",
+      "handoff": [
+        "modeling/runs/run-id/run-intent.md",
+        "modeling/runs/run-id/iteration-memo.md",
+        "modeling/results/candidate-tables/",
+        "modeling/results/interfaces/"
+      ]
+    },
+    {
+      "id": "M5",
+      "dispatch": "reuse_relevant_builders_with_one_integrator_owner_if_needed",
+      "roles": [
+        "interface_handoff_owner"
+      ],
+      "visibility": "relevant_upstream_and_downstream_contracts_runs_and_interfaces",
+      "handoff": "modeling/results/interfaces/"
+    },
+    {
+      "id": "M6",
+      "dispatch": "leader_only",
+      "roles": [
+        "leader"
+      ],
+      "visibility": "all_modeling_reports_runs_versions_and_interfaces",
+      "handoff": "modeling/model-handoff.md"
+    }
+  ],
+  "dynamic_M4_loop": [
+    {
+      "id": "M4A",
+      "dispatch": "reuse_original_builder_for_observation",
+      "roles": [
+        "model_builder"
+      ],
+      "handoff": "modeling/runs/run-id/iteration-memo.md"
+    },
+    {
+      "id": "M4B",
+      "dispatch": "new_diagnostician_when_leader_records_high_impact_trigger",
+      "roles": [
+        "build_result_diagnostician"
+      ],
+      "visibility": "build_contract_run_intent_code_raw_logs_raw_results_baseline_neutral_trigger_not_builder_posthoc_interpretation",
+      "handoff": "modeling/diagnostics/qN-runK-diagnosis.md"
+    },
+    {
+      "id": "M4C",
+      "dispatch": "reuse_original_builder_after_diagnosis_lands",
+      "roles": [
+        "model_builder_responder"
+      ],
+      "visibility": "own_implementation_iteration_memo_and_diagnosis",
+      "handoff": "modeling/adjustments/qN-runK-builder-response.md"
+    },
+    {
+      "id": "M4D",
+      "dispatch": "leader_only",
+      "roles": [
+        "leader"
+      ],
+      "handoff": "modeling/adjustments/qN-runK-adjustment.md"
+    },
+    {
+      "id": "M4E",
+      "dispatch": "reuse_original_builder_for_authorized_revision",
+      "roles": [
+        "model_builder"
+      ],
+      "visibility": "approved_adjustment_card_and_owned_artifacts",
+      "handoff": "new_versioned_run_and_builder_owned_artifacts"
+    }
+  ],
+  "ownership": {
+    "upstream_handoffs": "read_only",
+    "M1_reports": "one_role_one_report_append_only",
+    "M2_build_contract": "leader_only",
+    "question_code_configs_runs": "original_model_builder_single_owner",
+    "shared_modeling_kernel": "one_leader_designated_owner",
+    "M4_diagnosis": "new_diagnostician_report_only",
+    "M4_response_and_revision": "original_model_builder_only_after_leader_authorization",
+    "M5_interface_code": "one_leader_designated_original_builder",
+    "M6_handoff": "leader_only"
+  },
+  "adjustment_levels": {
+    "L0": "implementation_fix_within_frozen_contract",
+    "L1": "preauthorized_computational_adjustment_within_frozen_contract",
+    "L2": "model_structure_change_requires_build_contract_version",
+    "L3": "upstream_data_route_or_problem_change_request"
+  },
+  "branch_policy": {
+    "default_active_primary_branches": 1,
+    "default_active_structural_challengers": 1,
+    "additional_branch_requires_leader_written_discriminating_value": true
+  },
+  "final_phase": "MODEL_HANDOFF"
+}

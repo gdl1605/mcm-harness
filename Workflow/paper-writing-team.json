@@ -1,0 +1,102 @@
+{
+  "workflow_name": "cumcm-c-paper-writing",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/paper-writing.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent_is_unique_full_manuscript_author",
+    "external_orchestrator_required": false,
+    "leader_prompt": "prompts/paper-writing/leader.md",
+    "worker_base_prompt": "prompts/paper-writing/worker-base.md",
+    "worker_concurrency_policy": "PW2 question sections and PW5 independent reviews may run in parallel only with isolated inputs and writes",
+    "reviewers_may_edit_manuscript": false
+  },
+  "scope": {
+    "starts_at": "paper_framework_handoff",
+    "ends_at": "formal_paper_handoff",
+    "canonical_manuscript_format": "markdown",
+    "out_of_scope": [
+      "docx_generation",
+      "latex_generation",
+      "formal_figure_rendering",
+      "layout_and_typesetting",
+      "reference_search",
+      "submission_package",
+      "ai_detection_score",
+      "mechanical_style_linter",
+      "automatic_rewriting"
+    ]
+  },
+  "ownership": {
+    "full_manuscript_and_handoff": "leader_only",
+    "question_section": "one_new_question_manuscript_writer_per_question",
+    "question_fact_revision": "reuse_originating_question_writer",
+    "reviews": "review_only_no_manuscript_writes",
+    "global_revision": "leader_only"
+  },
+  "roles": {
+    "question_manuscript_writer": {
+      "prompt": "prompts/paper-writing/question-manuscript-writer.md",
+      "new_agent_required": true,
+      "writes": ["paper-writing/sections/qN/section-v1.md"]
+    },
+    "question_manuscript_response": {
+      "prompt": "prompts/paper-writing/question-manuscript-response.md",
+      "reuse_original_agent": "question_manuscript_writer",
+      "writes": ["paper-writing/sections/qN/section-fact-response.md", "paper-writing/sections/qN/section-v2.md"]
+    },
+    "full_paper_fact_auditor": {
+      "prompt": "prompts/paper-writing/full-paper-fact-auditor.md",
+      "new_agent_required": true,
+      "writes": ["paper-writing/reviews/fact-consistency-review.md", "paper-writing/reviews/closure/fact-closure.md"],
+      "review_only": true
+    },
+    "competition_expression_reviewer": {
+      "prompt": "prompts/paper-writing/competition-expression-reviewer.md",
+      "new_agent_required": true,
+      "writes": ["paper-writing/reviews/competition-expression-review.md", "paper-writing/reviews/closure/competition-expression-closure.md"],
+      "review_only": true
+    },
+    "full_paper_coherence_reviewer": {
+      "prompt": "prompts/paper-writing/full-paper-coherence-reviewer.md",
+      "new_agent_required": true,
+      "writes": ["paper-writing/reviews/full-paper-coherence-review.md", "paper-writing/reviews/closure/coherence-closure.md"],
+      "review_only": true
+    },
+    "ai_prose_auditor": {
+      "prompt": "prompts/paper-writing/ai-prose-auditor.md",
+      "new_agent_required": true,
+      "writes": ["paper-writing/reviews/ai-prose-review.md", "paper-writing/reviews/closure/ai-prose-closure.md"],
+      "review_only": true,
+      "ai_score_forbidden": true,
+      "automatic_rewrite_forbidden": true
+    }
+  },
+  "phases": [
+    {"id": "PW0", "dispatch": "leader_only", "handoff": "paper-writing/scope/frozen-inputs.md"},
+    {"id": "PW1", "dispatch": "leader_only", "handoff": "writing plan, section contracts, prose boundary and figure/table slots"},
+    {"id": "PW2", "dispatch": "one_new_writer_per_question", "parallel": true, "handoff": "sections/qN/section-v1.md"},
+    {"id": "PW3", "dispatch": "leader_only_full_manuscript_assembly", "handoff": "manuscript/full-paper-v1.md"},
+    {"id": "PW4", "dispatch": "one_new_full_paper_fact_auditor", "handoff": "reviews/fact-consistency-review.md"},
+    {"id": "PW4R", "dispatch": "reuse_question_writers_for_local_facts_then_leader_reassembles", "handoff": "section-v2, fact-response and full-paper-v2"},
+    {"id": "PW5", "dispatch": "three_new_isolated_language_and_coherence_reviewers", "parallel": true, "frozen_input": "manuscript/full-paper-v2.md"},
+    {"id": "PW5R", "dispatch": "leader_routes_local_facts_and_is_unique_global_editor", "handoff": "language-review-response and full-paper-v3"},
+    {"id": "PW6", "dispatch": "reuse_all_four_reviewers_for_original_issue_closure_only", "handoff": "four closure memos"},
+    {"id": "PW7", "dispatch": "leader_only", "handoff": "final-paper.md and formal-paper-handoff.md"}
+  ],
+  "review_isolation": {
+    "pw5_reviewers_read_same_frozen_v2": true,
+    "peer_reviews_hidden": true,
+    "leader_defense_hidden": true,
+    "ai_prose_reviewer_forbidden_context": ["author_identity", "peer_reviews", "engineering_logs", "award_paper_distillation"],
+    "closure_may_add_new_full_review": false
+  },
+  "branch_policy": {
+    "question_writers_may_run_in_parallel": true,
+    "no_fixed_numeric_worker_cap": true,
+    "do_not_create_one_agent_per_paragraph": true,
+    "leader_is_unique_manuscript_owner": true
+  },
+  "final_phase": "FORMAL_PAPER_HANDOFF"
+}

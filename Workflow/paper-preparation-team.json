@@ -1,0 +1,93 @@
+{
+  "workflow_name": "cumcm-c-paper-preparation",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/paper-preparation.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_prompt": "prompts/paper-preparation/leader.md",
+    "worker_base_prompt": "prompts/paper-preparation/worker-base.md",
+    "worker_concurrency_policy": "CP2/CP3 只按独立问题和独立写入根流式并行，不按段落拆 Agent；其余全篇阶段串行",
+    "leader_speaks_last_at_merge": true
+  },
+  "scope": {
+    "starts_at": "validation_handoff",
+    "ends_at": "paper_framework_handoff",
+    "semantic_output": "open_markdown",
+    "out_of_scope": [
+      "complete_paper_draft",
+      "formal_figure_rendering",
+      "aesthetic_or_layout_review",
+      "reference_search",
+      "submission_package_generation",
+      "semantic_json_schema"
+    ]
+  },
+  "roles": {
+    "paper_structure_architect": {
+      "prompt": "prompts/paper-preparation/paper-structure-architect.md",
+      "new_agent_required": true,
+      "writes": ["paper-prep/structure/chapter-map-v0.md", "paper-prep/structure/narrative-spine.md", "paper-prep/structure/page-budget.md"]
+    },
+    "question_chapter_curator": {
+      "prompt": "prompts/paper-preparation/question-chapter-curator.md",
+      "new_agent_required": true,
+      "one_owner_per_question": true,
+      "writes": ["paper-prep/questions/qN/chapter-material-v1.md"]
+    },
+    "chapter_evidence_auditor": {
+      "prompt": "prompts/paper-preparation/chapter-evidence-auditor.md",
+      "new_agent_required": true,
+      "writes": ["paper-prep/questions/qN/evidence-review.md"],
+      "read_only_upstream": true
+    },
+    "chapter_curator_response": {
+      "prompt": "prompts/paper-preparation/chapter-curator-response.md",
+      "reuse_original_agent": "question_chapter_curator",
+      "writes": ["paper-prep/questions/qN/evidence-response.md", "paper-prep/questions/qN/chapter-material-v2.md", "paper-prep/questions/qN/chapter-material-v3.md when CP5R assigns a local repair"]
+    },
+    "paper_framework_integrator": {
+      "prompt": "prompts/paper-preparation/paper-framework-integrator.md",
+      "new_agent_required": true,
+      "writes": ["paper-prep/structure/chapter-map-v1.md", "paper-prep/shared/**", "paper-prep/integration/paper-framework-v1.md"]
+    },
+    "competition_manuscript_reviewer": {
+      "prompt": "prompts/paper-preparation/competition-manuscript-reviewer.md",
+      "new_agent_required": true,
+      "two_pass_context_policy": "blind memo must be persisted before award-paper distillation is exposed",
+      "writes": ["paper-prep/integration/competition-review-blind.md", "paper-prep/integration/competition-review-pattern-sweep.md", "paper-prep/integration/competition-review-closure.md"],
+      "read_only_upstream": true
+    },
+    "paper_framework_response": {
+      "prompt": "prompts/paper-preparation/paper-framework-response.md",
+      "reuse_original_agent": "paper_framework_integrator",
+      "writes": ["paper-prep/integration/framework-response.md", "paper-prep/integration/paper-framework-v2.md", "paper-prep/paper-framework-handoff.md"]
+    }
+  },
+  "phases": [
+    {"id": "CP0", "dispatch": "leader_only", "handoff": "paper-prep/scope/frozen-inputs.md"},
+    {"id": "CP1", "dispatch": "one_new_structure_architect", "handoff": "chapter-map-v0, narrative-spine and page-budget; chapter-map-v0 immediately unblocks figure F3"},
+    {"id": "CP2", "dispatch": "one_new_curator_per_question", "streaming": true, "handoff": "questions/qN/chapter-material-v1.md"},
+    {"id": "CP3", "dispatch": "one_new_evidence_auditor_per_completed_v1", "streaming": true, "handoff": "questions/qN/evidence-review.md"},
+    {"id": "CP3R", "dispatch": "reuse_originating_question_curator_once", "handoff": "evidence-response and chapter-material-v2"},
+    {"id": "CP4", "dispatch": "one_new_framework_integrator_after_required_question_responses", "handoff": "chapter-map-v1, shared registries and paper-framework-v1"},
+    {"id": "CP5", "dispatch": "one_new_fresh_context_competition_reviewer", "handoff": "blind review first, award-pattern sweep second"},
+    {"id": "CP5R", "dispatch": "owner_routed_repairs_then_reuse_integrator_and_reviewer_once", "handoff": "paper-framework-v2 and closure review"},
+    {"id": "CP6", "dispatch": "reuse_framework_integrator_as_unique_handoff_owner", "handoff": "paper-prep/paper-framework-handoff.md"}
+  ],
+  "context_isolation": {
+    "competition_blind_forbidden": ["code", "engineering_logs", "leader_defense", "evidence_reviews", "award_paper_distillation"],
+    "award_pattern_sweep_available_only_after": "competition-review-blind.md is non-empty and frozen",
+    "award_patterns_are_not_evidence": true
+  },
+  "branch_policy": {
+    "question_tasks_may_run_in_parallel": true,
+    "no_fixed_numeric_worker_cap": true,
+    "do_not_create_one_agent_per_section": true,
+    "figure_preparation_may_run_concurrently": true,
+    "global_integration_and_review_are_serial": true
+  },
+  "final_phase": "PAPER_FRAMEWORK_HANDOFF"
+}

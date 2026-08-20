@@ -1,4 +1,0 @@
-interface:
-  display_name: "mcm.skill"
-  short_description: "Math modeling contest workflow from problem to paper"
-  default_prompt: "Use $mcm to analyze this modeling contest problem and produce an executable workflow."

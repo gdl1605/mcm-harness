@@ -1,0 +1,308 @@
+{
+  "workflow_name": "cumcm-c-data-engineering",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/data-engineering.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_slots": 1,
+    "worker_slots": 3,
+    "worker_base_prompt": "prompts/data-engineering/worker-base.md",
+    "new_agent_for": [
+      "D1_isolated_investigation",
+      "D3_pipeline_implementation",
+      "D4_independent_validation"
+    ],
+    "reuse_original_agent_for": ["D4R_pipeline_revision"],
+    "leader_speaks_last_in_each_wave": true
+  },
+  "scope": {
+    "starts_at": "route_handoff_and_problem_baseline",
+    "ends_at": "data_handoff",
+    "inputs": [
+      "inputs/source-manifest.json",
+      "synthesis/problem-baseline.md",
+      "routes/route-handoff.md",
+      "raw_problem_materials_and_attachments",
+      "relevant_front_half_memos"
+    ],
+    "forbidden": [
+      "modify_raw_materials",
+      "silently_rewrite_front_half_artifacts",
+      "model_training",
+      "optimization_solving",
+      "model_score_driven_canonical_cleaning",
+      "formal_model_validation",
+      "paper_level_plotting",
+      "answer_sheet_generation",
+      "formal_paper_writing"
+    ]
+  },
+  "handoff": {
+    "primary_format": "open_markdown_memo",
+    "required_questions_are": "minimum_not_exhaustive",
+    "allow_extra_sections": true,
+    "retain_raw_reports": true,
+    "retain_replaced_versions": true,
+    "leader_summary_may_replace_raw_report": false,
+    "semantic_json_schema_allowed": false,
+    "json_allowed_for": [
+      "team_configuration",
+      "run_metadata",
+      "source_hashes",
+      "artifact_paths",
+      "versions",
+      "task_status",
+      "run_parameters"
+    ]
+  },
+  "modes": {
+    "full": {
+      "use_when_any": [
+        "multiple_tables_or_attachments",
+        "multiple_entities_or_time_grains",
+        "repeated_measurements_or_panel_data",
+        "unclear_labels_proxies_or_information_time",
+        "complex_missing_zero_or_structural_blank_semantics",
+        "shared_cross_question_data_interfaces",
+        "aggregation_can_change_ranking_strategy_or_answer_objects"
+      ],
+      "D1_policy": "three_new_roles_parallel_and_isolated",
+      "D4_policy": "one_or_two_new_reviewers"
+    },
+    "lean": {
+      "use_only_if_all": [
+        "single_table",
+        "field_meanings_are_clear",
+        "join_risk_is_low",
+        "time_availability_risk_is_low",
+        "no_material_cross_question_interface_risk"
+      ],
+      "D1_policy": "skip_with_leader_written_reason_no_role_substitution",
+      "D4_policy": "one_new_combined_reproducibility_and_interface_validator",
+      "invariants": [
+        "raw_materials_read_only",
+        "one_pipeline_implementation_owner",
+        "processing_log_retained",
+        "independent_validation_required"
+      ]
+    }
+  },
+  "roles": {
+    "leader": {
+      "agent": "current_primary_agent",
+      "contract": "Workflow/data-engineering.md#31-leader",
+      "prompt": "prompts/data-engineering/leader.md"
+    },
+    "data_contract_architect": {
+      "contract": "Workflow/data-engineering.md#32-数据契约架构师",
+      "prompt": "prompts/data-engineering/data-contract-architect.md",
+      "new_agent_required": true,
+      "blind_D1": true,
+      "writes": ["data/contracts/data-contract.md"]
+    },
+    "data_profiler": {
+      "contract": "Workflow/data-engineering.md#33-数据剖析员",
+      "prompt": "prompts/data-engineering/data-profiler.md",
+      "new_agent_required": true,
+      "blind_D1": true,
+      "writes": ["data/profiling/data-profile.md"]
+    },
+    "data_risk_reviewer": {
+      "contract": "Workflow/data-engineering.md#34-数据风险审查员",
+      "prompt": "prompts/data-engineering/data-risk-reviewer.md",
+      "new_agent_required": true,
+      "blind_D1": true,
+      "writes": ["data/reviews/data-risk-review.md"]
+    },
+    "data_pipeline_implementer": {
+      "contract": "Workflow/data-engineering.md#35-数据管道实现者",
+      "prompt": "prompts/data-engineering/data-pipeline-builder.md",
+      "new_agent_required_at_D3": true,
+      "single_owner": true,
+      "writes": [
+        "data/pipeline/",
+        "data/staging/",
+        "data/processed/canonical/",
+        "data/processed/analytical/",
+        "data/decisions/preprocessing-log.md",
+        "data/pipeline/implementation-memo.md",
+        "data/paper-notes/data-method-note.md"
+      ]
+    },
+    "reproducibility_quality_validator": {
+      "contract": "Workflow/data-engineering.md#36-复现与质量验证者",
+      "prompt": "prompts/data-engineering/data-repro-validator.md",
+      "new_agent_required": true,
+      "read_only_implementation": true,
+      "writes": ["data/reviews/reproducibility-quality-review.md"]
+    },
+    "interquestion_interface_reviewer": {
+      "contract": "Workflow/data-engineering.md#37-题间接口审查者",
+      "prompt": "prompts/data-engineering/data-interface-reviewer.md",
+      "new_agent_required": true,
+      "read_only_implementation": true,
+      "writes": ["data/reviews/interquestion-interface-review.md"]
+    },
+    "data_builder_responder": {
+      "contract": "Workflow/data-engineering.md#d4r-原实现者修订",
+      "prompt": "prompts/data-engineering/data-builder-response.md",
+      "reuse_original_agent": "data_pipeline_implementer",
+      "writes": [
+        "data/reviews/data-builder-response.md",
+        "revised_D3_owned_artifacts"
+      ]
+    }
+  },
+  "full_mode_waves": [
+    {
+      "id": "D0",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "front_half_handoffs_sources_and_relevant_raw_memos",
+      "handoff": "data/briefs/D1/*.md"
+    },
+    {
+      "id": "D1",
+      "dispatch": "three_parallel_new_isolated_subagents",
+      "roles": [
+        "data_contract_architect",
+        "data_profiler",
+        "data_risk_reviewer"
+      ],
+      "visibility": "raw_sources_frozen_front_half_handoffs_and_own_brief_not_peer_reports_or_leader_preference",
+      "handoff": [
+        "data/contracts/data-contract.md",
+        "data/profiling/data-profile.md",
+        "data/reviews/data-risk-review.md"
+      ]
+    },
+    {
+      "id": "D2",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_D1_raw_reports_and_front_half_handoffs",
+      "handoff": "data/decisions/preprocessing-plan.md"
+    },
+    {
+      "id": "D3",
+      "dispatch": "one_new_subagent_single_implementation_owner",
+      "roles": ["data_pipeline_implementer"],
+      "visibility": "sources_front_half_handoffs_D1_reports_and_D2_plan",
+      "handoff": [
+        "data/pipeline/",
+        "data/processed/canonical/",
+        "data/processed/analytical/",
+        "data/decisions/preprocessing-log.md",
+        "data/pipeline/implementation-memo.md",
+        "data/paper-notes/data-method-note.md"
+      ]
+    },
+    {
+      "id": "D4",
+      "dispatch": "one_or_two_new_independent_subagents",
+      "roles": [
+        "reproducibility_quality_validator",
+        "interquestion_interface_reviewer"
+      ],
+      "visibility": "sources_front_half_handoffs_D2_plan_pipeline_processed_data_logs",
+      "write_policy": "reviews_only_no_implementation_changes",
+      "handoff": "data/reviews/*.md"
+    },
+    {
+      "id": "D4R",
+      "dispatch": "reuse_original_D3_implementer",
+      "roles": ["data_builder_responder"],
+      "reuse_target": "data_pipeline_implementer",
+      "visibility": "own_implementation_and_D4_reviews",
+      "write_policy": "revise_owned_data_engineering_artifacts_retain_first_version_and_change_impact",
+      "handoff": [
+        "data/reviews/data-builder-response.md",
+        "revised_D3_artifacts"
+      ]
+    },
+    {
+      "id": "D5",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_data_engineering_reports_versions_and_reviews",
+      "handoff": "data/data-handoff.md"
+    }
+  ],
+  "lean_mode_waves": [
+    {
+      "id": "D0",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "handoff": "data/decisions/lean-mode-rationale.md"
+    },
+    {
+      "id": "D1",
+      "dispatch": "skipped_only_after_D0_documents_all_lean_eligibility_conditions",
+      "roles": [],
+      "handoff": "data/decisions/lean-mode-rationale.md"
+    },
+    {
+      "id": "D2",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "handoff": "data/decisions/preprocessing-plan.md"
+    },
+    {
+      "id": "D3",
+      "dispatch": "one_new_subagent_single_implementation_owner",
+      "roles": ["data_pipeline_implementer"],
+      "handoff": "data_pipeline_and_open_markdown_memos"
+    },
+    {
+      "id": "D4",
+      "dispatch": "one_new_combined_independent_validator",
+      "roles": [
+        "reproducibility_quality_validator",
+        "interquestion_interface_reviewer"
+      ],
+      "role_assignment": "one_agent_holds_both_review_contracts",
+      "write_policy": "reviews_only_no_implementation_changes",
+      "handoff": "data/reviews/combined-data-review.md"
+    },
+    {
+      "id": "D4R",
+      "dispatch": "reuse_original_D3_implementer",
+      "roles": ["data_builder_responder"],
+      "reuse_target": "data_pipeline_implementer",
+      "handoff": [
+        "data/reviews/data-builder-response.md",
+        "revised_D3_artifacts"
+      ]
+    },
+    {
+      "id": "D5",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "handoff": "data/data-handoff.md"
+    }
+  ],
+  "ownership": {
+    "raw_sources": "read_only",
+    "D1_reports": "one_role_one_report_append_only",
+    "D2_plan": "leader_only",
+    "D3_shared_pipeline_and_processed_data": "single_data_pipeline_implementer",
+    "D4_reviews": "new_reviewers_reviews_only",
+    "D4R_revision": "original_D3_implementer_only",
+    "D5_handoff": "leader_only"
+  },
+  "reopen": {
+    "local_rollback_default": true,
+    "retain_old_reports_and_versions": true,
+    "front_half_triggers": [
+      "target_cannot_be_constructed",
+      "aggregation_or_filtering_changes_problem_population",
+      "interquestion_interface_is_incompatible",
+      "critical_label_would_need_to_be_invented",
+      "new_evidence_changes_problem_or_route_interpretation"
+    ]
+  },
+  "final_phase": "DATA_HANDOFF"
+}

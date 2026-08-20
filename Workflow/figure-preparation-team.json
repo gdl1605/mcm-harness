@@ -1,0 +1,240 @@
+{
+  "workflow_name": "cumcm-c-figure-preparation",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/figure-preparation.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_slots": 1,
+    "worker_concurrency_policy": "按问题或真实共享单元创建；仅受输入独立性、写入路径不冲突和平台容量约束，不设置固定数字上限",
+    "worker_base_prompt": "prompts/figure-preparation/worker-base.md",
+    "leader_speaks_last_at_merge": true,
+    "new_agent_for": [
+      "F1_question_figure_curator",
+      "F1_shared_figure_curator_when_cross_question_data_is_real",
+      "F2_streaming_figure_evidence_auditor",
+      "F3_figure_chapter_integrator"
+    ],
+    "reuse_original_agent_for": [
+      "F2R_question_curator_response"
+    ],
+    "parallel_with": [
+      "chapter_materials_and_paper_outline_subagent"
+    ]
+  },
+  "scope": {
+    "starts_at": "validation_handoff",
+    "ends_at": "figure_preparation_handoff",
+    "trigger": "V6 validation/validation-handoff.md is complete and Leader freezes the read set",
+    "inputs": [
+      "validation/validation-handoff.md",
+      "validation/claims/claim-evidence-map.md",
+      "validation/claims/claim-disposition-*.md",
+      "validation/authorized_result_tables_and_run_artifacts",
+      "validation/exposure-ledger-and-relevant_reviews",
+      "modeling/model-handoff.md",
+      "data/data-handoff.md",
+      "synthesis/problem-baseline.md",
+      "routes/route-handoff.md",
+      "paper-prep/structure/chapter-map-v0.md when CP1 completes"
+    ],
+    "input_resolution": "The non-literal selector entries above are not filesystem paths. F0 must resolve every allowed artifact to an exact path, version and hash in figure-prep/scope/frozen-inputs.md; workers may not search directories to resolve them. Missing paper-prep/structure/chapter-map-v0.md blocks F3.",
+    "forbidden": [
+      "modify_raw_materials",
+      "modify_data_or_modeling_or_validation_artifacts",
+      "modify_paper_drafts_or_chapter_text",
+      "change_claims_or_result_definitions_silently",
+      "formal_paper_figure_rendering",
+      "aesthetic_review_or_visual_style_iteration",
+      "paper_style_templates_or_visual_theme_files",
+      "answer_sheet_generation",
+      "GLM_or_external_plot_builder_dispatch"
+    ]
+  },
+  "handoff": {
+    "primary_format": "open_markdown_memos_and_reproducible_per_figure_data_exports",
+    "required_questions_are": "minimum_not_exhaustive",
+    "allow_extra_sections": true,
+    "retain_raw_reports": true,
+    "retain_replaced_versions": true,
+    "leader_summary_may_replace_raw_report": false,
+    "semantic_json_schema_allowed": false,
+    "json_or_yaml_allowed_for": [
+      "team_configuration",
+      "run_metadata",
+      "source_hashes",
+      "artifact_paths",
+      "versions",
+      "task_status",
+      "run_parameters"
+    ],
+    "formal_figure_rendering_owner": "external_codex_visual_figure_module"
+  },
+  "ownership": {
+    "frozen_scope_and_dispatch": "leader_only",
+    "question_package_and_question_scoped_diagnostics": "one_new_question_figure_curator_per_question_or_shared_unit",
+    "question_data_exports_and_recommendations": "originating_question_figure_curator",
+    "evidence_review": "one_new_figure_evidence_auditor_per_completed_question_package",
+    "curator_response_and_owned_revision": "reuse_originating_question_figure_curator_once",
+    "cross_question_plan_and_final_handoff": "one_new_figure_chapter_integrator",
+    "upstream_change_request_decision": "leader_only",
+    "paper_draft_and_formal_figure_rendering": "outside_this_workflow"
+  },
+  "roles": {
+    "leader": {
+      "agent": "current_primary_agent",
+      "prompt": "prompts/figure-preparation/leader.md"
+    },
+    "question_figure_curator": {
+      "contract": "Workflow/figure-preparation.md（F1 逐问题诊断与数据整理）",
+      "prompt": "prompts/figure-preparation/question-figure-curator.md",
+      "new_agent_required": true,
+      "single_owner_per_question_or_shared_unit": true,
+      "writes": [
+        "figure-prep/questions/qN/**",
+        "figure-prep/change-requests/REQUEST-ID.md when Leader explicitly authorizes"
+      ],
+      "forbidden_writes": [
+        "data/**",
+        "modeling/**",
+        "validation/**",
+        "paper_or_chapter_drafts/**"
+      ]
+    },
+    "shared_figure_curator": {
+      "contract": "Workflow/figure-preparation.md（F1 跨问共享结果整理）",
+      "prompt": "prompts/figure-preparation/question-figure-curator.md",
+      "new_agent_required_when": "a genuinely shared cross-question result or comparison cannot be owned by one question curator",
+      "single_owner": true,
+      "writes": [
+        "figure-prep/cross-question/shared/**",
+        "figure-prep/change-requests/REQUEST-ID.md when Leader explicitly authorizes"
+      ],
+      "forbidden_writes": [
+        "data/**",
+        "modeling/**",
+        "validation/**",
+        "paper_or_chapter_drafts/**"
+      ]
+    },
+    "figure_evidence_auditor": {
+      "contract": "Workflow/figure-preparation.md（F2 逐问流式独立复核）",
+      "prompt": "prompts/figure-preparation/figure-evidence-auditor.md",
+      "new_agent_required": true,
+      "read_only_upstream": true,
+      "writes": [
+        "figure-prep/questions/qN/review.md or figure-prep/cross-question/shared/review.md according to task brief unit_root"
+      ],
+      "forbidden_writes": [
+        "candidate_data_or_export_scripts",
+        "data/**",
+        "modeling/**",
+        "validation/**",
+        "paper_or_chapter_drafts/**"
+      ]
+    },
+    "question_curator_response": {
+      "contract": "Workflow/figure-preparation.md（F2R 原 Curator 回应与定向修订）",
+      "prompt": "prompts/figure-preparation/question-curator-response.md",
+      "reuse_original_agent": "originating question_figure_curator or shared_figure_curator",
+      "one_concentrated_revision_default": true,
+      "writes": [
+        "unit_root/response.md where unit_root is questions/qN or cross-question/shared",
+        "versioned_artifacts_under_originating_unit_root",
+        "figure-prep/change-requests/REQUEST-ID.md when Leader explicitly authorizes"
+      ],
+      "forbidden_writes": [
+        "data/**",
+        "modeling/**",
+        "validation/**",
+        "paper_or_chapter_drafts/**"
+      ]
+    },
+    "figure_chapter_integrator": {
+      "contract": "Workflow/figure-preparation.md（F3 跨问与章节位置整合）",
+      "prompt": "prompts/figure-preparation/figure-chapter-integrator.md",
+      "new_agent_required": true,
+      "writes": [
+        "figure-prep/cross-question/integration/**",
+        "figure-prep/figure-plan.md",
+        "figure-prep/figure-preparation-handoff.md"
+      ],
+      "forbidden_writes": [
+        "formal_figure_files",
+        "paper_or_chapter_drafts/**",
+        "data/**",
+        "modeling/**",
+        "validation/**"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "id": "F0",
+      "dispatch": "leader_only_after_V6_freeze",
+      "roles": ["leader"],
+      "writes": [
+        "figure-prep/scope/frozen-inputs.md",
+        "figure-prep/scope/dispatch-notes.md"
+      ],
+      "handoff": "question briefs and optional shared-unit brief"
+    },
+    {
+      "id": "F1",
+      "dispatch": "one_new_curator_per_question_or_genuine_shared_unit_in_parallel",
+      "roles": ["question_figure_curator", "shared_figure_curator"],
+      "streaming": "a completed question package may immediately enter F2 without waiting for other questions",
+      "handoff": "<unit_root>/question-package.md and unit-scoped diagnostics/candidate exports; unit_root is questions/qN or cross-question/shared"
+    },
+    {
+      "id": "F2",
+      "dispatch": "one_new_independent_auditor_per_completed_question_package",
+      "roles": ["figure_evidence_auditor"],
+      "streaming": "audit starts as soon as its curator package is present",
+      "write_policy": "review_only_no_data_or_code_changes",
+      "handoff": "<unit_root>/review.md where unit_root is questions/qN or cross-question/shared"
+    },
+    {
+      "id": "F2R",
+      "dispatch": "reuse_originating_curator_once_after_review",
+      "roles": ["question_curator_response"],
+      "write_policy": "response_plus_versioned_question_owned_artifacts_only",
+      "handoff": "<unit_root>/response.md and retained revisions or local change request"
+    },
+    {
+      "id": "F3",
+      "dispatch": "one_new_integrator_after_all_required_packages_and_minimum_chapter_map",
+      "roles": ["figure_chapter_integrator"],
+      "handoff": [
+        "figure-prep/figure-plan.md",
+        "figure-prep/figure-preparation-handoff.md"
+      ]
+    },
+    {
+      "id": "F4",
+      "dispatch": "leader_only_merge_and_stop",
+      "roles": ["leader"],
+      "conditions": [
+        "all required question packages have reviews and any response is recorded",
+        "high_impact_change_requests are explicitly accepted, retained, or routed upstream",
+        "figure-plan is aligned with the available chapter map",
+        "figure-preparation-handoff exists"
+      ],
+      "handoff": "external Codex visual figure module"
+    }
+  ],
+  "branch_policy": {
+    "question_tasks_may_run_in_parallel": true,
+    "no_fixed_numeric_worker_cap": true,
+    "additional_worker_requires": [
+      "independent_input_or_real_shared_unit",
+      "non_conflicting_write_root",
+      "platform_capacity"
+    ],
+    "do_not_create_one_agent_per_figure": true,
+    "chapter_work_may_run_concurrently": true
+  },
+  "final_phase": "FIGURE_PREPARATION_HANDOFF"
+}

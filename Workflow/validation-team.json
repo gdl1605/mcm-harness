@@ -1,0 +1,196 @@
+{
+  "workflow_name": "cumcm-c-independent-model-validation",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/model-validation.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_slots": 1,
+    "worker_slots": 3,
+    "worker_base_prompt": "prompts/validation/worker-base.md",
+    "leader_speaks_last_in_each_wave": true,
+    "new_agent_for": [
+      "V1_mathematical_implementation_audit",
+      "V1_experimental_evidence_audit",
+      "V1_reproducibility_interface_audit",
+      "V6_integrated_answer_audit_when_strongly_coupled",
+      "fresh_recheck_after_reserved_evidence_is_consumed"
+    ],
+    "reuse_original_agent_for": [
+      "V3_authorized_probe_by_originating_auditor",
+      "V4_original_model_owner_response",
+      "V4_original_data_owner_response_when_relevant"
+    ]
+  },
+  "scope": {
+    "starts_at": "model_handoff",
+    "ends_at": "validation_handoff",
+    "inputs": [
+      "modeling/model-handoff.md",
+      "modeling_build_contracts_code_configs_runs_results_interfaces",
+      "data/data-handoff.md",
+      "data_D4_reviews",
+      "synthesis/problem-baseline.md",
+      "routes/route-handoff.md",
+      "official_delivery_requirements"
+    ],
+    "forbidden": [
+      "silently_modify_data_or_modeling_artifacts",
+      "continue_model_selection_or_tuning",
+      "reuse_consumed_validation_evidence_as_pristine_holdout",
+      "whole_model_semantic_pass_fail_gate",
+      "paper_level_plotting",
+      "answer_sheet_generation",
+      "formal_paper_writing"
+    ]
+  },
+  "handoff": {
+    "primary_format": "open_markdown_memo",
+    "required_questions_are": "minimum_not_exhaustive",
+    "allow_extra_sections": true,
+    "retain_raw_reviews": true,
+    "retain_failed_and_inconclusive_probes": true,
+    "retain_replaced_versions": true,
+    "leader_summary_may_replace_raw_report": false,
+    "semantic_json_schema_allowed": false,
+    "json_or_yaml_allowed_for": [
+      "team_configuration",
+      "run_metadata",
+      "artifact_paths",
+      "versions",
+      "task_status",
+      "probe_parameters",
+      "solver_parameters",
+      "random_seeds"
+    ]
+  },
+  "roles": {
+    "leader": {
+      "agent": "current_primary_agent",
+      "prompt": "prompts/validation/leader.md"
+    },
+    "mathematical_implementation_auditor": {
+      "prompt": "prompts/validation/mathematical-implementation-auditor.md",
+      "new_agent_required": true,
+      "blind_V1": true,
+      "probe_write_requires_leader_authorization": true,
+      "writes": [
+        "validation/reviews/qN-mathematical-implementation-review.md",
+        "validation/probes/PROBE-ID/"
+      ]
+    },
+    "experimental_evidence_auditor": {
+      "prompt": "prompts/validation/experimental-evidence-auditor.md",
+      "new_agent_required": true,
+      "blind_V1": true,
+      "probe_write_requires_leader_authorization": true,
+      "writes": [
+        "validation/reviews/qN-experimental-evidence-review.md",
+        "validation/probes/PROBE-ID/"
+      ]
+    },
+    "reproducibility_interface_auditor": {
+      "prompt": "prompts/validation/reproducibility-interface-auditor.md",
+      "new_agent_required": true,
+      "blind_V1": true,
+      "probe_write_requires_leader_authorization": true,
+      "writes": [
+        "validation/reviews/qN-reproducibility-interface-review.md",
+        "validation/probes/PROBE-ID/"
+      ]
+    },
+    "integrated_answer_auditor": {
+      "prompt": "prompts/validation/integrated-answer-auditor.md",
+      "new_agent_required_when": "strong_interquestion_dependency_or_material_error_propagation",
+      "writes": [
+        "validation/interfaces/cross-question-validation.md"
+      ]
+    },
+    "original_owner_responder": {
+      "prompt": "prompts/validation/original-owner-response.md",
+      "reuse_original_agent": "relevant_model_builder_or_data_builder",
+      "writes": [
+        "validation/responses/ISSUE-ID-original-owner-response.md"
+      ]
+    }
+  },
+  "fixed_phases": [
+    {
+      "id": "V0",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "handoff": [
+        "validation/scope/validation-map.md",
+        "validation/scope/exposure-ledger.md"
+      ]
+    },
+    {
+      "id": "V1",
+      "dispatch": "three_parallel_new_isolated_subagents_per_validation_unit",
+      "roles": [
+        "mathematical_implementation_auditor",
+        "experimental_evidence_auditor",
+        "reproducibility_interface_auditor"
+      ],
+      "visibility": "frozen_handoffs_validation_map_own_brief_not_peer_reports_leader_root_cause_or_new_builder_defense",
+      "handoff": "validation/reviews/"
+    },
+    {
+      "id": "V2",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_V1_raw_reviews_and_frozen_evidence",
+      "handoff": "validation/dockets/qN-validation-docket.md"
+    },
+    {
+      "id": "V6",
+      "dispatch": "conditional_new_integrated_auditor_then_leader",
+      "roles": ["integrated_answer_auditor", "leader"],
+      "handoff": [
+        "validation/interfaces/cross-question-validation.md",
+        "validation/claims/claim-evidence-map.md",
+        "validation/validation-handoff.md"
+      ]
+    }
+  ],
+  "dynamic_V3_V5_loop": [
+    {
+      "id": "V3",
+      "dispatch": "reuse_originating_auditor_for_leader_authorized_probe",
+      "roles": [
+        "mathematical_implementation_auditor",
+        "experimental_evidence_auditor",
+        "reproducibility_interface_auditor"
+      ],
+      "writes": "validation/probes/PROBE-ID/"
+    },
+    {
+      "id": "V4",
+      "dispatch": "reuse_relevant_original_owner_after_probe_report_lands",
+      "roles": ["original_owner_responder"],
+      "writes": "validation/responses/ISSUE-ID-original-owner-response.md"
+    },
+    {
+      "id": "V5",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "writes": [
+        "validation/decisions/CLAIM-ID-disposition.md",
+        "validation/change-requests/REQUEST-ID.md"
+      ]
+    }
+  ],
+  "ownership": {
+    "upstream_handoffs_data_model_code_and_results": "read_only",
+    "V0_map_exposure_ledger_and_V2_docket": "leader_only",
+    "V1_raw_reviews": "one_auditor_one_report_append_only",
+    "V3_probe": "one_leader_authorized_auditor_owner_under_validation_only",
+    "V4_response": "relevant_original_upstream_owner_report_only_before_reroute",
+    "V5_claim_disposition_and_change_request": "leader_only",
+    "V6_integrated_review": "new_auditor_report_only",
+    "V6_claim_map_and_handoff": "leader_only"
+  },
+  "final_phase": "VALIDATION_HANDOFF"
+}

@@ -1,180 +1,37 @@
-# mcm.skill
+# C 题建模 Harness
 
-mcm.skill is a Chinese mathematical modeling contest skill for Codex-style AI agents.
-It packages a contest workflow from problem reading to paper writing, with reusable
-references, output contracts, code snippets, answer-table schemas, and writing templates.
+这是一个独立的 Leader + Subagents 协作工程，不是 Skill，也不需要额外 orchestrator。当前主 Agent 自动担任 Leader，直接使用原生 subagent 完成审题、路线竞标、数据工程、建模构建、独立验证、图表与论文准备，以及正式论文 Markdown 写作。
 
-The goal is practical contest execution: split the problem, identify subproblem types, choose
-primary and backup routes, inspect data, build a baseline, export first deliverables, validate
-results, and convert stable outputs into Chinese paper sections.
+当前已实现七段工作流：
 
-## What It Does
+1. **深度审题与路线交接**：确认每问真正要什么、做到多少、题间怎样串联、附件支持边界、未知陷阱和暂定建模路线。
+2. **数据工程**：把原始附件转为可复现、可追溯、可供各问消费的规范数据与分析视图，并通过独立复现和题间接口审查。
+3. **建模构建**：按题间依赖形成数学规格、baseline、候选模型、动态诊断与受约束调整，并交付待独立验证的模型包。
+4. **独立模型验证**：通过数学实现、实验证据和复现接口审计，动态取证并按主张交付可引用范围、失效条件和回滚路径。
+5. **V6 后异步图表准备**：由每问 Curator 整理诊断证据、逐图数据包、推荐图型和论文逻辑位置，流式复核后交给外部绘图模块。
+6. **章节材料包与竞赛论文框架**：逐问整理可直接成文的材料，经证据审计和双遍竞赛成文审读后，交付段落级论文框架。
+7. **正式论文写作与全文组装**：每问 subagent 写正式章节，Leader 独占全文主稿，并通过事实、竞赛表达、连贯性和 AI/口水文风四类独立审查。
 
-- Reads a contest problem and splits it into subproblems.
-- Classifies each subproblem as ranking, prediction, optimization, classification, statistical analysis, process explanation, or a combined workflow.
-- Recommends contest-safe primary routes and backup routes.
-- Forces early data inspection around grain, keys, time axis, proxy targets, repeated measurements, and answer-table schema.
-- Provides reusable baseline snippets for ranking, forecasting, optimization, preprocessing, threshold-time tasks, and structured classification.
-- Provides output contracts for route selection, execution plans, validation, final answer artifacts, and writing packages.
-- Helps draft Chinese modeling-paper sections from actual result tables, figures, and validation notes.
+主 harness 现在可以交付正式论文 Markdown，但不生成正式论文图、Word/LaTeX、排版、引用检索、审美评价或提交包。正式绘图由外部高审美模块消费图表 handoff；后续交付模块消费 `formal-paper-handoff.md`。
 
-## What It Does Not Do
+项目坚持开放 Markdown 交接：角色必须回答最低问题，也可以补充任务单未预见的新发现；JSON 只保存团队配置、路径、哈希、版本、运行参数和状态，不承载或裁决语义结论。
 
-- It does not include contest statements, attachments, datasets, full papers, or official answer workbooks.
-- It is not an automatic award-winning solver.
-- It does not replace contest rules, academic integrity requirements, or human verification.
-- It does not turn low-evidence methods such as deep learning, CVaR, or compositional transforms into default choices.
+文档入口：
 
-## Installation
-
-Copy the skill folder into your Codex skills directory:
-
-```bash
-cp -R mcm ~/.codex/skills/mcm
-```
-
-Then invoke it explicitly with `$mcm`, or let Codex trigger it when the task is clearly about mathematical modeling contests.
-
-## Example Prompts
-
-```text
-Use $mcm to analyze this modeling contest problem and produce a Chinese executable workflow.
-```
-
-```text
-用 $mcm 帮我拆解这道赛题，判断每问题型，并给出主模型、备选模型和验证方案。
-```
-
-```text
-用 $mcm 检查我当前的模型和论文草稿，指出 P0/P1/P2 缺口。
-```
-
-```text
-用 $mcm 根据这些结果表写摘要素材池、图表映射和每问结论句。
-```
-
-## Folder Layout
-
-```text
-mcm.skill/
-├── README.md
-├── LICENSE
-├── NOTICE.md
-├── CONTRIBUTING.md
-├── SECURITY.md
-├── CHANGELOG.md
-├── scripts/
-│   └── check_package_paths.py
-├── mcm/
-│   ├── SKILL.md
-│   ├── agents/
-│   │   └── openai.yaml
-│   ├── assets/
-│   │   ├── end_to_end_demo/
-│   │   ├── paper-template/
-│   │   ├── snippets/
-│   │   └── xlsx-schema/
-│   ├── scripts/
-│   │   └── deliverable_lint.py
-│   └── references/
-│       ├── code-templates.md
-│       ├── common-pitfalls.md
-│       ├── chinese-phrasing.md
-│       ├── data-inspection.md
-│       ├── figure-code-templates.md
-│       ├── model-selection.md
-│       ├── output-contracts.md
-│       ├── plotting.md
-│       ├── problem-typing.md
-│       ├── validation.md
-│       ├── paper-writing.md
-│       └── distill/
-└── docs/
-    └── evals/
-        ├── expected-behavior.md
-        └── smoke-prompts.md
-```
-
-## Usage Model
-
-- 默认中文输出（除非用户明确要求英文）。
-- Skill 调用时优先使用最小上下文：按阶段调用对应 `references/*.md`。
-- 输出优先级：可交付产物 > 过程解释。
-- 在关键阶段使用 `references/output-contracts.md` 强制结构化输出。
-
-## Package Contents
-
-- `mcm/SKILL.md`: Core workflow and trigger instructions.
-- `mcm/references/`: Stage-specific playbooks and output contracts.
-- `mcm/references/distill/`: Distilled modeling and writing rules.
-- `mcm/assets/snippets/`: Lightweight baseline code assets.
-- `mcm/assets/paper-template/`: Chinese paper skeleton and section templates.
-- `mcm/assets/xlsx-schema/`: Answer-table schema anchors.
-- `mcm/assets/end_to_end_demo/`: Minimal ranking-to-table demo.
-- `mcm/scripts/deliverable_lint.py`: Lightweight delivery completeness check.
-
-## Evidence Policy
-
-The skill is distilled from recurring modeling and writing patterns observed across recent
-mathematical modeling contest materials and excellent-paper examples. Conclusions are labeled
-by evidence strength:
-
-- `高频共性`: repeated across multiple strong examples; suitable as a default rule.
-- `中频经验`: stable in some examples; suitable as a candidate route.
-- `低频个例`: appears in a narrow setting; should not become a default.
-- `弱证据`: useful as a caution or inspiration only.
-
-Evidence labels such as `2021-C066` are compact identifiers for summarized patterns. This
-package does not redistribute the underlying papers or contest attachments.
-
-## Minimal Integration Idea
-
-This package can be used in two ways:
-
-1. as a direct `.agents/skills` drop-in (same relative paths)
-2. as a standalone repo copy, then wire into your Codex plugin/runtime by your own plugin manifest
-
-## Runtime Notes
-
-The snippets are intentionally lightweight and meant as contest baselines. Depending on which
-assets you use, Python packages such as `pandas` and `matplotlib` may be needed. Optimization
-or classification extensions may require additional libraries chosen by the user or agent.
-
-## Optional Dependencies
-
-The core skill instructions are Markdown and do not require Python packages. Optional runtime
-assets may need common scientific Python libraries:
-
-```bash
-pip install pandas matplotlib
-```
-
-Some user-extended optimization, classification, or statistical workflows may also use packages
-such as `scipy`, `scikit-learn`, `statsmodels`, or a linear/integer programming solver. Install
-those only when a specific contest workflow needs them.
-
-## Package Checks
-
-Before publishing a release, run:
-
-```bash
-python3 scripts/check_package_paths.py
-```
-
-This checks that package-local references inside `mcm/` resolve within the packaged
-skill folder, and that common private or non-packaged path markers are not present elsewhere.
-
-## Files In This Package
-
-- Open-source metadata files: `README.md`, `LICENSE`, `NOTICE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`
-- Core skill logic: `mcm/SKILL.md`, `mcm/agents/openai.yaml`
-- Reference playbooks: `mcm/references/*`
-- Runtime assets: `mcm/assets/*`
-- Minimal delivery lint: `mcm/scripts/deliverable_lint.py`
-- Distill knowledge base: `mcm/references/distill/*`
-- Package path check: `scripts/check_package_paths.py`
-
-## Note
-
-This package includes the runtime assets explicitly referenced by `SKILL.md`. Keep the package focused on reusable
-contest assets; do not add private contest data, full papers, or case-specific project scripts.
+- [AGENTS.md](AGENTS.md)：Leader 调度、上下文隔离、角色复用、所有权和跨模块交接规则。
+- [Workflow/README.md](Workflow/README.md)：已实现波次、运行目录与模块交接顺序。
+- [Workflow/team.json](Workflow/team.json)：前半程机械调度配置。
+- [Workflow/data-engineering.md](Workflow/data-engineering.md)：数据工程职责、D0–D5、数据分层与回滚设计。
+- [Workflow/data-team.json](Workflow/data-team.json)：数据工程完整/精简模式配置。
+- [Workflow/modeling-construction.md](Workflow/modeling-construction.md)：建模构建模块的边界、Agent Team、逐问调度和工程留档设计。
+- [Workflow/modeling-team.json](Workflow/modeling-team.json)：建模构建固定阶段、动态诊断、角色与所有权配置。
+- [Workflow/modeling-implementation-plan.md](Workflow/modeling-implementation-plan.md)：建模构建模块的文件清单、角色 prompt、动态调度和分阶段实施计划。
+- [Workflow/model-validation.md](Workflow/model-validation.md)：独立验证边界、V0–V6、保留信息暴露、动态 probe 和主张裁决。
+- [Workflow/validation-team.json](Workflow/validation-team.json)：独立验证角色、固定阶段、动态循环与文件所有权配置。
+- [Workflow/figure-preparation.md](Workflow/figure-preparation.md)：V6 后异步图表准备 F0–F4、逐问 Curator、流式复核和外部绘图交接。
+- [Workflow/figure-preparation-team.json](Workflow/figure-preparation-team.json)：图表准备角色、阶段和机械所有权配置。
+- [Workflow/paper-preparation.md](Workflow/paper-preparation.md)：章节材料、双层独立审查、竞赛论文框架和 CP0–CP6 交接。
+- [Workflow/paper-preparation-team.json](Workflow/paper-preparation-team.json)：论文准备角色、上下文隔离、创建/复用和机械所有权配置。
+- [Workflow/paper-writing.md](Workflow/paper-writing.md)：PW0–PW7 正式正文写作、Leader 全文组装和四类独立审查。
+- [Workflow/paper-writing-team.json](Workflow/paper-writing-team.json)：正式写作角色、审查隔离、创建/复用和文件所有权配置。
+- [Workflow/back-half-top-level-design.md](Workflow/back-half-top-level-design.md)：后半程总体边界与其余待实现模块。
