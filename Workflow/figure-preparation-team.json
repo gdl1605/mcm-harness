@@ -70,7 +70,7 @@
       "task_status",
       "run_parameters"
     ],
-    "formal_figure_rendering_owner": "external_codex_visual_figure_module"
+    "formal_figure_rendering_owner": "formal-figure-rendering FR0-FR4"
   },
   "ownership": {
     "frozen_scope_and_dispatch": "leader_only",
@@ -80,7 +80,7 @@
     "curator_response_and_owned_revision": "reuse_originating_question_figure_curator_once",
     "cross_question_plan_and_final_handoff": "one_new_figure_chapter_integrator",
     "upstream_change_request_decision": "leader_only",
-    "paper_draft_and_formal_figure_rendering": "outside_this_workflow"
+    "paper_draft_and_formal_figure_rendering": "outside_F0_F4_but_formal_rendering_is_inside_main_harness_as_FR0_FR4"
   },
   "roles": {
     "leader": {
@@ -222,7 +222,7 @@
         "figure-plan is aligned with the available chapter map",
         "figure-preparation-handoff exists"
       ],
-      "handoff": "external Codex visual figure module"
+      "handoff": "formal-figure-rendering FR0-FR4"
     }
   ],
   "branch_policy": {

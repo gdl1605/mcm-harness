@@ -19,6 +19,7 @@ PAPER_PROMPT_ROOT = PROMPT_ROOT / "paper-preparation"
 PAPER_WRITING_PROMPT_ROOT = PROMPT_ROOT / "paper-writing"
 FINAL_DELIVERY_PROMPT_ROOT = PROMPT_ROOT / "final-delivery"
 LITERATURE_PROMPT_ROOT = PROMPT_ROOT / "literature"
+FORMAL_FIGURE_PROMPT_ROOT = PROMPT_ROOT / "formal-figures"
 DATA_ROLE_ALIASES = {
     "data_contract_architect": "data-contract-architect",
     "data_profiler": "data-profiler",
@@ -97,6 +98,11 @@ LITERATURE_ROLE_ALIASES = {
     "citation_gap_analyst": "citation-gap-analyst",
     "citation_literature_scout": "citation-literature-scout",
     "citation_auditor": "citation-auditor",
+}
+FORMAL_FIGURE_ROLE_ALIASES = {
+    "question_visual_producer": "question-visual-producer",
+    "shared_visual_producer": "question-visual-producer",
+    "figure_portfolio_reviewer": "figure-portfolio-reviewer",
 }
 
 
@@ -274,6 +280,30 @@ def literature_role_path(name: str) -> Path | None:
     return None
 
 
+def formal_figure_roles() -> list[str]:
+    """Return available formal-figure role prompt stems."""
+
+    return sorted(
+        path.stem
+        for path in FORMAL_FIGURE_PROMPT_ROOT.glob("*.md")
+        if path.stem not in {"leader", "worker-base"}
+    )
+
+
+def formal_figure_role_path(name: str) -> Path | None:
+    """Resolve a formal-figure role by prompt stem or team key."""
+
+    raw = name.strip()
+    candidates = [FORMAL_FIGURE_ROLE_ALIASES.get(raw), raw, raw.replace("_", "-")]
+    for stem in candidates:
+        if not stem:
+            continue
+        path = FORMAL_FIGURE_PROMPT_ROOT / f"{stem}.md"
+        if path.is_file():
+            return path
+    return None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -367,6 +397,22 @@ def parse_args() -> argparse.Namespace:
             f"available stems: {', '.join(literature_roles())})"
         ),
     )
+    mode.add_argument(
+        "--formal-figure-leader",
+        "--figure-rendering-leader",
+        dest="formal_figure_leader",
+        action="store_true",
+    )
+    mode.add_argument(
+        "--formal-figure-role",
+        "--figure-rendering-role",
+        dest="formal_figure_role",
+        metavar="ROLE",
+        help=(
+            "Formal-figure role (accepts a prompt stem or team key; "
+            f"available stems: {', '.join(formal_figure_roles())})"
+        ),
+    )
     parser.add_argument("--task-brief", type=Path, help="Markdown brief required for a worker role")
     parser.add_argument("--output", type=Path, help="Optional rendered prompt path")
     return parser.parse_args()
@@ -384,6 +430,7 @@ def main() -> int:
         or args.paper_writing_leader
         or args.final_delivery_leader
         or args.literature_leader
+        or args.formal_figure_leader
     ):
         if args.task_brief:
             print(
@@ -407,6 +454,8 @@ def main() -> int:
             leader_prompt = FINAL_DELIVERY_PROMPT_ROOT / "leader.md"
         elif args.literature_leader:
             leader_prompt = LITERATURE_PROMPT_ROOT / "leader.md"
+        elif args.formal_figure_leader:
+            leader_prompt = FORMAL_FIGURE_PROMPT_ROOT / "leader.md"
         else:
             leader_prompt = PROMPT_ROOT / "leader.md"
         if not leader_prompt.is_file():
@@ -499,6 +548,17 @@ def main() -> int:
                 )
                 return 2
             worker_prompt = LITERATURE_PROMPT_ROOT / "worker-base.md"
+        elif args.formal_figure_role:
+            role_prompt = formal_figure_role_path(args.formal_figure_role)
+            if role_prompt is None:
+                available = ", ".join(formal_figure_roles()) or "(no formal-figure role prompts found)"
+                print(
+                    f"error: unknown formal-figure role {args.formal_figure_role!r}; "
+                    f"choose a prompt stem or team key from: {available}",
+                    file=sys.stderr,
+                )
+                return 2
+            worker_prompt = FORMAL_FIGURE_PROMPT_ROOT / "worker-base.md"
         else:
             role_prompt = ROLE_ROOT / f"{args.role}.md"
             worker_prompt = PROMPT_ROOT / "worker-base.md"

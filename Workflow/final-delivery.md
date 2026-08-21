@@ -1,13 +1,13 @@
 # 最终排版、终审与人工交付工作流
 
-> 状态：已实现。本文定义 FD0–FD7。模块把 PW7 的 Markdown、外部正式图、引用和最终结果装配为提交候选包；终审冻结后只报告问题，不再由 Agent 修改，最终状态为 `AWAITING_HUMAN_FINALIZATION`。
+> 状态：已实现。本文定义 FD0–FD7。模块把 PW7 的 Markdown、FR4 manifest 授权正式图、引用和最终结果装配为提交候选包；终审冻结后只报告问题，不再由 Agent 修改，最终状态为 `AWAITING_HUMAN_FINALIZATION`。
 
 ## 1. 入口、目标与停止点
 
 入口至少包括：
 
 - `paper-writing/formal-paper-handoff.md` 与 `paper-writing/manuscript/final-paper.md`；
-- `figure-prep/figure-preparation-handoff.md` 以及外部模块交付的正式图片；
+- `formal-figures/figure-rendering-handoff.md`、`figure-manifest.md` 及其授权的正式图片；
 - 验证授权的结果、公式、单位、精度、限制和 claim；
 - `literature/citation-preparation/references-handoff.md`、claim-to-citation map 与 `literature/references.bib`；
 - 生成最终结果的实际数据文件、运行脚本和版本证据；
@@ -35,15 +35,15 @@
 Leader 写 `scope/frozen-inputs.md`，列出精确路径、版本、哈希、用途和禁止旧候选。至少冻结：
 
 - 正文 Markdown 与 formal-paper handoff；
-- 正式图片文件、Figure/Table ID、caption 和来源版本；
+- figure-rendering handoff、manifest、正式图片文件、Figure/Table ID、caption 和来源版本；
 - 结果数据、公式、单位、精度、限制和 claim；
 - route-evidence-handoff、references handoff、claim-to-citation map、references.bib、已有引用核实状态与 citation-needed；
 - 官方模板、页数、匿名、答卷和附件规则；
 - 最终运行脚本、运行记录、输入和结果版本；
-- `problem-baseline`、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff 的精确版本，供第五路全链路反查；
+- `problem-baseline`、候选模型汇报、真实人工模型决定、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff 的精确版本，供第五路全链路反查；
 - 输出格式和支撑材料是正文后附还是独立附件。
 
-缺少正式图片、关键引用、官方规则或最终脚本时可以建立清单，但不得把候选包标为完整。FD0 只冻结，不搜索新模型、不重开论文润色。
+缺少 figure-rendering handoff/manifest、关键引用、官方规则或最终脚本时可以建立清单，但不得把候选包标为完整。FD0 只冻结，不搜索新模型、不重开论文润色，也不从散乱 formal-figures 路径挑图。
 
 ## 4. FD1：支撑材料整理
 
@@ -76,7 +76,7 @@ Submission Typesetter 读取冻结正文、正式图、引用和支撑材料，�
 
 ## 6. FD4：五路独立终审
 
-四个新 Reviewer 并行读取同一 candidate snapshot，不读取 peer review。每条问题都要给精确页码/章节/短句或 artifact 定位、依据、影响、建议人工动作和不得改变的数学含义。不得只写“通过/不通过”。
+五个新 Reviewer 并行读取同一 candidate snapshot，不读取 peer review。每条问题都要给精确页码/章节/短句或 artifact 定位、依据、影响、建议人工动作和不得改变的数学含义。不得只写“通过/不通过”。
 
 ### 6.1 排版与规则审查
 
@@ -96,7 +96,7 @@ Submission Typesetter 读取冻结正文、正式图、引用和支撑材料，�
 
 ### 6.5 全链路一致性审查
 
-`End-to-End Consistency Auditor` 写 `reviews/end-to-end-consistency-review.md`。它使用 fresh context，从 candidate snapshot 反向读取 `problem-baseline`、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff，检查题意、路线、数据口径、模型合同、题间接口、验证限制和版本选择是否跨阶段保持一致。
+`End-to-End Consistency Auditor` 写 `reviews/end-to-end-consistency-review.md`。它使用 fresh context，从 candidate snapshot 反向读取 `problem-baseline`、候选模型汇报、真实人工模型决定、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff，检查题意、人工选择、路线、实际模型、数据口径、题间接口、验证限制和版本选择是否跨阶段保持一致。
 
 该角色重点报告题意或数据口径漂移、接口断裂、验证限制未传播、旧候选混入、版本错配和未裁决 change request。每项必须定位最早受影响 checkpoint 和下游传播范围；不重新选模型、不执行新实验、不修改任何阶段产物。
 

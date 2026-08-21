@@ -1,10 +1,10 @@
 # 文献、人的意见与引用证据工作流
 
-> 状态：已实现。本文定义 REF0–REF6。模块在路线竞标和论文准备两次进入：前期用论文与人的意见校准模型路线，后期把最终主张映射为可核验引用。语义使用开放 Markdown；BibTeX 只承载引用元数据。
+> 状态：已实现。本文定义 REF0–REF6。模块在宽候选路线和论文准备两次进入：前期用论文与人的意见验证、反驳并扩展候选模型，后期把最终主张映射为可核验引用。语义使用开放 Markdown；BibTeX 只承载引用元数据。
 
 ## 1. 目标与边界
 
-文献不能只在论文末尾补，也不能在读题前先搜“C题常用模型”。路线 A/B 必须先从题意和数据独立产生，再由文献和人的意见挑战、校准和补充。
+文献不能只在论文末尾补，也不能在读题前先搜“C题常用模型”。路线 A/B 必须先从题意和数据独立产生宽候选，再由文献和人的意见挑战、校准和补充。前期检索不能只给 Agent 已想到的模型找背书，必须主动发现替代模型和失败证据。
 
 模块使用四类来源：用户提供的论文/PDF、可访问的学术网络来源、官方标准/数据说明、可选的本地 Zotero 库。Zotero 不是依赖；没有 Zotero 时仍可运行。向 Zotero 导入或修改记录必须另获用户授权，本 workflow 只允许只读搜索或导出已存在条目。
 
@@ -13,24 +13,27 @@
 ## 2. 前期插入位置
 
 ```text
-W5A Route A/B 隔离提案
+W5A Route A/B 隔离宽候选提案
 ⇉ W5B 结构 Critic（不读文献）
 ⇉ REF0–REF2 文献检索与人的意见
 → REF3 独立证据审查与路线证据交接
 → W5C 原 Route A/B 作者回应
-→ L2 Leader 路线交接
+→ L2C Leader 候选模型汇报
+→ H1 真实人工模型决策
+→ L2 Leader 按人工决定路线交接
 ```
 
-W5B 与 REF0–REF2 相互隔离，避免结构审查被“论文很多/模型流行”锚定。W5C 才同时看到结构 review、文献证据和人的意见。
+W5B 与 REF0–REF2 相互隔离，避免结构审查被“论文很多/模型流行”锚定。W5C 才同时看到结构 review、文献证据和人的意见。REF2 领域咨询即使缺失也可记录缺口；H1 模型决策则是必须等待真实用户回复的强制停点，两者不能混为一谈。
 
 ## 3. REF0：路线检索合同
 
-W5A 落盘后，Leader 为每条路线写 `literature/route-alignment/search-briefs/route-X.md`，把路线拆成可检索问题：
+W5A 落盘后，Leader 为每条路线写 `literature/route-alignment/search-briefs/route-X.md`，同时按路线结构与逐问候选模型族拆成可检索问题：
 
 - 领域内如何命名该对象、决策和约束；
 - 核心结构假设是否有原始研究或官方依据；
 - 方法需要的数据、识别条件、边界和计算代价；
 - 有哪些替代路线、失败案例和负面证据；
+- 是否存在当前 A/B 都未提出、但更适合该数据结构或答题目标的模型族；
 - 哪些真实应用与本题相似，哪些差异使其不可直接迁移；
 - 应向人类咨询什么，而不是泛问“哪个模型好”。
 
@@ -38,7 +41,7 @@ W5A 落盘后，Leader 为每条路线写 `literature/route-alignment/search-bri
 
 ## 4. REF1：逐路线 Literature Scout
 
-每条真实候选路线创建一个新的 Route Literature Scout。它只读本路线提案、题意基线和 search brief，写 `route-X/scout-memo.md`，并只在 Leader 预分配的非重叠 REF-ID 范围内建立 `sources/REF-ID/source-note.md`。
+每条真实候选路线创建一个新的 Route Literature Scout。它只读本路线提案、题意基线和 search brief，写 `route-X/scout-memo.md`，并只在 Leader 预分配的非重叠 REF-ID 范围内建立 `sources/REF-ID/source-note.md`。Scout 必须逐候选核对适用前提，并主动把文献中新发现的候选加入报告，不受原提案清单限制。
 
 来源优先级：
 
@@ -66,7 +69,7 @@ Leader 将 brief 交给用户、指导老师、队友或领域人员。Recorder 
 
 Auditor 检查文献真实性、元数据、是否过度依赖摘要、假设/数据/总体可比性、选择性搜证、负面证据、替代方法和人的意见是否被包装成事实。每项说明来源、失败机制、路线影响和仍需 pilot 的问题，不按文献数量或声望投票。
 
-Leader 据此写 `route-alignment/route-evidence-handoff.md`，交给原 Route A/B 作者在 W5C 回应。Handoff 区分：文献支持、文献削弱、人的经验判断、仍不可判、应调整假设、应加入的替代路线和需要数据判别的内容。
+Leader 据此写 `route-alignment/route-evidence-handoff.md`，交给原 Route A/B 作者在 W5C 回应。Handoff 区分：逐候选文献支持/削弱、人的经验判断、仍不可判、应调整假设、应加入的新候选或替代路线，以及需要数据判别的内容。它不选模型；L2C 之后由 H1 真实人工决定。
 
 ## 7. REF4：最终引用缺口地图
 
@@ -124,4 +127,4 @@ literature/
 └── references.bib
 ```
 
-路线部分在 `route-evidence-handoff.md` 暂停并交给 W5C/L2；完整模块在 `references-handoff.md` 停止。正式论文 Writer 只能使用 handoff 授权的引用或显式 `[CITATION-NEEDED-ID]`。
+路线部分在 `route-evidence-handoff.md` 暂停并交给 W5C/L2C/H1；完整模块在 `references-handoff.md` 停止。正式论文 Writer 只能使用 handoff 授权的引用或显式 `[CITATION-NEEDED-ID]`。

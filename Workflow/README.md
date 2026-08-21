@@ -2,10 +2,10 @@
 
 本文是 Leader 的逐波调度手册。根目录 `AGENTS.md` 规定 Leader 的行为、判断纪律和文件路由；本文说明每一波创建谁、复用谁、给什么 prompt、允许看什么、写到哪里。各模块 `*-team.json` 只是同一安排的机器可读清单，不能替代本文。
 
-当前实现范围包括独立验证、两条准备支线、正式论文 Markdown 写作，以及最终排版终审与人工交接：
+当前实现范围包括独立验证、两条准备支线、sol-high 正式绘图、正式论文 Markdown 写作，以及最终排版终审与人工交接：
 
 ```text
-题意诊断与路线竞标 W0–L2
+题意诊断、宽候选与人工模型决策 W0–H1–L2
 ⇉ W5A 后文献/人的意见 REF0–REF3
 → 数据工程 D0–D5
 → 建模构建 M0–M6
@@ -14,13 +14,13 @@
 ⇉ 图表准备 F0–F4 / 论文准备 CP0–CP6
 ⇉ CP1 后正式引用 REF4–REF6
 → 分别停止于 figure-preparation-handoff / paper-framework-handoff
-→ 正式论文写作 PW0–PW7
-→ 停止于 paper-writing/formal-paper-handoff.md
+⇉ 正式绘图 FR0–FR4 / 正式论文写作 PW0–PW7
+→ 停止于 figure-rendering-handoff / formal-paper-handoff
 → 最终交付 FD0–FD7
 → 停止于 final-delivery/final-delivery-handoff.md
 ```
 
-文献模块在 W5A 后校准路线，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；论文准备整理可成文材料与段落级框架；正式写作由 Leader 组装唯一 Markdown 主稿。最终交付消费外部正式图与已审引用，生成候选包和支撑材料，冻结后只审不改并交给人微调。正式绘图和实际投稿仍不在本模块内。
+文献模块在 W5A 后验证、反驳并扩展候选，H1 由真实用户选择模型，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；正式绘图使用强制 sol-high Producer/Reviewer 生成与审查正式图片；论文准备和正式写作可与绘图并行。最终交付消费 rendering handoff 与已审引用，生成候选包和支撑材料，冻结后只审不改并交给人微调。实际投稿仍不在本模块内。
 
 ## 1. Leader 怎样使用本文
 
@@ -42,6 +42,9 @@
 - 独立验证 Leader prompt：`prompts/validation/leader.md`
 - 图表准备配置：`Workflow/figure-preparation-team.json`
 - 图表准备设计：`Workflow/figure-preparation.md`
+- 正式绘图配置：`Workflow/formal-figure-team.json`
+- 正式绘图设计：`Workflow/formal-figure-rendering.md`
+- 正式绘图 Leader prompt：`prompts/formal-figures/leader.md`
 - 论文准备配置：`Workflow/paper-preparation-team.json`
 - 论文准备设计：`Workflow/paper-preparation.md`
 - 论文准备 Leader prompt：`prompts/paper-preparation/leader.md`
@@ -117,7 +120,17 @@ prompts/figure-preparation/worker-base.md
 + 基于 templates/figure-preparation/task-brief.md 的开放 brief
 ```
 
-图表 worker 只在自己的 `figure-prep/` 问题或共享目录中写诊断、数据包和 review。它们不得修改 `data/`、`modeling/`、`validation/` 或论文草稿；正式绘图交给外部模块。
+图表 worker 只在自己的 `figure-prep/` 问题或共享目录中写诊断、数据包和 review。它们不得修改 `data/`、`modeling/`、`validation/` 或论文草稿；正式绘图交给 FR0–FR4。
+
+正式绘图使用：
+
+```text
+prompts/formal-figures/worker-base.md
++ prompts/formal-figures/question-visual-producer.md 或 figure-portfolio-reviewer.md
++ 基于 templates/formal-figures/task-brief.md 的开放 brief
+```
+
+Leader 创建每个新 Producer/Reviewer 时必须显式指定 `model=gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并写 `formal-figures/scope/dispatch-log.json`。默认 Luna 禁止；覆盖不可用时停止并报告。Producer 每问/共享单元一个，负责规划、绘制和回应；默认一个 Portfolio Reviewer 统一审准确性、图型、审美和真实版面。
 
 论文准备使用：
 
@@ -155,7 +168,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 
 每次派工都按以下顺序执行：
 
-1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、论文准备、PW2、FD4 独立终审和文献 Scout 按隔离写入根派工，不受该数字上限约束。
+1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、正式绘图、论文准备、PW2、FD4 独立终审和文献 Scout 按隔离写入根派工，不受该数字上限约束。正式绘图额外强制 sol-high。
 2. 根据下表决定创建新 subagent，还是复用原 subagent。
 3. 从对应模板新建开放 task brief，写明允许读取、禁止读取、唯一主输出路径、额外工程写入权限和停止条件。
 4. 向 subagent 发送完整三段 prompt，并直接给出绝对或 run 内可解析路径。
@@ -173,6 +186,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 - V3 定向 probe：复用提出该问题的 auditor；V4 回应：复用原 model/data owner。
 - 原 owner 因验证证据修正后，若旧 holdout 已消耗，使用新独立证据并在必要时创建 fresh-context auditor。
 - 图表 F1 每问或共享结果单元创建一个新 Question Figure Curator；F2 每个 package 落盘后立即流式创建一个新 Figure Evidence Auditor；F2R 复用原 Curator；F3 创建一个新 Figure–Chapter Integrator。
+- 正式绘图 FR1 每问/共享单元创建一个显式 sol-high Visual Producer，不按图拆 Agent；FR2 创建一个 fresh-context sol-high Portfolio Reviewer；FR2R/FR3 分别复用原 Producer/Reviewer；FR4 Leader 独写 manifest/handoff。
 - F3 Integrator 是 `figure-plan.md` 与 `figure-preparation-handoff.md` 的唯一内容 owner；F4 Leader 只核对条件、处理回滚和宣布汇合。
 - 论文 CP1 创建新 Structure Architect；CP2 每问新 Curator；CP3 每个 v1 完成即创建新 Evidence Auditor；CP3R 复用原 Curator；CP4 创建新 Integrator；CP5 创建新 Competition Reviewer。
 - CP5 blind review 落盘前禁止加载国奖论文蒸馏；第二遍和关闭检查复用同一 Reviewer。CP5R/CP6 复用原 Integrator，事实修订复用原 Question Curator。
@@ -180,6 +194,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 - PW3/PW5R/PW7 全文主稿和 handoff 只由 Leader写，不创建全文作者 subagent。
 - FD1 创建新 Supporting Material Curator；FD2 创建新 Submission Typesetter，FD3 只复用原 Typesetter 修纯机械问题；FD4 创建五个互相隔离的新 Reviewer，其中全链路审查者必须 fresh-context；FD5–FD7 只由 Leader 写人工索引和 handoff，不创建修稿角色。
 - REF1 每路线新建 Scout，REF2 真实人类回复后复用 Recorder，REF3 新建 Literature Auditor；REF4 新建 Gap Analyst，REF5 每主题簇新建 Scout，REF6 新建 Citation Auditor。
+- L2C 候选汇报由 Leader 独写；H1 不创建 Agent，只等待真实用户决定并忠实记录，决定缺失时禁止 L2/D0/M0。
 - route-evidence-handoff、references.bib、claim-to-citation map 和 references-handoff 由 Leader 整理；Auditor 不修改来源或 BibTeX。
 - 没有独立输入或只会重复已有报告：不创建角色。
 
@@ -193,11 +208,13 @@ W0 来源封箱
 → W3R 原判断角色复核
 → W4 定向消歧/反共识
 → L1 暂定题意基线
-→ W5A A/B 路线隔离竞标
+→ W5A A/B 隔离生成宽候选
 ⇉ W5B 独立结构审查 / REF0–REF2 文献与真实人类咨询
 → REF3 文献证据独立审查
-→ W5C 原路线提案者回应
-→ L2 Leader 路线交接
+→ W5C 原路线提案者按证据重构候选
+→ L2C Leader 候选模型汇报
+→ H1 真实人工模型决策
+→ L2 Leader 按人工决定路线交接
 ```
 
 ### W0：来源封箱
@@ -294,16 +311,16 @@ W4 只为仍会改变答卷对象、变量/约束、粒度/单位、题间接口
 
 基线应说明每问要回答什么、最低做到多少、题间接口、数据边界、当前工作解释、仍存少数意见、禁止默认事项和重开触发器。它是可回滚的执行版本，不是语义正确性证明。
 
-### W5A：A/B 路线隔离竞标
+### W5A：A/B 隔离生成宽候选
 
 L1 完成后才允许路线角色读取模型资料。创建 2 个新 subagent 并行运行，首轮互不可见。
 
 | 角色 | 创建方式 | 角色 prompt | 路线责任 | 主输出 |
 |---|---|---|---|---|
-| Route A 提案者 | 新 subagent | `prompts/roles/route-proposer.md` | 给出最低完整、可复现、可回滚的主张—变量—模型—验证链 | `routes/route-a.md` |
-| Route B 挑战提案者 | 新 subagent | `prompts/roles/route-proposer.md` | 挑战 A 所依赖的实质结构假设，形成真正不同的可辩护路线 | `routes/route-b.md` |
+| Route A 提案者 | 新 subagent | `prompts/roles/route-proposer.md` | 给出最低完整的题链，并按问题展开多个结构不同的候选模型族 | `routes/route-a.md` |
+| Route B 挑战提案者 | 新 subagent | `prompts/roles/route-proposer.md` | 挑战实质结构假设，形成另一组宽候选并指出可能遗漏的方向 | `routes/route-b.md` |
 
-两者均用 `templates/route-proposal.md`，但 brief 中必须写清 A/B 的不同责任。B 若找不到实质结构差异，应如实说明并请求回到题意争议，不得用更复杂算法伪造备选。
+两者均用 `templates/route-proposal.md`，但 brief 中必须写清 A/B 的不同责任。每问先展开结构方向，再具体化多个候选；数量不是硬配额，不用同一家族算法/超参数凑数，也不因当前依赖或实现难度隐藏适配候选。B 若找不到实质结构差异，应如实说明并请求回到题意争议。
 
 ### W5B：独立路线审查
 
@@ -315,15 +332,15 @@ L1 完成后才允许路线角色读取模型资料。创建 2 个新 subagent �
 | 模板 | `templates/route-review.md` |
 | 输出 | `routes/route-review.md` |
 
-Critic 先分别钢人化两案，再比较对象、状态量、决策量、约束、题间接口、证据负担、识别风险、可复现性和切换成本。不得按模型新颖度或投票决定胜者。W5B 与 REF0–REF2 并行，Critic 禁止读取文献检索和人的意见。
+Critic 先分别钢人化两案，再比较对象、状态量、决策量、约束、题间接口、证据负担、识别风险、候选结构宽度、伪多样性和遗漏方向。不得按模型新颖度或投票决定胜者，也不替用户选模型。W5B 与 REF0–REF2 并行，Critic 禁止读取文献检索和人的意见。
 
 ### REF0–REF3：路线文献与人的意见校准
 
-完整设计见 [`Workflow/literature-research.md`](literature-research.md)。W5A 后由 Leader 为 A/B 分别写 search brief；每方向创建新的 Route Literature Scout，使用 `prompts/literature/route-literature-scout.md`。Scout 只读本路线，必须检索原始来源、官方依据、应用、限制、负面证据和替代路线，逐篇写 source note，不能只给标题列表。
+完整设计见 [`Workflow/literature-research.md`](literature-research.md)。W5A 后由 Leader 为 A/B 分别写 route-and-candidate search brief；每方向创建新的 Route Literature Scout，使用 `prompts/literature/route-literature-scout.md`。Scout 逐候选检索原始来源、官方依据、应用、限制和负面证据，并用不带既有模型名的结构检索发现新候选；不能只给现有方案找背书或只列标题。
 
 并行创建 Human Consultation Recorder，使用 `prompts/literature/human-consultation-recorder.md`。它先写具体咨询问题；Leader 把问题交给真实用户、老师、队友或领域人员，收到回复后复用原 Recorder 忠实记录。没有回复时只记缺口，Agent 永久不能模拟人的意见。
 
-REF1/REF2 完成后创建新的 Literature Evidence Auditor，使用 `prompts/literature/literature-evidence-auditor.md`。它审来源真实性、摘要过度推断、可比性、选择性搜证、二手来源和人的意见边界，只写 evidence review。Leader 形成 `literature/route-alignment/route-evidence-handoff.md`。
+REF1/REF2 完成后创建新的 Literature Evidence Auditor，使用 `prompts/literature/literature-evidence-auditor.md`。它审来源真实性、摘要过度推断、可比性、选择性搜证、替代模型遗漏和人的意见边界，只写 evidence review。Leader 形成逐候选的 `literature/route-alignment/route-evidence-handoff.md`。REF2 咨询可以记录缺口继续，但不能代替 H1 强制人工决策。
 
 Zotero 可作为只读来源；Zotero item key 与 BibTeX key 分开。导入、保存或修改本地库必须另获用户授权。
 
@@ -336,23 +353,41 @@ Zotero 可作为只读来源；Zotero item key 与 BibTeX key 分开。导入、
 | Route A 回应者 | 复用原 Route A subagent | `prompts/roles/route-proposer-response.md` | 自己的路线、题意基线、结构审查和 route evidence 中与 A 有关部分 | `routes/responses/route-a-response.md` |
 | Route B 回应者 | 复用原 Route B subagent | `prompts/roles/route-proposer-response.md` | 自己的路线、题意基线、结构审查和 route evidence 中与 B 有关部分 | `routes/responses/route-b-response.md` |
 
-每条路线只做一次正式回应：接受修改、以证据维持、缩小适用范围或承认失效。回应不得直接执行数据清洗、训练或求解。
+每条路线只做一次正式回应：按结构 review 与逐候选文献证据增加、合并、缩小、降级或撤回候选，保留不可判分歧。回应不得提前选唯一主模型，也不得执行数据清洗、训练或求解。
 
-### L2：Leader 路线交接
+### L2C：Leader 候选模型汇报
+
+| 项目 | 安排 |
+|---|---|
+| 执行者 | Leader，不创建新的选择角色 |
+| 必读协议 | `Workflow/protocols/route-tournament.md` |
+| 输入 | 题意基线、A/B 原提案、结构审查、逐候选 route-evidence-handoff、真实咨询记录和两份 W5C 回应 |
+| 模板 | `templates/model-candidate-briefing.md` |
+| 输出 | `routes/model-candidate-briefing.md` |
+
+Leader 逐问展示值得人选择的完整候选范围，说明结构、适配理由、文献支持/削弱、优劣势、假设、失败风险、题间作用、实现/验证成本和竞赛价值；另给主选、备选/敏感性、baseline 和不推荐意见。不得只展示首选，也不得因为库未安装、代码较难或简单模型没报错而隐藏候选。
+
+### H1：真实人工模型决策
+
+Leader 将完整 briefing 交给用户，并把状态置为 `AWAITING_HUMAN_MODEL_DECISION`。此时不创建 subagent，也不得进入 L2、D0 或 M0。
+
+用户可以选择主模型；选择主模型加备选/敏感性模型；要求补文献或扩展候选；全部否决；或规定时间、依赖和实现限制。只有收到真实回复后，Leader 才能使用 `templates/human-model-decision.md` 忠实记录为 `routes/human-model-decision.md`。REF2 咨询、Agent 判断、超时或沉默均不构成批准。
+
+### L2：Leader 按人工决定路线交接
 
 | 项目 | 安排 |
 |---|---|
 | 执行者 | Leader，不创建 subagent |
 | 必读协议 | `Workflow/protocols/route-tournament.md` |
-| 输入 | 题意基线、A/B 原提案、结构审查、route-evidence-handoff、人的意见记录、两份提案者回应 |
+| 输入 | L2C briefing、真实 H1 决定及其全部题意、路线、结构和文献依据 |
 | 模板 | `templates/route-handoff.md` |
 | 输出 | `routes/route-handoff.md` |
 
-Leader 交接暂定主路线、存活挑战路线、共同安全核心、关键模型族、文献支持/削弱、人的经验判断、判别指标、切换/回滚条件、少数意见和下一阶段第一个待验证问题。完成后前半程立即停止。
+Leader 按人工决定交接主模型、保留备选/挑战/敏感性模型、仅作 baseline、明确放弃项、共同安全核心、数据要求、题间接口和重新 H1 条件。后续若必须改变模型家族、目标或核心结构，使用 `templates/model-selection-change-request.md` 写 `routes/change-requests/REQUEST-ID.md` 并重新等待真实决定，不得静默降级。完成后前半程立即停止。
 
 ## 4. 数据工程总览
 
-进入数据工程前，Leader 必须显式从 L2 切换到 D0，并改用数据工程 prompt：
+进入数据工程前，Leader 必须确认真实 H1 决定和按其形成的 L2 均已落盘，再显式切换到 D0 并改用数据工程 prompt：
 
 ```text
 D0 接收与模式选择
@@ -372,7 +407,7 @@ D0 接收与模式选择
 |---|---|
 | 执行者 | Leader，不创建 subagent |
 | Leader prompt | `prompts/data-engineering/leader.md` |
-| 必读 | `Workflow/data-engineering.md`、`Workflow/data-team.json`、`synthesis/problem-baseline.md`、`routes/route-handoff.md` 与相关前半程原始 memo |
+| 必读 | `Workflow/data-engineering.md`、`Workflow/data-team.json`、`synthesis/problem-baseline.md`、`routes/model-candidate-briefing.md`、真实 `routes/human-model-decision.md`、`routes/route-handoff.md` 与相关前半程原始 memo |
 | task brief 模板 | `templates/data-engineering/task-brief.md` |
 | 输出 | 完整模式的 `data/briefs/D1/*.md`；精简模式另写 `data/decisions/lean-mode-rationale.md` |
 
@@ -483,11 +518,11 @@ M0 问题编排
 |---|---|
 | 执行者 | Leader，不创建 subagent |
 | Leader prompt | `prompts/modeling/leader.md` |
-| 必读 | `Workflow/modeling-construction.md`、`Workflow/modeling-team.json`、`synthesis/problem-baseline.md`、`routes/route-handoff.md`、`data/data-handoff.md` |
+| 必读 | `Workflow/modeling-construction.md`、`Workflow/modeling-team.json`、`synthesis/problem-baseline.md`、`routes/model-candidate-briefing.md`、真实 `routes/human-model-decision.md`、`routes/route-handoff.md`、`data/data-handoff.md` |
 | 模板 | `templates/modeling/question-map.md` |
 | 输出 | `modeling/question-map.md`、`modeling/briefs/M1/` |
 
-Leader 逐问记录答案对象、数据入口、父/消费问题、共享参数/状态/代码、开发反馈、验证保留信息、失效传播和并行顺序。共享内核先指定唯一 owner；不得让各问分别实现不同口径的公共量。
+Leader 逐问记录人工授权的主模型、baseline、保留备选/敏感性模型，以及答案对象、数据入口、父/消费问题、共享参数/状态/代码、开发反馈、验证保留信息、失效传播和并行顺序。缺 H1 决定时停止；M1 新候选只能触发 change request，不能自行进入合同。
 
 ### M1：三视角隔离分析
 
@@ -510,7 +545,7 @@ Leader 保存三者句柄并等待全部结束。只有分歧会改变变量、�
 | 模板 | `templates/modeling/build-contract.md` |
 | 输出 | `modeling/specs/qN-build-contract.md` |
 
-合同必须冻结数学对象、数据/信息边界、题间接口、baseline、主/挑战候选、统一结果口径、预期画像、L0/L1 预授权、L2/L3 触发器、分支/计算预算和停止线。它只约束修改权限，不证明模型正确。
+合同必须冻结数学对象、数据/信息边界、题间接口、真实人工授权来源、baseline、人工选择的主/挑战/敏感性候选、统一结果口径、预期画像、L0/L1 预授权、L2/L3 触发器、分支/计算预算和停止线。改变模型家族、目标或核心结构必须重新进入 H1；合同只约束修改权限，不证明模型正确。
 
 ### M3：baseline 最小贯通
 
@@ -622,7 +657,7 @@ V3–V5 是触发式循环，不是固定轮数。验证按具体主张裁决，
 | 项目 | 安排 |
 |---|---|
 | 执行者 | Leader，不创建 subagent |
-| 必读 | `modeling/model-handoff.md`、相关 build contracts/code/config/runs/results/interfaces、`data/data-handoff.md`、D4 review、题意/路线交接、官方要求 |
+| 必读 | `modeling/model-handoff.md`、相关 build contracts/code/config/runs/results/interfaces、`data/data-handoff.md`、D4 review、候选汇报、真实人工模型决定、题意/路线交接、官方要求 |
 | 模板 | `templates/validation/validation-map.md`、`templates/validation/validation-exposure-ledger.md` |
 | 输出 | `validation/scope/validation-map.md`、`validation/scope/exposure-ledger.md` |
 
@@ -720,7 +755,7 @@ F2 是逐问题流式例外，不等待所有 Curator 完成：某问题的 `que
 |---|---|
 | Prompt | `prompts/figure-preparation/figure-evidence-auditor.md` |
 | 读取 | F0 冻结材料、该问题已落盘 package、数据包、来源结果和导出代码；不得读未授权 peer 报告或 Leader 解释 |
-| 检查 | 数据能否复算；行数/主键/粒度/单位/时间一致性；派生、区间、样本量和缺失保留；图型与 claim 匹配；章节位置可用；外部模块能否只凭交接包作图 |
+| 检查 | 数据能否复算；行数/主键/粒度/单位/时间一致性；派生、区间、样本量和缺失保留；图型与 claim 匹配；章节位置可用；FR Producer 能否只凭交接包作图 |
 | 写入 | 只写 `<unit_root>/review.md`；不改 package 或上游 |
 
 当前机械检查只确认文件、路径和非空可读性；哈希、版本、重建和列级一致性由 Auditor 独立复核。Auditor 必须写观察、证据、未知、影响和建议，不用脚本全绿代替语义判断。
@@ -743,7 +778,7 @@ Leader 不以票数解决 review 分歧；仍不能判断时保留分支、限�
 Integrator 是以下两个文件的唯一内容 owner：
 
 - `figure-prep/figure-plan.md`：全篇 Figure ID、核心/辅助/可选/放弃项、跨问组合、结果表关系、章节位置和正文叙事顺序；
-- `figure-prep/figure-preparation-handoff.md`：逐图数据包、来源/版本、claim、推荐/备选图型、必要编码/标注、caption、限制、禁止表达、诊断异常、回滚和外部绘图边界。
+- `figure-prep/figure-preparation-handoff.md`：逐图数据包、来源/版本、claim、推荐/备选图型、必要编码/标注、caption、限制、禁止表达、诊断异常、回滚和 FR0–FR4 边界。
 
 Integrator 不得补造尚未完成的数据，不得为了完整而保留不能支持 claim 的图。F3 产生的文件可由 Leader 要求一次补充，但内容修改仍由同一 Integrator 完成。
 
@@ -756,7 +791,7 @@ F4 不是新的写作角色。Integrator 已写出 `figure-plan.md` 和 `figure-
 - 高影响 change request 已裁决或标明禁止表达；
 - figure plan 已与章节最小地图对齐；
 - 每个 Figure ID、来源、claim、数据版本和逻辑位置能互相链接；
-- handoff 已声明外部绘图不得改变的数据口径。
+- handoff 已声明 FR0–FR4 不得改变的数据口径。
 
 缺条件时，Leader 退回对应 F1/F2/F2R/F3 或上游；不代替 Integrator 修改 handoff。条件满足后，Leader 宣布图表支线汇合并停止。结果章节可以提前使用 Figure ID 占位，但上述条件未满足前不得标记定稿。
 
@@ -767,7 +802,44 @@ F4 不是新的写作角色。Integrator 已写出 `figure-plan.md` 和 `figure-
 - worker 未返回时同角色重试一次；仍失败则记录该问题缺失，其他独立问题继续。
 - 数据包不可复算、claim 未获授权或诊断发现上游问题时，暂停候选并保留版本；Leader 通过 change request 返回最早受影响阶段。
 - Curator 只写自己的问题/共享目录，Auditor 只写 review，F2R 只写 response/新版本；F3 Integrator 独占 figure plan/handoff；F4 Leader 只检查、回滚和宣布。
-- 主 harness 不生成正式论文图、样式文件、审美评分或视觉迭代记录；外部绘图模块只能消费最终 handoff。
+- F0–F4 不生成正式论文图、样式文件、审美评分或视觉迭代记录；FR0–FR4 只能消费最终 handoff 和显式冻结数据包。
+
+## 7A. 正式论文绘图 FR0–FR4
+
+完整设计见 [`Workflow/formal-figure-rendering.md`](formal-figure-rendering.md)。模块只有两类 subagent：Question Visual Producer 和 Figure Portfolio Reviewer。所有新 Agent 都必须由 Leader 显式创建为 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`；默认 Luna 不得使用，覆盖失败时停止并报告用户。
+
+### 7A.1 FR0 冻结与 sol-high 调度
+
+F4 handoff 和 `chapter-map-v0.md` 落盘后，Leader 写 `formal-figures/scope/frozen-inputs.md`，解析每个 Figure ID 的数据包、provenance、recommendation、claim、章节、官方版心、路径、版本和哈希。
+
+每次新建 Producer/Reviewer 都必须把请求模型、reasoning、fork、角色、单元和 Agent 句柄追加到 `formal-figures/scope/dispatch-log.json`。因为覆盖模型不能配合 full-history fork，使用 `fork_turns=none`，完整上下文通过 prompt、brief 和文件路径提供。未显式覆盖不算完成派工。
+
+Leader指定一个 Producer 兼任 style owner，先写 `style/visual-system.md`、`paper.mplstyle` 和 `theme.py`；这是同一角色，不新增样式 Agent。
+
+### 7A.2 FR1 每问/共享 Visual Producer
+
+每问创建一个新的 sol-high Producer；真实共享结果可创建一个同角色 shared Producer。不得按 Figure ID 拆 Agent。Producer 写：
+
+- `visual-plan.md`：数据/统计、关系、模型结构、核心结果、baseline、误差/稳健性、情景/决策和题间接口覆盖；
+- 每图 `chart-contract.md` 与 `data-ref.md`：claim、粒度、单位、时间、样本量、误差、比较任务、图型、轴、尺度、颜色、标注和版心；
+- pilot：用极值、零/负值、长标签、缺失、稀有类别和密集区域调试，不进入 handoff；
+- `render.py`、render config/memo 和使用完整冻结数据的 v1 PNG/PDF/SVG。
+
+典型每问先考虑数据/结构、核心结果、比较/不确定性三类，必要时加情景图；典型三至四问题目的 12–20 候选、正文 8–14 张只是规划参考。没有 claim、重复表格或证据不足时放弃/转附录，不按数量凑图。缺关键数据包时写 coverage request 返回 F1/F2。
+
+### 7A.3 FR2/FR2R 统一审图与原 Producer 修订
+
+所有 v1 落盘后，创建一个 fresh-context sol-high Portfolio Reviewer，使用 `prompts/formal-figures/figure-portfolio-reviewer.md`，只写 `formal-figures/figure-review.md`。默认一次审全部图；确实超出上下文才按问题包拆多个同角色 Reviewer。
+
+Reviewer 在同一报告中审：数据/单位/样本量/误差/轴域与 claim，图型与图量覆盖，字体/颜色/层级/碰撞/灰度与全篇风格，以及目标版心中的可读性。它不改图、不打综合美观分。
+
+FR2R 复用各原 Producer，保留 v1，写 response 并生成 final PNG/PDF/SVG。默认一轮；只有数值/尺度错误、关键不可读或导出损坏允许第二次定向修复。数据或 claim 问题返回上游。
+
+### 7A.4 FR3/FR4 真实版面关闭与交接
+
+`full-paper-v2.md` 和 `figure-table-slots.md` 可用后，生成只读 contact sheet/in-paper preview，复用原 Reviewer 只关闭原问题，写 `figure-review-closure.md`，不再全面审稿。
+
+Leader 随后写 `figure-coverage-map.md`、`figure-manifest.md`、`placement-and-caption-handoff.md` 和 `figure-rendering-handoff.md`。FD0 只消费 manifest 授权的 final 图，不从散乱目录挑图。
 
 ## 8. 章节材料包与竞赛论文框架 CP0–CP6
 
@@ -885,11 +957,11 @@ PW7 由 Leader 独写 `manuscript/final-paper.md` 与 `formal-paper-handoff.md`�
 
 ## 10. 最终排版、终审与人工交付 FD0–FD7
 
-完整设计见 [`Workflow/final-delivery.md`](final-delivery.md)。本模块不重写论文内容；它把冻结 Markdown、外部正式图、引用、结果数据和实际运行脚本装配为供人最终处理的候选包。
+完整设计见 [`Workflow/final-delivery.md`](final-delivery.md)。本模块不重写论文内容；它把冻结 Markdown、FR4 manifest 授权正式图、引用、结果数据和实际运行脚本装配为供人最终处理的候选包。
 
 ### 10.1 FD0 输入冻结
 
-Leader 读取 `Workflow/final-delivery-team.json` 和 `prompts/final-delivery/leader.md`，写 `final-delivery/scope/frozen-inputs.md`。必须列出题意基线、路线、route evidence、数据/模型/验证/图表/论文各阶段 handoff，以及正文、正式图、references handoff/references.bib、结果/公式/claim、实际执行脚本、官方要求、精确版本/哈希和禁止旧候选。缺项可以记录，但不得伪装候选包完整。
+Leader 读取 `Workflow/final-delivery-team.json` 和 `prompts/final-delivery/leader.md`，写 `final-delivery/scope/frozen-inputs.md`。必须列出题意基线、路线、route evidence、数据/模型/验证/图表/论文各阶段 handoff，以及正文、figure-rendering handoff/manifest、references handoff/references.bib、结果/公式/claim、实际执行脚本、官方要求、精确版本/哈希和禁止旧候选。缺项可以记录，但不得伪装候选包完整；不得从 manifest 外挑图。
 
 ### 10.2 FD1 支撑材料
 
@@ -933,7 +1005,7 @@ FD4 后不创建 Agent 修订版。FD7 状态必须为 `AWAITING_HUMAN_FINALIZAT
 
 ## 11. 等待、失败与局部重开
 
-- W/D/M/V 同步波在本波所有任务返回、失败或取消前，Leader 不进入综合阶段；图表 F2、论文 CP3、PW2 和 REF1/REF5 Scout 是独立单元并行例外；PW5 三个 Reviewer 必须全部结束后再综合；FD4 五个 Reviewer 必须全部结束后才能建立人工问题索引。
+- W/D/M/V 同步波在本波所有任务返回、失败或取消前，Leader 不进入综合阶段；图表 F2、正式绘图 FR1、论文 CP3、PW2 和 REF1/REF5 Scout 是独立单元并行例外；FR2 默认一个 Reviewer 审全篇图包；PW5 三个 Reviewer 必须全部结束后再综合；FD4 五个 Reviewer 必须全部结束后才能建立人工问题索引。
 - subagent 未返回时，同角色重试一次；仍失败则记录缺失，不由 Leader 冒充独立意见。
 - memo 偏离角色时，向原 subagent 发一次补充任务，写追加 memo，不覆盖原文。
 - 出现字段语义、目标可构造性、总体、粒度、单位、时间或题间接口被推翻时，回到最早受影响阶段。
@@ -951,15 +1023,17 @@ python3 scripts/build_prompt.py --model-role model_builder --task-brief RUN_DIR/
 python3 scripts/build_prompt.py --validation-role experimental_evidence_auditor --task-brief RUN_DIR/validation/briefs/V1/q1-evidence.md
 python3 scripts/build_prompt.py --paper-prep-role question_chapter_curator --task-brief RUN_DIR/paper-prep/briefs/CP2-q1.md
 python3 scripts/build_prompt.py --paper-writing-role question_manuscript_writer --task-brief RUN_DIR/paper-writing/briefs/PW2-q1.md
+python3 scripts/build_prompt.py --formal-figure-role question_visual_producer --task-brief RUN_DIR/formal-figures/briefs/FR1-q1.md
 python3 scripts/build_prompt.py --final-delivery-role supporting_material_curator --task-brief RUN_DIR/final-delivery/briefs/FD1-support.md
 python3 scripts/check_workspace.py RUN_DIR --stage data --json
 python3 scripts/check_workspace.py RUN_DIR --stage paper-prep --json
 python3 scripts/check_workspace.py RUN_DIR --stage paper-writing --json
+python3 scripts/check_workspace.py RUN_DIR --stage formal-figures --json
 python3 scripts/check_workspace.py RUN_DIR --stage final-delivery --json
 python3 scripts/check_workspace.py RUN_DIR --stage literature --json
 ```
 
-这些脚本不创建或调度 subagent，不解析 Markdown 语义，也不证明题意、模型、事实、竞赛表达或 AI 文风正确。当前没有 `check_workspace.py --stage validation`；后半程 checker 只检查交接文件和路径。
+这些脚本不创建或调度 subagent，不解析 Markdown 语义，也不证明题意、模型、图形准确/美观、竞赛表达或 AI 文风正确。formal-figures checker 只验证 dispatch log 请求了 sol-high，不能证明运行平台实际提供了该模型；Leader 仍需保存真实创建结果。当前没有 `check_workspace.py --stage validation`。
 
 ## 12. 运行目录与最终停止边界
 
@@ -971,7 +1045,14 @@ run/
 ├── reviews/{W3,W4}/
 ├── synthesis/
 ├── routes/
-│   └── responses/
+│   ├── responses/
+│   ├── change-requests/
+│   ├── route-a.md
+│   ├── route-b.md
+│   ├── route-review.md
+│   ├── model-candidate-briefing.md
+│   ├── human-model-decision.md
+│   └── route-handoff.md
 ├── literature/
 │   ├── scope/
 │   ├── route-alignment/{search-briefs,route-a,route-b,sources,human-consultation}/
@@ -1021,6 +1102,19 @@ run/
 │   ├── change-requests/
 │   ├── figure-plan.md
 │   └── figure-preparation-handoff.md
+├── formal-figures/
+│   ├── scope/{frozen-inputs.md,dispatch-log.json}
+│   ├── style/{visual-system.md,paper.mplstyle,theme.py}
+│   ├── questions/qN/{visual-plan.md,FIG-ID/}
+│   ├── shared/UNIT-ID/
+│   ├── previews/
+│   ├── change-requests/
+│   ├── figure-review.md
+│   ├── figure-review-closure.md
+│   ├── figure-coverage-map.md
+│   ├── figure-manifest.md
+│   ├── placement-and-caption-handoff.md
+│   └── figure-rendering-handoff.md
 ├── paper-prep/
 │   ├── scope/frozen-inputs.md
 │   ├── structure/{chapter-map-v0.md,chapter-map-v1.md,narrative-spine.md,page-budget.md}
@@ -1052,4 +1146,4 @@ run/
 
 目录表示所有权与追溯边界，不是固定语义 schema。报告使用开放 Markdown；JSON 只保存配置、状态、路径、哈希、版本和运行参数。
 
-验证后可并行完成图表、论文和 REF4–REF6 引用准备；figure、paper framework、references handoff 和 references.bib 齐备后启动 PW0–PW7。外部正式图、已审引用、最终结果/代码和官方要求齐备后显式启动 FD0–FD7，停止于 `final-delivery/final-delivery-handoff.md`。终审后 Leader 不得自动修改或投稿。
+验证后可并行完成图表、论文和 REF4–REF6 引用准备；F4 后 FR0–FR2 与 CP/PW 并行，FR3 等待事实稳定正文。figure-prep、paper framework、references handoff 和 references.bib 齐备后启动 PW0–PW7；FR4 rendering handoff、已审引用、最终结果/代码和官方要求齐备后显式启动 FD0–FD7，停止于 `final-delivery/final-delivery-handoff.md`。终审后 Leader 不得自动修改或投稿。

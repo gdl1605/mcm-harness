@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-final-delivery",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "language": "zh-CN",
   "design_document": "Workflow/final-delivery.md",
   "execution": {
@@ -21,7 +21,8 @@
       "paper-writing/formal-paper-handoff.md",
       "paper-writing/manuscript/final-paper.md",
       "figure-prep/figure-preparation-handoff.md",
-      "formal figure assets selected in frozen-inputs.md",
+      "formal-figures/figure-rendering-handoff.md",
+      "formal-figures/figure-manifest.md and only its authorized final assets",
       "validation-authorized results, formulas, units, limits and claims",
       "literature/citation-preparation/references-handoff.md",
       "literature/citation-preparation/claim-to-citation-map.md",
@@ -100,6 +101,8 @@
       "review_only": true,
       "reads_frozen_chain": [
         "synthesis/problem-baseline.md",
+        "routes/model-candidate-briefing.md",
+        "routes/human-model-decision.md",
         "routes/route-handoff.md",
         "data/data-handoff.md",
         "modeling/model-handoff.md",

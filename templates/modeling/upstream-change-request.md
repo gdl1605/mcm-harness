@@ -18,6 +18,10 @@
 
 明确请求哪个阶段核查什么，不预先替上游决定答案。列出最低成本区分证据。
 
+## 是否改变人工模型决定
+
+若改变模型家族、目标或核心结构，另行使用 `templates/model-selection-change-request.md` 写入 `routes/change-requests/`，并将状态置为 `AWAITING_HUMAN_MODEL_DECISION`；本请求本身不构成人工批准。
+
 ## 影响与暂停范围
 
 说明哪些问题、run、接口、结果和文稿暂停/失效，哪些可继续。

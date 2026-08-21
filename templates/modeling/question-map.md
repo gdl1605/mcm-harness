@@ -5,6 +5,8 @@
 ## 采用的上游版本
 
 - 题意基线：{{PROBLEM_BASELINE}}
+- 候选模型人工汇报：{{MODEL_CANDIDATE_BRIEFING}}
+- 真实人工模型决定：{{HUMAN_MODEL_DECISION}}
 - 路线交接：{{ROUTE_HANDOFF}}
 - 数据交接与版本：{{DATA_HANDOFF_AND_VERSION}}
 - 相关原始 memo / 少数意见：{{UPSTREAM_MEMOS}}
@@ -12,6 +14,10 @@
 ## 每问答案对象与数据入口
 
 逐问说明要回答的对象、输入分析视图、总体、主键、粒度、单位、时间、可用时点和输出对象。不可构造或仅能 proxy 的内容保持显式。
+
+## 人工授权的模型边界
+
+逐问列出获准主模型、baseline、保留备选/挑战/敏感性模型和明确放弃项。新模型只能作为 change request，不能在 M0/M1 自行替换。
 
 ## 依赖、共享构建单元与反馈
 

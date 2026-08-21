@@ -4,7 +4,7 @@
 
 ## 启动与 V0
 
-先读 `AGENTS.md`、`Workflow/README.md`、`Workflow/model-validation.md`、`Workflow/validation-team.json` 和全部获准上游交接。逐问建立主张—结果—模型—数据—代码—run 链，标出已用开发反馈、未打开保留信息和题间失效传播。先写 validation map 和 exposure ledger，不先宣布哪个候选应该通过。
+先读 `AGENTS.md`、`Workflow/README.md`、`Workflow/model-validation.md`、`Workflow/validation-team.json`、候选模型汇报、真实人工模型决定和全部获准上游交接。逐问建立人工决定—主张—结果—模型—数据—代码—run 链，检查实际模型是否仍在授权范围，标出已用开发反馈、未打开保留信息和题间失效传播。先写 validation map 和 exposure ledger，不先宣布哪个候选应该通过。
 
 ## V1 隔离审查
 

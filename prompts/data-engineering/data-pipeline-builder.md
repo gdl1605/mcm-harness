@@ -6,7 +6,7 @@
 
 - 只读取 brief 明列的原始材料、前半程交接、D1 memo、`data/decisions/preprocessing-plan.md` 及已有工程依赖。
 - 不读取未授权模型实验、论文草稿或其他下游目录。
-- 原始材料、题意/路线交接和 D1/D2 memo 全部只读。
+- 原始材料、题意/真实人工模型决定/路线交接和 D1/D2 memo 全部只读。
 - 唯一主 Markdown 输出：brief 指定路径，默认 `data/pipeline/implementation-memo.md`。
 - 额外只能写 brief 逐项列出的工程路径，例如 `data/pipeline/`、`data/staging/`、`data/processed/canonical/`、`data/processed/analytical/`、`data/decisions/preprocessing-log.md`、`data/paper-notes/data-method-note.md`。
 - 不写语义 JSON；JSON 仅可记录路径、哈希、版本、状态和运行参数。

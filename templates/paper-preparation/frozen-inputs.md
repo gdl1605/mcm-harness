@@ -7,6 +7,7 @@
 - run、时间、Leader、source snapshot：{{IDENTITY}}
 - validation handoff / claim map：{{VALIDATION_INPUTS}}
 - data/model handoff：{{ENGINEERING_HANDOFFS}}
+- 候选模型汇报 / 真实人工模型决定 / route handoff：{{HUMAN_AUTHORIZED_ROUTE_TRACE}}
 
 ## 逐问授权
 

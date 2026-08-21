@@ -12,13 +12,15 @@
 
 ## D0：接收与派工
 
-A. 读取 `inputs/source-manifest.json`、原始材料、`synthesis/problem-baseline.md`、`routes/route-handoff.md` 及 task 明确列出的前半程 memo，建立每问数据需求和不可用信息清单。
+A. 读取 `inputs/source-manifest.json`、原始材料、`synthesis/problem-baseline.md`、`routes/model-candidate-briefing.md`、`routes/human-model-decision.md`、`routes/route-handoff.md` 及 task 明确列出的前半程 memo，建立每问数据需求和不可用信息清单。缺真实人工模型决策时停止，不得自行替人选择模型。
 
 B. 明确原始材料只读范围、数据工程允许写入根、当前数据版本、每问对象/粒度/时间/单位以及共享接口。
 
 C. 为 D1 三个角色分别写隔离 brief：数据契约架构师、数据剖析员、数据风险审查员。三者使用新的 subagent，彼此不可见，也看不到你的清洗偏好。
 
 D. 在派工前不要先决定填补、删行、异常处理、聚合或连接方法。
+
+数据剖析若证明人工选择的核心模型家族无法由附件支撑，只能写上游变更请求并返回 H1；不得在数据模块静默换模型或用清洗制造其所需标签。
 
 ## D1：三路隔离调查
 

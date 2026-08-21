@@ -50,7 +50,7 @@ M0 完全由 Leader 执行，不创建 worker。
 
 | 子步骤 | Leader 动作 | 读取 | 写入 | 完成后的去向 |
 |---|---|---|---|---|
-| M0.1 接收上游 | 核对当前采用的题意、路线和数据版本 | `synthesis/problem-baseline.md`、`routes/route-handoff.md`、`data/data-handoff.md` | 暂不写综合 | 上游缺失则停止 |
+| M0.1 接收上游 | 核对当前采用的题意、候选汇报、真实人工模型决定、路线和数据版本 | `synthesis/problem-baseline.md`、`routes/model-candidate-briefing.md`、`routes/human-model-decision.md`、`routes/route-handoff.md`、`data/data-handoff.md` | 暂不写综合 | H1 或其他上游缺失则停止 |
 | M0.2 问题依赖图 | 逐问列输入、输出、父问题、消费问题和失效传播 | 三份交接及必要原始 memo | `modeling/question-map.md` | 明确串行/并行关系 |
 | M0.3 数据与反馈边界 | 标出允许使用的分析视图、开发反馈和保留信息 | data handoff | 写入 question map | 不得自行打开保留信息 |
 | M0.4 所有权 | 指定 shared-kernel owner；为各问预留独立代码/运行目录 | question map | 写入 question map | 避免并行写冲突 |
@@ -82,7 +82,7 @@ Leader 需要逐项决定：
 
 1. 数学对象：集合、变量、参数、目标、约束和输出；
 2. 数据对象：数据版本、视图、字段、粒度、单位、时间和可用时点；
-3. 构建对象：baseline、主候选、是否保留挑战候选；
+3. 构建对象：人工授权的 baseline、主候选、备选/挑战/敏感性候选；
 4. 结果口径：候选结果表和题间接口的对象/单位/粒度；
 5. 反馈边界：开发阶段允许看的信息与后续验证保留信息；
 6. 预期画像：合理结果可能表现出的范围、符号、形状和约束状态；
@@ -436,7 +436,7 @@ M4 需要单独写成条件分支，不伪装成每次都固定创建诊断者�
 `model-builder.md` 必须要求：
 
 - 先写 run intent 再运行；
-- baseline、主候选和挑战候选共用冻结数据/结果接口；
+- 人工授权的 baseline、主候选和挑战/敏感性候选共用冻结数据/结果接口；
 - 每次运行记录输入、代码、配置、随机性、求解状态和结果路径；
 - 不只保留最佳版本；
 - 遇到 L2/L3 问题停止修改并请求 Leader；

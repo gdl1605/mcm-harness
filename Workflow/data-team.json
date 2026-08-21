@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-data-engineering",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "language": "zh-CN",
   "design_document": "Workflow/data-engineering.md",
   "execution": {
@@ -19,11 +19,13 @@
     "leader_speaks_last_in_each_wave": true
   },
   "scope": {
-    "starts_at": "route_handoff_and_problem_baseline",
+    "starts_at": "human_authorized_route_handoff_and_problem_baseline",
     "ends_at": "data_handoff",
     "inputs": [
       "inputs/source-manifest.json",
       "synthesis/problem-baseline.md",
+      "routes/model-candidate-briefing.md",
+      "routes/human-model-decision.md",
       "routes/route-handoff.md",
       "raw_problem_materials_and_attachments",
       "relevant_front_half_memos"
@@ -31,6 +33,7 @@
     "forbidden": [
       "modify_raw_materials",
       "silently_rewrite_front_half_artifacts",
+      "silently_change_human_selected_model_family",
       "model_training",
       "optimization_solving",
       "model_score_driven_canonical_cleaning",
@@ -161,6 +164,7 @@
       "id": "D0",
       "dispatch": "leader_only",
       "roles": ["leader"],
+      "requires": ["routes/model-candidate-briefing.md", "routes/human-model-decision.md", "routes/route-handoff.md"],
       "visibility": "front_half_handoffs_sources_and_relevant_raw_memos",
       "handoff": "data/briefs/D1/*.md"
     },
@@ -236,6 +240,7 @@
       "id": "D0",
       "dispatch": "leader_only",
       "roles": ["leader"],
+      "requires": ["routes/model-candidate-briefing.md", "routes/human-model-decision.md", "routes/route-handoff.md"],
       "handoff": "data/decisions/lean-mode-rationale.md"
     },
     {
@@ -300,8 +305,9 @@
       "target_cannot_be_constructed",
       "aggregation_or_filtering_changes_problem_population",
       "interquestion_interface_is_incompatible",
-      "critical_label_would_need_to_be_invented",
-      "new_evidence_changes_problem_or_route_interpretation"
+            "critical_label_would_need_to_be_invented",
+            "new_evidence_changes_problem_or_route_interpretation",
+            "data_cannot_support_human_selected_model_family"
     ]
   },
   "final_phase": "DATA_HANDOFF"

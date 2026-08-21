@@ -69,7 +69,7 @@ def main() -> int:
     directories = [
         "inputs", "state", "briefs", "submissions/W1", "submissions/W2",
         "submissions/W3R", "reviews/W3", "reviews/W4", "synthesis",
-        "routes/responses",
+        "routes/responses", "routes/change-requests",
         "literature/scope", "literature/route-alignment/search-briefs",
         "literature/route-alignment/route-a", "literature/route-alignment/route-b",
         "literature/route-alignment/sources",
@@ -110,6 +110,12 @@ def main() -> int:
         "paper-writing/sections", "paper-writing/manuscript",
         "paper-writing/reviews/closure", "paper-writing/responses",
         "paper-writing/change-requests",
+        # Formal-figure rendering starts only after F4.  Empty ownership roots
+        # do not imply that figures were selected, rendered or reviewed.
+        "formal-figures/briefs", "formal-figures/scope",
+        "formal-figures/style", "formal-figures/questions",
+        "formal-figures/shared", "formal-figures/previews",
+        "formal-figures/change-requests",
         # Final delivery creates only ownership roots.  Candidate files,
         # semantic reports and human handoff are created when FD0 explicitly
         # starts; no successful package is implied by initialization.
@@ -149,15 +155,19 @@ def main() -> int:
         "created_at": now,
         "updated_at": now,
         "scope_boundary": (
+            "The front half must pause at AWAITING_HUMAN_MODEL_DECISION after routes/model-candidate-briefing.md; "
+            "L2/D0/M0 require a real-human routes/human-model-decision.md and the resulting route handoff. "
             "The main modeling/validation chain stops at validation/validation-handoff.md. "
             "When post-V6 preparation branches are explicitly started, figure preparation stops "
             "after figure-prep/figure-preparation-handoff.md and paper preparation stops after "
             "paper-prep/paper-framework-handoff.md. Formal Markdown writing stops after "
-            "paper-writing/formal-paper-handoff.md. When FD0 is explicitly started with formal figures, "
+            "paper-writing/formal-paper-handoff.md. Formal figure rendering may start after F4, uses "
+            "explicit gpt-5.6-sol high-reasoning subagents, and stops after "
+            "formal-figures/figure-rendering-handoff.md. When FD0 is explicitly started with that handoff, "
             "verified literature/references handoff, official rules, final result data and executed scripts, final delivery stops "
             "after final-delivery/final-delivery-handoff.md with status AWAITING_HUMAN_FINALIZATION. "
-            "Formal figure rendering, post-review human tuning and actual submission "
-            "remain outside this harness. Semantic content belongs in Markdown reports."
+            "Post-review human tuning and actual submission remain outside this harness. "
+            "Semantic content belongs in Markdown reports."
         )
     }
     write_json(run_dir / "state/run-state.json", state)

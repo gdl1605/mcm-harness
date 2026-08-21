@@ -19,10 +19,14 @@
 - `inputs/source-manifest.json`；
 - 原始题面、附件、说明和答卷模板；
 - `synthesis/problem-baseline.md`；
+- `routes/model-candidate-briefing.md`；
+- `routes/human-model-decision.md`；
 - `routes/route-handoff.md`；
 - 前半程与数据有关的原始 memo、复核和未决争议。
 
 模块终点：`data/data-handoff.md`。完成后进入建模模块，但不在本模块内训练模型、优化求解、按模型成绩筛选处理方案、制作最终论文图或写正式论文。
+
+缺真实人工模型决定时 D0 不启动。若数据事实推翻人工选择模型所需的核心字段、粒度或识别条件，数据模块只记录证据并请求重开 H1；不得静默换模型，也不得通过清洗制造模型所需标签。
 
 已实现文件索引：
 

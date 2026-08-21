@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-literature-and-citation-evidence",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "language": "zh-CN",
   "design_document": "Workflow/literature-research.md",
   "execution": {
@@ -60,10 +60,10 @@
     }
   },
   "phases": [
-    {"id": "REF0", "dispatch": "leader_only_after_W5A", "handoff": "route-specific search briefs"},
-    {"id": "REF1", "dispatch": "one_new_scout_per_route", "parallel_with": ["W5B_structural_critic", "REF2_human_consultation"]},
-    {"id": "REF2", "dispatch": "one_consultation_recorder_then_real_human_checkpoint", "missing_human_response": "record_gap_and_continue_after_timebox"},
-    {"id": "REF3", "dispatch": "one_new_literature_evidence_auditor_then_leader_handoff", "handoff": "literature/route-alignment/route-evidence-handoff.md"},
+    {"id": "REF0", "dispatch": "leader_only_after_W5A", "handoff": "route-and-candidate-specific search briefs"},
+    {"id": "REF1", "dispatch": "one_new_scout_per_route_for_existing_candidates_negative_evidence_and_new_candidate_discovery", "parallel_with": ["W5B_structural_critic", "REF2_human_consultation"]},
+    {"id": "REF2", "dispatch": "one_consultation_recorder_then_real_human_consultation_not_H1_model_decision", "missing_human_response": "record_gap_and_continue_after_timebox"},
+    {"id": "REF3", "dispatch": "one_new_literature_evidence_auditor_then_leader_candidate_evidence_handoff", "handoff": "literature/route-alignment/route-evidence-handoff.md", "does_not_replace": "H1_real_human_model_decision"},
     {"id": "REF4", "dispatch": "one_new_citation_gap_analyst_after_V6_and_CP1", "handoff": "citation-gap-map.md"},
     {"id": "REF5", "dispatch": "new_scouts_per_independent_topic_cluster_then_leader_merges_candidate_bibtex", "handoff": "topic-scoped source notes/BibTeX and leader-owned references-candidate.bib"},
     {"id": "REF6", "dispatch": "one_new_citation_auditor_then_leader_finalizes_metadata", "handoff": "references.bib, claim-to-citation-map.md and references-handoff.md"}
@@ -73,6 +73,9 @@
     "human_opinion_is_not_publication_evidence": true,
     "award_paper_is_not_scientific_authority": true,
     "negative_and_alternative_evidence_required": true,
+    "candidate_specific_alignment_required": true,
+    "new_candidate_discovery_required": true,
+    "literature_must_not_select_model_for_human": true,
     "metadata_abstract_and_fulltext_review_must_be_distinguished": true,
     "unverified_reference_fabrication_forbidden": true
   },

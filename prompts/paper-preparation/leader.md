@@ -4,7 +4,7 @@
 
 ## CP0–CP3R
 
-CP0 写 `paper-prep/scope/frozen-inputs.md`，列出验证授权结果、route evidence、已有来源/引用缺口、公式、版本、官方要求、旧候选禁区、图表状态和国奖蒸馏材料路径。国奖材料在 CP5 第一遍完成前禁止暴露。
+CP0 写 `paper-prep/scope/frozen-inputs.md`，列出候选模型汇报、真实人工模型决定、按决定形成的 route handoff、验证授权结果、route evidence、已有来源/引用缺口、公式、版本、官方要求、旧候选禁区、图表状态和国奖蒸馏材料路径。国奖材料在 CP5 第一遍完成前禁止暴露。
 
 CP1 创建新的 Paper Structure Architect；`chapter-map-v0.md` 落盘后立即把精确路径和版本提供给图表 F3。CP2 每问创建一个新 Question Chapter Curator，不按段落拆分。每个 v1 完成后立即创建新的 Chapter Evidence Auditor；review 落盘后复用原 Curator一次形成 response 和 v2，不等待其他问题。
 

@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-modeling-construction",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "language": "zh-CN",
   "design_document": "Workflow/modeling-construction.md",
   "implementation_plan": "Workflow/modeling-implementation-plan.md",
@@ -32,6 +32,8 @@
     "ends_at": "model_handoff",
     "inputs": [
       "synthesis/problem-baseline.md",
+      "routes/model-candidate-briefing.md",
+      "routes/human-model-decision.md",
       "routes/route-handoff.md",
       "data/data-handoff.md",
       "allowed_data_products",
@@ -40,6 +42,8 @@
     "forbidden": [
       "silently_rewrite_problem_baseline",
       "silently_rewrite_route_handoff",
+      "implement_model_family_not_authorized_by_human_decision",
+      "silently_downgrade_to_easier_model_family",
       "modify_canonical_data",
       "use_reserved_validation_information_for_adjustment",
       "formal_model_validation",
@@ -149,6 +153,12 @@
       "dispatch": "leader_only",
       "roles": [
         "leader"
+      ],
+      "requires": [
+        "routes/model-candidate-briefing.md",
+        "routes/human-model-decision.md",
+        "routes/route-handoff.md",
+        "data/data-handoff.md"
       ],
       "handoff": "modeling/question-map.md"
     },
@@ -268,8 +278,16 @@
   "adjustment_levels": {
     "L0": "implementation_fix_within_frozen_contract",
     "L1": "preauthorized_computational_adjustment_within_frozen_contract",
-    "L2": "model_structure_change_requires_build_contract_version",
-    "L3": "upstream_data_route_or_problem_change_request"
+    "L2": "model_structure_change_within_human_authorized_family_requires_build_contract_version",
+    "L3": "upstream_data_route_or_problem_change_request_and_H1_reapproval_when_model_family_changes"
+  },
+  "human_model_decision": {
+    "required_before_M0": true,
+    "source": "routes/human-model-decision.md",
+    "builder_may_implement": "human_selected_primary_baseline_and_explicitly_retained_backup_or_sensitivity_models_only",
+    "same_family_contract_adjustments_allowed": true,
+    "model_family_target_or_core_structure_change_requires": "routes/change-requests/REQUEST-ID.md_and_new_H1_real_human_decision",
+    "agent_may_treat_silence_as_approval": false
   },
   "branch_policy": {
     "default_active_primary_branches": 1,

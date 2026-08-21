@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-front-half",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "language": "zh-CN",
   "execution": {
     "mode": "leader_with_native_subagents",
@@ -9,11 +9,13 @@
     "leader_slots": 1,
     "worker_slots": 3,
     "new_agent_for": ["blind_reading", "independent_review", "fresh_context_attack", "route_proposal"],
-    "reuse_original_agent_for": ["original_judgment_review", "route_proposer_response"]
+    "reuse_original_agent_for": ["original_judgment_review", "route_proposer_response"],
+    "mandatory_human_checkpoint": "H1_model_candidate_decision",
+    "agent_may_simulate_human_decision": false
   },
   "scope": {
     "starts_at": "raw_problem_materials",
-    "ends_at": "route_handoff_report",
+    "ends_at": "human_authorized_route_handoff_report",
     "forbidden": [
       "formal_data_engineering",
       "model_training",
@@ -44,8 +46,8 @@
     "original_judgment_reviewer": {"prompt": "prompts/roles/original-judgment-review.md", "reuse_original_agent": true},
     "probe_designer": {"prompt": "prompts/roles/probe-designer.md"},
     "fresh_context_reviewer": {"prompt": "prompts/roles/fresh-context-reviewer.md", "new_agent_required": true},
-    "route_a": {"prompt": "prompts/roles/route-proposer.md", "variant": "minimum_complete_route", "blind_first_pass": true},
-    "route_b": {"prompt": "prompts/roles/route-proposer.md", "variant": "structural_challenger", "blind_first_pass": true},
+    "route_a": {"prompt": "prompts/roles/route-proposer.md", "variant": "minimum_complete_broad_candidate_portfolio", "blind_first_pass": true},
+    "route_b": {"prompt": "prompts/roles/route-proposer.md", "variant": "structural_challenger_broad_candidate_portfolio", "blind_first_pass": true},
     "route_critic": {"prompt": "prompts/roles/route-critic.md"},
     "route_proposer_responder": {"prompt": "prompts/roles/route-proposer-response.md", "reuse_original_agent": true}
   },
@@ -123,10 +125,27 @@
       "handoff": "routes/responses/*.md"
     },
     {
+      "id": "L2C",
+      "dispatch": "leader_only",
+      "roles": ["leader"],
+      "visibility": "all_route_memos_route_evidence_handoff_human_consultation_and_route_responses",
+      "handoff": "routes/model-candidate-briefing.md"
+    },
+    {
+      "id": "H1",
+      "dispatch": "real_human_checkpoint",
+      "roles": [],
+      "visibility": "complete_model_candidate_briefing",
+      "required_status_while_waiting": "AWAITING_HUMAN_MODEL_DECISION",
+      "agent_must_not_create_decision_without_real_reply": true,
+      "handoff": "routes/human-model-decision.md",
+      "blocks": ["L2", "D0", "M0"]
+    },
+    {
       "id": "L2",
       "dispatch": "leader_only",
       "roles": ["leader"],
-      "visibility": "all_route_memos_route_evidence_handoff_and_human_response_record",
+      "visibility": "all_route_memos_route_evidence_handoff_human_consultation_model_candidate_briefing_and_real_human_model_decision",
       "handoff": "routes/route-handoff.md"
     }
   ],
@@ -141,6 +160,9 @@
     "ROUTE_REVIEW",
     "ROUTE_EVIDENCE_ALIGNMENT",
     "ROUTE_REBUTTAL",
+    "MODEL_CANDIDATE_BRIEFING",
+    "AWAITING_HUMAN_MODEL_DECISION",
+    "HUMAN_MODEL_DECISION_RECORDED",
     "ROUTE_HANDOFF",
     "REOPENED"
   ],

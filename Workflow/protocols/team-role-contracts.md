@@ -3,7 +3,7 @@
 ## 1. 模块化拓扑
 
 - 全程只有一个 Leader。W/D/M/V 与前半程同步波最多使用三个 worker 槽位。
-- 文献 Scout、V6 后的图表/论文准备/正式写作逐问任务，以及 FD4 五路独立终审是显式并行例外：不设固定数字上限，只在输入已经冻结、写入根互不冲突且平台容量允许时并行；不得按单篇论文、单条引用、候选图、段落、小节或单个问题点制造 Agent。
+- 文献 Scout、V6 后的图表/正式绘图/论文准备/正式写作逐问任务，以及 FD4 五路独立终审是显式并行例外：不设固定数字上限，只在输入已经冻结、写入根互不冲突且平台容量允许时并行；不得按单篇论文、单条引用、候选图、段落、小节或单个问题点制造 Agent。正式绘图新 Agent 额外强制显式 sol-high 覆盖，不继承默认 Luna。
 - 当前主 Agent 自动担任 Leader，直接使用原生 subagent；不另造 orchestrator。
 - 角色是一次任务的视角，不是永久人格。
 - 只有独立发现、竞争解释或互不依赖的取证才并行；不为填满槽位制造重复任务。
@@ -46,9 +46,10 @@ Leader 不得：
 - **原判断角色复核**：必须复用提出原判断的 subagent，只复核一次攻击；可以承认、修订、反驳或保留分支，不覆盖首稿。
 - **探针设计员**：先写不同观察会怎样改变理解，再给最低成本检查；若出现第三种解释，立即报告。
 - **新鲜上下文 reviewer**：不看历史票数和 Leader 辩护，寻找能推翻当前工作解释的最小细节。
-- **Route A/B**：先独立写结构，再映射 baseline、主模型族和备选；B 挑战结构，不追求复杂。
-- **Route critic**：钢人化两案，检查结构差异、数据、接口、模型假设、交付和回退成本。
-- **路线提案者回应**：复用 A/B 原提案 subagent，各回应一次评审；不得以算法复杂度掩盖结构问题。
+- **Route A/B**：先独立写结构，再按问题展开多个结构真正不同的候选模型族；B 挑战结构，不用同一家族变体制造宽度。
+- **Route critic**：钢人化两案，检查结构差异、候选宽度、伪多样性、遗漏方向、数据、接口、模型假设、交付和回退成本；不替用户选模型。
+- **路线提案者回应**：复用 A/B 原提案 subagent，按结构审查和逐候选文献证据重构一次；不得提前收敛或以实现便利隐藏候选。
+- **Leader 与 H1**：W5C 后 Leader 独写候选模型汇报并交给真实用户；H1 不创建 Agent，真实回复到达前禁止 L2/D0/M0。Leader 只能忠实记录决定，不能代签或把 REF2 咨询当批准。
 
 ## 5. 任务合同
 
@@ -65,7 +66,8 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 - 需要真正盲审、重大重解释、反共识攻击时创建新 Agent。
 - 需要回答自己旧判断或保持数据版本连续时复用原 Agent。
 - Leader 必须保存 subagent 句柄，原判断角色复核和路线提案者回应不得由新角色代写。
-- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、论文准备、正式写作和最终交付是 artifact-bundle 例外：单元 worker 只拥有自己的独立根；Reviewer 只写 review；不同 owner 不得共享写入根。文献 Scout 只写自己的 memo/source notes/候选 BibTeX，Auditor 只写 review，Human Recorder 只记录真实回复，共享 handoff 与最终 BibTeX 由 Leader 独写。FD3 candidate snapshot 后候选包与支撑材料永久只读。
+- 候选汇报、人工决定记录和按决定形成的 route handoff 分别保留；模型家族后续改变时重新 H1，不用 builder 或 reviewer 代替用户批准。
+- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、正式绘图、论文准备、正式写作和最终交付是 artifact-bundle 例外：单元 worker 只拥有自己的独立根；Reviewer 只写 review；不同 owner 不得共享写入根。文献 Scout 只写自己的 memo/source notes/候选 BibTeX，Auditor 只写 review，Human Recorder 只记录真实回复，共享 handoff 与最终 BibTeX 由 Leader 独写。FD3 candidate snapshot 后候选包与支撑材料永久只读。
 - 提案者可以回应一次，但不能做自己的唯一独立终审。
 - 如果任务没有独立输入、不同视角或可区分交付，就不创建 Agent。
 
@@ -73,4 +75,4 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 
 W/D/M/V 与前半程同步波中，本波所有角色已返回、失败或取消，且原文已保存后，Leader 才能综合。缺失角色要明确记录，不能用 Leader 自己补写来冒充独立意见。
 
-图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。REF1/REF5 Scout 按路线或主题簇并行，不能按单篇论文拆 Agent。正式写作 PW2 可逐问并行；PW5 三个 Reviewer 必须审同一冻结 v2，并在全部返回后由 Leader 综合。PW6 只关闭原问题，不开启新全面审稿。最终交付 FD4 五个 Reviewer 必须审同一 candidate snapshot；全链路 Reviewer 使用 fresh context 和额外冻结 handoff。全部返回后 Leader 只建立人工问题索引，不创建修订或关闭轮次。
+图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。正式绘图 FR1 按问题包并行，全部 v1 齐备后默认一个 Portfolio Reviewer 统一审查。REF1/REF5 Scout 按路线或主题簇并行，不能按单篇论文拆 Agent。正式写作 PW2 可逐问并行；PW5 三个 Reviewer 必须审同一冻结 v2，并在全部返回后由 Leader 综合。PW6 只关闭原问题，不开启新全面审稿。最终交付 FD4 五个 Reviewer 必须审同一 candidate snapshot；全链路 Reviewer 使用 fresh context 和额外冻结 handoff。全部返回后 Leader 只建立人工问题索引，不创建修订或关闭轮次。

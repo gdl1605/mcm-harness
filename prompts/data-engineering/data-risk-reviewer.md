@@ -4,7 +4,7 @@
 
 ## 文件合同
 
-- 只读 brief 明列的原始材料、来源清单、冻结题意/路线交接和你的 task brief。
+- 只读 brief 明列的原始材料、来源清单、冻结题意/真实人工模型决定/路线交接和你的 task brief。
 - 不读取数据契约、剖析报告、Leader 偏好、处理代码或 peer memo。
 - 唯一输出路径：brief 指定的 Markdown，默认 `data/reviews/data-risk-review.md`。
 - 不写语义 JSON，不修改任何其他文件。

@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 
 
-STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "final-delivery": 7, "literature": 8}
-ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "final-delivery", "literature"}
+STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "formal-figures": 7, "final-delivery": 8, "literature": 9}
+ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "formal-figures", "final-delivery", "literature"}
 
 DATA_DIRS = (
     "data/briefs",
@@ -73,6 +73,16 @@ LITERATURE_DIRS = (
     "literature/citation-preparation/search-briefs",
     "literature/citation-preparation/scouts",
     "literature/citation-preparation/sources",
+)
+
+FORMAL_FIGURE_DIRS = (
+    "formal-figures/briefs",
+    "formal-figures/scope",
+    "formal-figures/style",
+    "formal-figures/questions",
+    "formal-figures/shared",
+    "formal-figures/previews",
+    "formal-figures/change-requests",
 )
 
 
@@ -310,6 +320,8 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
 
     required_files = (
         "synthesis/problem-baseline.md",
+        "routes/model-candidate-briefing.md",
+        "routes/human-model-decision.md",
         "routes/route-handoff.md",
         "data/data-handoff.md",
         "modeling/model-handoff.md",
@@ -322,6 +334,8 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
         "paper-writing/manuscript/final-paper.md",
         "paper-writing/formal-paper-handoff.md",
         "figure-prep/figure-preparation-handoff.md",
+        "formal-figures/figure-rendering-handoff.md",
+        "formal-figures/figure-manifest.md",
         "paper-prep/paper-framework-handoff.md",
         "final-delivery/scope/frozen-inputs.md",
         "final-delivery/scope/candidate-snapshot.md",
@@ -398,6 +412,146 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
             )
 
 
+def check_formal_figure_bundle(bundle: Path, errors: list[str]) -> None:
+    """Check one question/shared formal-figure bundle mechanically."""
+
+    if not nonempty_file(bundle / "visual-plan.md"):
+        errors.append(f"missing or empty formal-figure visual plan: {bundle}/visual-plan.md")
+    figure_roots = sorted(
+        path for path in bundle.iterdir() if path.is_dir() and path.name.startswith("FIG-")
+    ) if bundle.is_dir() else []
+    if not figure_roots:
+        errors.append(f"formal-figure unit must contain at least one FIG-* directory: {bundle}")
+        return
+    for figure_root in figure_roots:
+        for relative in (
+            "data-ref.md",
+            "chart-contract.md",
+            "render.py",
+            "render-config.md",
+            "render-memo.md",
+            "response.md",
+            "v1/figure.png",
+            "v1/figure.pdf",
+            "v1/figure.svg",
+            "final/figure.png",
+            "final/figure.pdf",
+            "final/figure.svg",
+        ):
+            if not nonempty_file(figure_root / relative):
+                errors.append(f"missing or empty formal-figure file: {figure_root / relative}")
+
+
+def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) -> None:
+    """Check FR0–FR4 files and explicit model request metadata only."""
+
+    for relative in FORMAL_FIGURE_DIRS:
+        if not (run_dir / relative).is_dir():
+            errors.append(f"missing formal-figure directory: {relative}")
+
+    required_files = (
+        "validation/validation-handoff.md",
+        "validation/claims/claim-evidence-map.md",
+        "figure-prep/figure-plan.md",
+        "figure-prep/figure-preparation-handoff.md",
+        "paper-prep/structure/chapter-map-v0.md",
+        "paper-prep/structure/chapter-map-v1.md",
+        "paper-writing/plan/figure-table-slots.md",
+        "paper-writing/manuscript/full-paper-v2.md",
+        "formal-figures/scope/frozen-inputs.md",
+        "formal-figures/style/visual-system.md",
+        "formal-figures/style/paper.mplstyle",
+        "formal-figures/style/theme.py",
+        "formal-figures/figure-review.md",
+        "formal-figures/figure-review-closure.md",
+        "formal-figures/figure-coverage-map.md",
+        "formal-figures/figure-manifest.md",
+        "formal-figures/placement-and-caption-handoff.md",
+        "formal-figures/figure-rendering-handoff.md",
+    )
+    for relative in required_files:
+        if not nonempty_file(run_dir / relative):
+            errors.append(f"missing or empty formal-figure file: {relative}")
+
+    dispatch_path = run_dir / "formal-figures/scope/dispatch-log.json"
+    dispatch: object | None = None
+    producer_units: set[str] = set()
+    if not nonempty_file(dispatch_path):
+        errors.append("missing or empty formal-figure dispatch log: formal-figures/scope/dispatch-log.json")
+    else:
+        try:
+            dispatch = json.loads(dispatch_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"invalid formal-figure dispatch log JSON: {exc}")
+    if isinstance(dispatch, dict):
+        if dispatch.get("metadata_only") is not True:
+            errors.append("formal-figure dispatch log must declare metadata_only=true")
+        tasks = dispatch.get("tasks")
+        if not isinstance(tasks, list) or not tasks:
+            errors.append("formal-figure dispatch log must contain non-empty tasks")
+        else:
+            roles_seen: set[str] = set()
+            for index, task in enumerate(tasks, 1):
+                if not isinstance(task, dict):
+                    errors.append(f"formal-figure dispatch task {index} must be an object")
+                    continue
+                role = task.get("role")
+                if isinstance(role, str):
+                    roles_seen.add(role)
+                if role not in {"question_visual_producer", "figure_portfolio_reviewer"}:
+                    errors.append(f"formal-figure dispatch task {index} has unknown role: {role!r}")
+                if role == "question_visual_producer" and isinstance(task.get("unit"), str):
+                    producer_units.add(task["unit"])
+                expected = {
+                    "requested_model": "gpt-5.6-sol",
+                    "requested_reasoning_effort": "high",
+                    "fork_turns": "none",
+                }
+                for field, value in expected.items():
+                    if task.get(field) != value:
+                        errors.append(
+                            f"formal-figure dispatch task {index} must set {field}={value!r}"
+                        )
+                if not task.get("agent_handle"):
+                    errors.append(f"formal-figure dispatch task {index} is missing agent_handle")
+                brief_ref = task.get("task_brief")
+                if not isinstance(brief_ref, str) or not nonempty_file(run_dir / brief_ref):
+                    errors.append(
+                        f"formal-figure dispatch task {index} has missing or empty task_brief"
+                    )
+                else:
+                    brief_text = (run_dir / brief_ref).read_text(encoding="utf-8")
+                    for marker in ("gpt-5.6-sol", "high", "fork_turns=none"):
+                        if marker not in brief_text:
+                            errors.append(
+                                f"formal-figure task brief for dispatch task {index} is missing {marker!r}"
+                            )
+            for required_role in ("question_visual_producer", "figure_portfolio_reviewer"):
+                if required_role not in roles_seen:
+                    errors.append(
+                        f"formal-figure dispatch log is missing required role: {required_role}"
+                    )
+
+    question_root = run_dir / "formal-figures/questions"
+    question_bundles = sorted(path for path in question_root.iterdir() if path.is_dir()) if question_root.is_dir() else []
+    if not question_bundles:
+        errors.append("formal-figures must contain at least one question ownership directory")
+    for bundle in question_bundles:
+        check_formal_figure_bundle(bundle, errors)
+        if bundle.name not in producer_units:
+            errors.append(
+                f"formal-figure dispatch log has no sol-high producer task for question unit: {bundle.name}"
+            )
+    shared_root = run_dir / "formal-figures/shared"
+    if shared_root.is_dir():
+        for bundle in sorted(path for path in shared_root.iterdir() if path.is_dir()):
+            check_formal_figure_bundle(bundle, errors)
+
+    previews = run_dir / "formal-figures/previews"
+    if previews.is_dir() and not any(nonempty_file(path) for path in previews.rglob("*")):
+        warnings.append("formal-figure previews directory is empty; checker cannot confirm real-context QA")
+
+
 def check_literature(run_dir: Path, errors: list[str], warnings: list[str]) -> None:
     """Check literature artifacts and paths without judging source truth."""
 
@@ -453,7 +607,7 @@ def main() -> int:
     required_dirs = [
         "inputs", "state", "briefs", "submissions/W1", "submissions/W2",
         "submissions/W3R", "reviews/W3", "reviews/W4", "synthesis",
-        "routes/responses",
+        "routes/responses", "routes/change-requests",
     ]
     for relative in required_dirs:
         if not (run_dir / relative).is_dir():
@@ -505,6 +659,10 @@ def main() -> int:
             "literature/route-alignment/human-consultation/response-record.md",
             "literature/route-alignment/evidence-review.md",
             "literature/route-alignment/route-evidence-handoff.md",
+            "routes/responses/route-a-response.md",
+            "routes/responses/route-b-response.md",
+            "routes/model-candidate-briefing.md",
+            "routes/human-model-decision.md",
             "routes/route-handoff.md",
         ):
             path = run_dir / relative
@@ -530,6 +688,8 @@ def main() -> int:
         check_paper_preparation(run_dir, errors, warnings)
     if args.stage == "paper-writing":
         check_paper_writing(run_dir, errors, warnings)
+    if args.stage == "formal-figures":
+        check_formal_figures(run_dir, errors, warnings)
     if args.stage == "final-delivery":
         check_final_delivery(run_dir, errors, warnings)
     if args.stage == "literature":
@@ -541,6 +701,9 @@ def main() -> int:
         "markdown_content_parsed": False,
         "semantic_correctness_checked": False,
         "figure_aesthetic_checked": False,
+        "formal_figure_data_accuracy_checked": False,
+        "formal_figure_visual_quality_checked": False,
+        "formal_figure_actual_model_identity_verified": False,
         "competition_manuscript_quality_checked": False,
         "award_distillation_context_isolation_checked": False,
         "ai_prose_quality_checked": False,
@@ -552,6 +715,7 @@ def main() -> int:
         "post_review_human_edits_checked": False,
         "literature_semantics_checked": False,
         "human_opinion_authenticity_checked": False,
+        "human_model_decision_authenticity_checked": False,
         "citation_support_checked": False,
         "errors": errors,
         "warnings": warnings,

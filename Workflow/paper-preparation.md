@@ -27,7 +27,7 @@ CP2/CP3 按问题独立写根流式运行，不按段落拆 Agent，也不为填
 
 Leader 写 `paper-prep/scope/frozen-inputs.md`，至少记录：
 
-- 题意基线、路线以及 data/model/validation handoff 的精确路径、版本与哈希；
+- 题意基线、候选模型汇报、真实人工模型决定、按决定形成的路线，以及 data/model/validation handoff 的精确路径、版本与哈希；
 - 每问允许引用的结果、公式、claim、条件、限制和题间接口；
 - 官方论文格式、页数、答卷要求和已有引用来源；
 - 禁止使用的旧 run、未验证候选、诊断猜想和失效版本；

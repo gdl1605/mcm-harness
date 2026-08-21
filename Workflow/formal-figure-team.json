@@ -1,0 +1,99 @@
+{
+  "workflow_name": "cumcm-c-formal-figure-rendering",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/formal-figure-rendering.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_prompt": "prompts/formal-figures/leader.md",
+    "worker_base_prompt": "prompts/formal-figures/worker-base.md",
+    "default_subagent_model_is_not_accepted": "luna",
+    "required_subagent_runtime": {
+      "user_facing_alias": "gpt5.6sol-high",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "fork_turns": "none",
+      "must_be_explicit_on_every_new_spawn": true,
+      "silent_fallback_forbidden": true,
+      "on_unavailable": "stop_and_report_to_user"
+    },
+    "worker_concurrency_policy": "one producer per question or genuine shared unit; one portfolio reviewer by default; only isolated writes and platform capacity permit parallelism"
+  },
+  "scope": {
+    "starts_at": "figure-prep/figure-preparation-handoff.md",
+    "ends_at": "formal-figures/figure-rendering-handoff.md",
+    "may_run_parallel_with": ["paper-prep CP4-CP6", "paper-writing PW0-PW4"],
+    "must_finish_before": "final-delivery FD0",
+    "inputs": [
+      "figure-prep/figure-preparation-handoff.md",
+      "figure-prep/figure-plan.md",
+      "figure-prep question and shared candidate data packages",
+      "validation/validation-handoff.md",
+      "validation/claims/claim-evidence-map.md",
+      "paper-prep/structure/chapter-map-v0.md",
+      "paper-prep/structure/chapter-map-v1.md when available",
+      "paper-writing/plan/figure-table-slots.md when available",
+      "paper-writing/manuscript/full-paper-v2.md for FR3",
+      "official page and figure requirements"
+    ],
+    "forbidden": [
+      "modify_data_modeling_validation_or_paper_sources",
+      "search_upstream_directories_for_better_results",
+      "change_data_grain_filter_aggregation_unit_or_claim_silently",
+      "promote_diagnostic_screenshot_as_formal_figure",
+      "one_agent_per_figure",
+      "default_luna_subagent",
+      "silent_model_fallback"
+    ]
+  },
+  "roles": {
+    "question_visual_producer": {
+      "prompt": "prompts/formal-figures/question-visual-producer.md",
+      "new_agent_required_per_question_or_shared_unit": true,
+      "required_runtime": "execution.required_subagent_runtime",
+      "reuse_for": "FR2R response and revision",
+      "writes": [
+        "formal-figures/questions/qN/**",
+        "formal-figures/shared/UNIT-ID/** according to brief",
+        "formal-figures/style/** only when designated style owner",
+        "formal-figures/change-requests/REQUEST-ID.md when Leader authorizes"
+      ]
+    },
+    "figure_portfolio_reviewer": {
+      "prompt": "prompts/formal-figures/figure-portfolio-reviewer.md",
+      "new_agent_required": true,
+      "fresh_context_required": true,
+      "required_runtime": "execution.required_subagent_runtime",
+      "reuse_for": "FR3 original-issue closure",
+      "review_only": true,
+      "writes": [
+        "formal-figures/figure-review.md",
+        "formal-figures/figure-review-closure.md"
+      ]
+    }
+  },
+  "ownership": {
+    "scope_dispatch_log_coverage_manifest_and_handoff": "leader_only",
+    "question_or_shared_figure_bundle": "originating_question_visual_producer",
+    "shared_style": "one_designated_question_visual_producer_before_parallel_full_rendering",
+    "portfolio_review_and_closure": "one_fresh_figure_portfolio_reviewer_by_default",
+    "upstream_change_request_decision": "leader_only"
+  },
+  "phases": [
+    {"id": "FR0", "dispatch": "leader_only_freeze_and_explicit_sol_high_setup", "handoff": "formal-figures/scope/frozen-inputs.md and dispatch-log.json"},
+    {"id": "FR1", "dispatch": "one_new_sol_high_visual_producer_per_question_or_shared_unit", "parallel": true, "handoff": "visual plans, contracts, pilots and v1 bundles"},
+    {"id": "FR2", "dispatch": "one_new_fresh_sol_high_portfolio_reviewer", "handoff": "formal-figures/figure-review.md"},
+    {"id": "FR2R", "dispatch": "reuse_originating_visual_producers", "handoff": "responses and final figure bundles"},
+    {"id": "FR3", "dispatch": "reuse_original_portfolio_reviewer_for_closure", "handoff": "figure-review-closure.md"},
+    {"id": "FR4", "dispatch": "leader_only", "handoff": "figure manifest, placement/caption handoff and figure-rendering-handoff.md"}
+  ],
+  "iteration_policy": {
+    "default_concentrated_revision_rounds": 1,
+    "second_round_only_for": ["numeric_or_scale_error", "critical_unreadability", "broken_export"],
+    "aesthetic_preference_after_one_round": "leader_or_human_decision",
+    "reviewer_may_edit_figures": false
+  },
+  "final_phase": "FORMAL_FIGURE_RENDERING_HANDOFF"
+}

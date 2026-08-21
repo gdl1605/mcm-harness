@@ -4,7 +4,7 @@
 
 ## 1. 入口、目标与停止点
 
-入口为 paper framework、figure handoff、`literature/citation-preparation/references-handoff.md`、`literature/references.bib`、验证授权证据和官方论文要求。正式图尚未交付时允许 Figure ID 占位；引用缺口只能保留 CITATION-NEEDED，不得虚构。
+入口为 paper framework、figure handoff、`literature/citation-preparation/references-handoff.md`、`literature/references.bib`、验证授权证据和官方论文要求。FR0–FR4 可与 PW0–PW4 并行；正式图尚未交付时允许 Figure ID 占位，`full-paper-v2.md` 和 figure-table slots 提供给 FR3 做真实版面关闭。引用缺口只能保留 CITATION-NEEDED，不得虚构。
 
 目标是形成连续、可提交前继续加工的竞赛论文 Markdown 正文，并通过四种彼此独立的审查：事实一致性、竞赛表达、全文连贯、AI/口水文风。Reviewer 永久只写修改单；原问题作者修局部，Leader 组装并统一全文。
 
@@ -34,7 +34,7 @@ Leader 写 `paper-writing/scope/frozen-inputs.md`，至少冻结：
 - 旧材料、旧数字、未验证候选和上游只读边界；
 - 每问 writer/reviewer 句柄、写入根与版本保留规则。
 
-缺正式图片或引用不阻塞内容写作，但必须保持可追踪占位；缺验证授权阻塞对应 claim。
+缺正式图片不阻塞内容写作，但必须保持可追踪占位并登记 FR owner；缺已审引用或验证授权阻塞对应 claim。FR4 handoff 在 FD0 前必须完成。
 
 ## 4. PW1：Leader 写作计划
 

@@ -9,6 +9,7 @@
 - Role / 原 Agent 句柄：{{ROLE_AND_AGENT_HANDLE}}
 - 当前 build contract / 分支 / 父运行：{{CONTRACT_BRANCH_PARENT_RUN}}
 - 当前数据、代码与接口版本：{{DATA_CODE_INTERFACE_VERSIONS}}
+- 候选模型汇报与真实人工决定：{{MODEL_CANDIDATE_BRIEFING_AND_HUMAN_DECISION}}
 
 ## 输入与隔离
 
@@ -49,6 +50,7 @@
 ## 调整权限、预算与停止
 
 - 当前允许的 L0/L1/L2/L3 权限：{{ADJUSTMENT_AUTHORITY}}
+- 人工授权的模型边界与重开 H1 条件：{{HUMAN_AUTHORIZED_MODEL_BOUNDARY}}
 - 活跃主/挑战分支：{{ACTIVE_BRANCHES}}
 - 时间与计算预算：{{BUDGET}}
 - 停止条件与升级方向：{{STOP_AND_ESCALATION}}

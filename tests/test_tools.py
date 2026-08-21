@@ -40,6 +40,7 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertFalse(report["semantic_correctness_checked"])
             self.assertTrue((run_dir / "submissions/W3R").is_dir())
             self.assertTrue((run_dir / "routes/responses").is_dir())
+            self.assertTrue((run_dir / "routes/change-requests").is_dir())
             self.assertTrue((run_dir / "data/staging").is_dir())
             self.assertTrue((run_dir / "data/processed/canonical").is_dir())
             self.assertTrue((run_dir / "data/processed/analytical").is_dir())
@@ -58,6 +59,104 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertIn("Worker Base Prompt", rendered.stdout)
             self.assertIn("最低必答", rendered.stdout)
             self.assertIn("任务之外的新发现", rendered.stdout)
+
+    def test_route_human_model_decision_is_a_mandatory_mechanical_stop(self) -> None:
+        template_names = {
+            "model-candidate-briefing.md",
+            "human-model-decision.md",
+            "model-selection-change-request.md",
+        }
+        for name in template_names:
+            path = PROJECT_ROOT / "templates" / name
+            self.assertTrue(path.is_file(), name)
+            self.assertIn("最低责任", path.read_text(encoding="utf-8"))
+
+        team = json.loads((PROJECT_ROOT / "Workflow/team.json").read_text(encoding="utf-8"))
+        phase_ids = [wave["id"] for wave in team["waves"]]
+        self.assertLess(phase_ids.index("L2C"), phase_ids.index("H1"))
+        self.assertLess(phase_ids.index("H1"), phase_ids.index("L2"))
+        h1 = next(wave for wave in team["waves"] if wave["id"] == "H1")
+        self.assertTrue(h1["agent_must_not_create_decision_without_real_reply"])
+        self.assertEqual(h1["required_status_while_waiting"], "AWAITING_HUMAN_MODEL_DECISION")
+        self.assertEqual(h1["blocks"], ["L2", "D0", "M0"])
+
+        model_team = json.loads(
+            (PROJECT_ROOT / "Workflow/modeling-team.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("routes/human-model-decision.md", model_team["scope"]["inputs"])
+        self.assertTrue(model_team["human_model_decision"]["required_before_M0"])
+        model_m0 = next(phase for phase in model_team["fixed_phases"] if phase["id"] == "M0")
+        self.assertIn("routes/human-model-decision.md", model_m0["requires"])
+
+        data_team = json.loads((PROJECT_ROOT / "Workflow/data-team.json").read_text(encoding="utf-8"))
+        data_d0 = next(phase for phase in data_team["full_mode_waves"] if phase["id"] == "D0")
+        self.assertIn("routes/human-model-decision.md", data_d0["requires"])
+
+        proposer = (PROJECT_ROOT / "prompts/roles/route-proposer.md").read_text(encoding="utf-8")
+        scout = (PROJECT_ROOT / "prompts/literature/route-literature-scout.md").read_text(encoding="utf-8")
+        leader = (PROJECT_ROOT / "prompts/leader.md").read_text(encoding="utf-8")
+        self.assertIn("不要提前收敛", proposer)
+        self.assertIn("未列出的模型族", scout)
+        self.assertIn("AWAITING_HUMAN_MODEL_DECISION", leader)
+
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+
+            route_files = (
+                "synthesis/problem-baseline.md",
+                "routes/route-a.md",
+                "routes/route-b.md",
+                "routes/route-review.md",
+                "literature/route-alignment/route-a/scout-memo.md",
+                "literature/route-alignment/route-b/scout-memo.md",
+                "literature/route-alignment/sources/REF-001/source-note.md",
+                "literature/route-alignment/human-consultation/consultation-brief.md",
+                "literature/route-alignment/human-consultation/response-record.md",
+                "literature/route-alignment/evidence-review.md",
+                "literature/route-alignment/route-evidence-handoff.md",
+                "routes/responses/route-a-response.md",
+                "routes/responses/route-b-response.md",
+                "routes/model-candidate-briefing.md",
+                "routes/route-handoff.md",
+            )
+            for relative in route_files:
+                path = run_dir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+
+            blocked = subprocess.run(
+                [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
+                 "--stage", "route", "--json"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(blocked.returncode, 1)
+            blocked_report = json.loads(blocked.stdout)
+            self.assertFalse(blocked_report["human_model_decision_authenticity_checked"])
+            self.assertIn(
+                "missing or empty report file: routes/human-model-decision.md",
+                blocked_report["errors"],
+            )
+
+            (run_dir / "routes/human-model-decision.md").write_text(
+                "opaque real-human decision fixture\n", encoding="utf-8"
+            )
+            released = subprocess.run(
+                [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
+                 "--stage", "route", "--json"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(released.returncode, 0, released.stdout + released.stderr)
 
     def test_data_workspace_stage_templates_and_prompts(self) -> None:
         template_root = PROJECT_ROOT / "templates/data-engineering"
@@ -111,6 +210,10 @@ class WorkflowToolTests(unittest.TestCase):
                 "literature/route-alignment/evidence-review.md",
                 "literature/route-alignment/route-evidence-handoff.md",
                 "literature/route-alignment/sources/REF-001/source-note.md",
+                "routes/responses/route-a-response.md",
+                "routes/responses/route-b-response.md",
+                "routes/model-candidate-briefing.md",
+                "routes/human-model-decision.md",
                 "routes/route-handoff.md",
             )
             for relative in stage_reports:
@@ -1000,6 +1103,261 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertIn("不直接修改正文", ai_prompt)
         self.assertIn("不要把必要技术术语", ai_prompt)
 
+    def test_formal_figure_workspace_prompts_templates_and_sol_high_team(self) -> None:
+        template_root = PROJECT_ROOT / "templates/formal-figures"
+        expected_templates = {
+            "task-brief.md",
+            "frozen-inputs.md",
+            "visual-system.md",
+            "visual-plan.md",
+            "chart-contract.md",
+            "data-ref.md",
+            "render-memo.md",
+            "figure-review.md",
+            "producer-response.md",
+            "figure-review-closure.md",
+            "change-request.md",
+            "figure-coverage-map.md",
+            "figure-manifest.md",
+            "placement-and-caption-handoff.md",
+            "figure-rendering-handoff.md",
+        }
+        self.assertTrue(expected_templates.issubset({path.name for path in template_root.glob("*.md")}))
+        for name in expected_templates:
+            self.assertIn("最低责任", (template_root / name).read_text(encoding="utf-8"), name)
+        self.assertTrue((template_root / "dispatch-log.example.json").is_file())
+
+        team = json.loads(
+            (PROJECT_ROOT / "Workflow/formal-figure-team.json").read_text(encoding="utf-8")
+        )
+        runtime = team["execution"]["required_subagent_runtime"]
+        self.assertEqual(runtime["model"], "gpt-5.6-sol")
+        self.assertEqual(runtime["reasoning_effort"], "high")
+        self.assertEqual(runtime["fork_turns"], "none")
+        self.assertTrue(runtime["must_be_explicit_on_every_new_spawn"])
+        self.assertTrue(runtime["silent_fallback_forbidden"])
+        self.assertEqual(
+            {"question_visual_producer", "figure_portfolio_reviewer"},
+            set(team["roles"]),
+        )
+        for role in team["roles"].values():
+            self.assertTrue((PROJECT_ROOT / role["prompt"]).is_file(), role["prompt"])
+
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            for relative in (
+                "formal-figures/briefs",
+                "formal-figures/scope",
+                "formal-figures/style",
+                "formal-figures/questions",
+                "formal-figures/shared",
+                "formal-figures/previews",
+                "formal-figures/change-requests",
+            ):
+                self.assertTrue((run_dir / relative).is_dir(), relative)
+            self.assertFalse(any((run_dir / "formal-figures").rglob("*.md")))
+            self.assertFalse(any((run_dir / "formal-figures").rglob("*.json")))
+
+            leader = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_prompt.py"), "--formal-figure-leader"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(leader.returncode, 0, leader.stderr)
+            for marker in ("gpt-5.6-sol", "reasoning_effort: high", "fork_turns: none", "Luna", "静默降级"):
+                self.assertIn(marker, leader.stdout)
+
+            brief = run_dir / "formal-figures/briefs/FR1-q1.md"
+            brief.write_text(
+                "# FR1\n\nmodel=gpt-5.6-sol; reasoning_effort=high; fork_turns=none。\n",
+                encoding="utf-8",
+            )
+            producer = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--formal-figure-role",
+                    "question_visual_producer",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(producer.returncode, 0, producer.stderr)
+            self.assertIn("Question Visual Producer", producer.stdout)
+            self.assertIn("默认 Luna 不符合", producer.stdout)
+
+            reviewer = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--formal-figure-role",
+                    "figure_portfolio_reviewer",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(reviewer.returncode, 0, reviewer.stderr)
+            self.assertIn("Figure Portfolio Reviewer", reviewer.stdout)
+            for marker in ("准确性", "信息设计", "视觉质量", "正文环境"):
+                self.assertIn(marker, reviewer.stdout)
+
+    def test_formal_figure_stage_checks_requested_sol_high_and_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+
+            missing = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "formal-figures",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(missing.returncode, 1)
+            missing_report = json.loads(missing.stdout)
+            self.assertFalse(missing_report["formal_figure_data_accuracy_checked"])
+            self.assertFalse(missing_report["formal_figure_visual_quality_checked"])
+            self.assertFalse(missing_report["formal_figure_actual_model_identity_verified"])
+
+            required_files = (
+                "validation/validation-handoff.md",
+                "validation/claims/claim-evidence-map.md",
+                "figure-prep/figure-plan.md",
+                "figure-prep/figure-preparation-handoff.md",
+                "paper-prep/structure/chapter-map-v0.md",
+                "paper-prep/structure/chapter-map-v1.md",
+                "paper-writing/plan/figure-table-slots.md",
+                "paper-writing/manuscript/full-paper-v2.md",
+                "formal-figures/briefs/FR1-q1.md",
+                "formal-figures/briefs/FR2-portfolio.md",
+                "formal-figures/scope/frozen-inputs.md",
+                "formal-figures/style/visual-system.md",
+                "formal-figures/style/paper.mplstyle",
+                "formal-figures/style/theme.py",
+                "formal-figures/figure-review.md",
+                "formal-figures/figure-review-closure.md",
+                "formal-figures/figure-coverage-map.md",
+                "formal-figures/figure-manifest.md",
+                "formal-figures/placement-and-caption-handoff.md",
+                "formal-figures/figure-rendering-handoff.md",
+                "formal-figures/questions/q1/visual-plan.md",
+                "formal-figures/questions/q1/FIG-Q1-01/data-ref.md",
+                "formal-figures/questions/q1/FIG-Q1-01/chart-contract.md",
+                "formal-figures/questions/q1/FIG-Q1-01/render.py",
+                "formal-figures/questions/q1/FIG-Q1-01/render-config.md",
+                "formal-figures/questions/q1/FIG-Q1-01/render-memo.md",
+                "formal-figures/questions/q1/FIG-Q1-01/response.md",
+                "formal-figures/questions/q1/FIG-Q1-01/v1/figure.png",
+                "formal-figures/questions/q1/FIG-Q1-01/v1/figure.pdf",
+                "formal-figures/questions/q1/FIG-Q1-01/v1/figure.svg",
+                "formal-figures/questions/q1/FIG-Q1-01/final/figure.png",
+                "formal-figures/questions/q1/FIG-Q1-01/final/figure.pdf",
+                "formal-figures/questions/q1/FIG-Q1-01/final/figure.svg",
+                "formal-figures/previews/contact-sheet.pdf",
+            )
+            for relative in required_files:
+                path = run_dir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                if relative.startswith("formal-figures/briefs/"):
+                    path.write_text(
+                        "gpt-5.6-sol high fork_turns=none\n",
+                        encoding="utf-8",
+                    )
+                else:
+                    path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+
+            dispatch = {
+                "metadata_only": True,
+                "tasks": [
+                    {
+                        "phase": "FR1",
+                        "role": "question_visual_producer",
+                        "unit": "q1",
+                        "agent_handle": "agent-producer",
+                        "task_brief": "formal-figures/briefs/FR1-q1.md",
+                        "requested_model": "gpt-5.6-sol",
+                        "requested_reasoning_effort": "high",
+                        "fork_turns": "none",
+                    },
+                    {
+                        "phase": "FR2",
+                        "role": "figure_portfolio_reviewer",
+                        "unit": "portfolio",
+                        "agent_handle": "agent-reviewer",
+                        "task_brief": "formal-figures/briefs/FR2-portfolio.md",
+                        "requested_model": "gpt-5.6-sol",
+                        "requested_reasoning_effort": "high",
+                        "fork_turns": "none",
+                    },
+                ],
+            }
+            dispatch_path = run_dir / "formal-figures/scope/dispatch-log.json"
+            dispatch_path.write_text(json.dumps(dispatch), encoding="utf-8")
+
+            checked = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "formal-figures",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+            self.assertEqual(json.loads(checked.stdout)["errors"], [])
+
+            dispatch["tasks"][0]["requested_model"] = "gpt-5.6-luna"
+            dispatch_path.write_text(json.dumps(dispatch), encoding="utf-8")
+            rejected = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "formal-figures",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(rejected.returncode, 1)
+            rejected_report = json.loads(rejected.stdout)
+            self.assertTrue(
+                any("requested_model='gpt-5.6-sol'" in error for error in rejected_report["errors"]),
+                rejected_report["errors"],
+            )
+
     def test_final_delivery_workspace_prompts_templates_and_team(self) -> None:
         template_root = PROJECT_ROOT / "templates/final-delivery"
         expected_templates = {
@@ -1173,6 +1531,8 @@ class WorkflowToolTests(unittest.TestCase):
 
             required_files = (
                 "synthesis/problem-baseline.md",
+                "routes/model-candidate-briefing.md",
+                "routes/human-model-decision.md",
                 "routes/route-handoff.md",
                 "data/data-handoff.md",
                 "modeling/model-handoff.md",
@@ -1185,6 +1545,8 @@ class WorkflowToolTests(unittest.TestCase):
                 "paper-writing/manuscript/final-paper.md",
                 "paper-writing/formal-paper-handoff.md",
                 "figure-prep/figure-preparation-handoff.md",
+                "formal-figures/figure-rendering-handoff.md",
+                "formal-figures/figure-manifest.md",
                 "paper-prep/paper-framework-handoff.md",
                 "final-delivery/scope/frozen-inputs.md",
                 "final-delivery/scope/candidate-snapshot.md",
@@ -1305,6 +1667,9 @@ class WorkflowToolTests(unittest.TestCase):
         literature_team = json.loads(
             (PROJECT_ROOT / "Workflow/literature-team.json").read_text(encoding="utf-8")
         )
+        formal_figure_team = json.loads(
+            (PROJECT_ROOT / "Workflow/formal-figure-team.json").read_text(encoding="utf-8")
+        )
 
         prompt_paths = {role["prompt"] for role in front_team["roles"].values()}
         prompt_paths.add(data_team["execution"]["worker_base_prompt"])
@@ -1315,6 +1680,8 @@ class WorkflowToolTests(unittest.TestCase):
         prompt_paths.update(role["prompt"] for role in writing_team["roles"].values())
         prompt_paths.add(literature_team["execution"]["worker_base_prompt"])
         prompt_paths.update(role["prompt"] for role in literature_team["roles"].values())
+        prompt_paths.add(formal_figure_team["execution"]["worker_base_prompt"])
+        prompt_paths.update(role["prompt"] for role in formal_figure_team["roles"].values())
 
         for prompt_path in sorted(prompt_paths):
             self.assertTrue((PROJECT_ROOT / prompt_path).is_file(), prompt_path)
@@ -1327,6 +1694,7 @@ class WorkflowToolTests(unittest.TestCase):
             "Workflow/paper-preparation-team.json",
             "Workflow/paper-writing-team.json",
             "Workflow/literature-team.json",
+            "Workflow/formal-figure-team.json",
             "prompts/leader.md",
             "prompts/worker-base.md",
             "prompts/data-engineering/leader.md",
@@ -1337,11 +1705,14 @@ class WorkflowToolTests(unittest.TestCase):
             "prompts/paper-writing/worker-base.md",
             "prompts/literature/leader.md",
             "prompts/literature/worker-base.md",
+            "prompts/formal-figures/leader.md",
+            "prompts/formal-figures/worker-base.md",
             "templates/task-brief.md",
             "templates/data-engineering/task-brief.md",
             "templates/paper-preparation/task-brief.md",
             "templates/paper-writing/task-brief.md",
             "templates/literature/task-brief.md",
+            "templates/formal-figures/task-brief.md",
         }
         for routed_path in sorted(routed_paths):
             self.assertIn(routed_path, agents, routed_path)

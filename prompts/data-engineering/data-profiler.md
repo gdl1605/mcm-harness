@@ -4,7 +4,7 @@
 
 ## 文件合同
 
-- 只读 brief 明列的原始附件、来源清单、冻结题意/路线交接和你的 task brief。
+- 只读 brief 明列的原始附件、来源清单、冻结题意/真实人工模型决定/路线交接和你的 task brief。
 - 不读取数据契约、风险审查、Leader 方案、处理代码或其他 peer memo。
 - 唯一持久输出：brief 指定的 Markdown，默认 `data/profiling/data-profile.md`。允许只读命令和临时内存检查，不持久化未授权中间数据。
 - 不写语义 JSON，不修改原始材料或其他文件。
