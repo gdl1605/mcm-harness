@@ -16,7 +16,7 @@
 
 ## 全局注册表与竞赛审读
 
-链接符号、claim-section、table/Figure 计划、盲审、模式扫描、response 和 closure；保留少数意见和受限项。
+链接符号、claim-section、table/Figure 计划、references-handoff、references.bib、claim-to-citation map、盲审、模式扫描、response 和 closure；保留少数意见、受限引用和 citation-needed。
 
 ## 后续作者必须遵守
 

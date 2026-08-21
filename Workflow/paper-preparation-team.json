@@ -16,6 +16,11 @@
     "starts_at": "validation_handoff",
     "ends_at": "paper_framework_handoff",
     "semantic_output": "open_markdown",
+    "required_literature_inputs_before_CP4_CP6": [
+      "literature/citation-preparation/references-handoff.md",
+      "literature/citation-preparation/claim-to-citation-map.md",
+      "literature/references.bib"
+    ],
     "out_of_scope": [
       "complete_paper_draft",
       "formal_figure_rendering",

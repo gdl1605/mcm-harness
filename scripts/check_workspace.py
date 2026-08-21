@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 
 
-STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "final-delivery": 7}
-ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "final-delivery"}
+STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "final-delivery": 7, "literature": 8}
+ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "final-delivery", "literature"}
 
 DATA_DIRS = (
     "data/briefs",
@@ -61,6 +61,18 @@ FINAL_DELIVERY_DIRS = (
     "final-delivery/candidate",
     "final-delivery/reviews",
     "final-delivery/human-review",
+)
+
+LITERATURE_DIRS = (
+    "literature/scope",
+    "literature/route-alignment/search-briefs",
+    "literature/route-alignment/route-a",
+    "literature/route-alignment/route-b",
+    "literature/route-alignment/sources",
+    "literature/route-alignment/human-consultation",
+    "literature/citation-preparation/search-briefs",
+    "literature/citation-preparation/scouts",
+    "literature/citation-preparation/sources",
 )
 
 
@@ -188,6 +200,9 @@ def check_paper_preparation(run_dir: Path, errors: list[str], warnings: list[str
         "validation/validation-handoff.md",
         "validation/claims/claim-evidence-map.md",
         "figure-prep/figure-preparation-handoff.md",
+        "literature/citation-preparation/references-handoff.md",
+        "literature/citation-preparation/claim-to-citation-map.md",
+        "literature/references.bib",
         "paper-prep/scope/frozen-inputs.md",
         "paper-prep/structure/chapter-map-v0.md",
         "paper-prep/structure/chapter-map-v1.md",
@@ -239,6 +254,9 @@ def check_paper_writing(run_dir: Path, errors: list[str], warnings: list[str]) -
         "validation/claims/claim-evidence-map.md",
         "figure-prep/figure-preparation-handoff.md",
         "paper-prep/paper-framework-handoff.md",
+        "literature/citation-preparation/references-handoff.md",
+        "literature/citation-preparation/claim-to-citation-map.md",
+        "literature/references.bib",
         "paper-writing/scope/frozen-inputs.md",
         "paper-writing/plan/writing-plan.md",
         "paper-writing/plan/section-contracts.md",
@@ -297,6 +315,10 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
         "modeling/model-handoff.md",
         "validation/validation-handoff.md",
         "validation/claims/claim-evidence-map.md",
+        "literature/route-alignment/route-evidence-handoff.md",
+        "literature/citation-preparation/references-handoff.md",
+        "literature/citation-preparation/claim-to-citation-map.md",
+        "literature/references.bib",
         "paper-writing/manuscript/final-paper.md",
         "paper-writing/formal-paper-handoff.md",
         "figure-prep/figure-preparation-handoff.md",
@@ -376,6 +398,44 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
             )
 
 
+def check_literature(run_dir: Path, errors: list[str], warnings: list[str]) -> None:
+    """Check literature artifacts and paths without judging source truth."""
+
+    for relative in LITERATURE_DIRS:
+        if not (run_dir / relative).is_dir():
+            errors.append(f"missing literature directory: {relative}")
+
+    required_files = (
+        "literature/route-alignment/search-briefs/route-a.md",
+        "literature/route-alignment/search-briefs/route-b.md",
+        "literature/route-alignment/route-a/scout-memo.md",
+        "literature/route-alignment/route-b/scout-memo.md",
+        "literature/route-alignment/human-consultation/consultation-brief.md",
+        "literature/route-alignment/human-consultation/response-record.md",
+        "literature/route-alignment/evidence-review.md",
+        "literature/route-alignment/route-evidence-handoff.md",
+        "literature/citation-preparation/citation-gap-map.md",
+        "literature/citation-preparation/references-candidate.bib",
+        "literature/citation-preparation/claim-to-citation-map.md",
+        "literature/citation-preparation/citation-audit.md",
+        "literature/citation-preparation/references-handoff.md",
+        "literature/references.bib",
+    )
+    for relative in required_files:
+        if not nonempty_file(run_dir / relative):
+            errors.append(f"missing or empty literature file: {relative}")
+
+    route_sources = list((run_dir / "literature/route-alignment/sources").glob("*/source-note.md"))
+    citation_sources = list((run_dir / "literature/citation-preparation/sources").glob("*/source-note.md"))
+    citation_scouts = list((run_dir / "literature/citation-preparation/scouts").glob("*/scout-memo.md"))
+    if not any(nonempty_file(path) for path in route_sources):
+        errors.append("literature route alignment requires at least one non-empty source-note.md")
+    if not any(nonempty_file(path) for path in citation_sources):
+        errors.append("literature citation preparation requires at least one non-empty source-note.md")
+    if not any(nonempty_file(path) for path in citation_scouts):
+        errors.append("literature citation preparation requires at least one topic scout-memo.md")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", type=Path)
@@ -435,10 +495,26 @@ def main() -> int:
             warnings.append("no raw worker Markdown submissions found; checker does not infer whether this is intentional")
 
     if args.stage not in ASYNC_STAGES and STAGES[args.stage] >= STAGES["route"]:
-        for relative in ("routes/route-a.md", "routes/route-b.md", "routes/route-review.md", "routes/route-handoff.md"):
+        for relative in (
+            "routes/route-a.md",
+            "routes/route-b.md",
+            "routes/route-review.md",
+            "literature/route-alignment/route-a/scout-memo.md",
+            "literature/route-alignment/route-b/scout-memo.md",
+            "literature/route-alignment/human-consultation/consultation-brief.md",
+            "literature/route-alignment/human-consultation/response-record.md",
+            "literature/route-alignment/evidence-review.md",
+            "literature/route-alignment/route-evidence-handoff.md",
+            "routes/route-handoff.md",
+        ):
             path = run_dir / relative
             if not path.is_file() or path.stat().st_size == 0:
                 errors.append(f"missing or empty report file: {relative}")
+        route_source_notes = list(
+            (run_dir / "literature/route-alignment/sources").glob("*/source-note.md")
+        )
+        if not any(nonempty_file(path) for path in route_source_notes):
+            errors.append("route handoff requires at least one non-empty literature source-note.md")
 
     if args.stage not in ASYNC_STAGES and STAGES[args.stage] >= STAGES["data"]:
         for relative in DATA_DIRS:
@@ -456,6 +532,8 @@ def main() -> int:
         check_paper_writing(run_dir, errors, warnings)
     if args.stage == "final-delivery":
         check_final_delivery(run_dir, errors, warnings)
+    if args.stage == "literature":
+        check_literature(run_dir, errors, warnings)
 
     payload = {
         "stage": args.stage,
@@ -472,6 +550,9 @@ def main() -> int:
         "delivery_evidence_semantics_checked": False,
         "end_to_end_consistency_semantics_checked": False,
         "post_review_human_edits_checked": False,
+        "literature_semantics_checked": False,
+        "human_opinion_authenticity_checked": False,
+        "citation_support_checked": False,
         "errors": errors,
         "warnings": warnings,
     }

@@ -1,6 +1,6 @@
 # C 题 Agent Team：Leader 运行规则
 
-当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程、数据工程、建模构建和独立验证由同一个 Leader 连续管理；V6 后并行运行图表准备与论文准备，再进入正式论文写作和最终排版终审。正式绘图与引用检索仍由外部/前置模块完成，实际人工微调和投稿不在本 harness 内。
+当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。文献与真实人的意见在路线竞标和论文准备两次进入；其余主链由同一个 Leader 连续管理。V6 后并行运行图表、论文与正式引用准备，再进入正式写作和最终排版终审。正式绘图、终审后人工微调和投稿不在本 harness 内。
 
 详细波次、角色输入、prompt 路径和输出路径以 `Workflow/README.md` 为准。本文件只规定 Leader 应怎样工作，以及做到某阶段必须读取哪些文件。
 
@@ -33,7 +33,7 @@ Leader 不得：
 启动任何 run 时，Leader 先读取：
 
 1. `Workflow/README.md`：唯一详细调度说明；
-2. 当前模块配置：前半程 `Workflow/team.json`，数据工程 `Workflow/data-team.json`，建模构建 `Workflow/modeling-team.json`，独立验证 `Workflow/validation-team.json`，图表准备 `Workflow/figure-preparation-team.json`，论文准备 `Workflow/paper-preparation-team.json`，正式写作 `Workflow/paper-writing-team.json`，最终交付 `Workflow/final-delivery-team.json`；
+2. 当前模块配置：前半程 `Workflow/team.json`，文献与引用 `Workflow/literature-team.json`，数据工程 `Workflow/data-team.json`，建模构建 `Workflow/modeling-team.json`，独立验证 `Workflow/validation-team.json`，图表准备 `Workflow/figure-preparation-team.json`，论文准备 `Workflow/paper-preparation-team.json`，正式写作 `Workflow/paper-writing-team.json`，最终交付 `Workflow/final-delivery-team.json`；
 3. 当前模块 Leader prompt；
 4. 当前阶段在第 3 节路由表中列出的协议、角色 prompt 和模板；
 5. `inputs/source-manifest.json` 与当前阶段允许读取的已有 memo。
@@ -46,7 +46,10 @@ W0 来源封箱
 → W3/W3R 交叉审查与原判断角色复核
 → W4 最小消歧
 → L1 暂定题意基线
-→ W5A/W5B/W5C 路线竞标、审查与回应
+→ W5A Route A/B 隔离提案
+⇉ W5B 结构审查 / REF0–REF2 路线文献与真实人类咨询
+→ REF3 独立文献证据审查与路线证据交接
+→ W5C 原 Route A/B 作者回应结构、文献与人的意见
 → L2 路线交接
 → 若任务包含数据工程，再显式进入 D0
 → D1 数据契约/剖析/风险调查
@@ -69,7 +72,8 @@ W0 来源封箱
 → V6 整体题链审查与验证交接
 ⇉（若任务包含后续交付）F0 图表输入冻结 / CP0 论文输入冻结
 → CP1 最小章节地图，立即供给图表 F3
-⇉ F1 逐问诊断与数据整理 / CP2 逐问章节材料
+⇉ F1 逐问诊断与数据整理 / CP2 逐问章节材料 / REF4 引用缺口地图
+→ REF5 定向引用检索与 REF6 独立引用审查
 → F2/F2R 图表证据复核与回应
 → CP3/CP3R 章节证据复核与回应
 → F3/F4 图表整合与交接
@@ -94,7 +98,7 @@ W0 来源封箱
 → FD7 人工交接并停止
 ```
 
-前半程在 `routes/route-handoff.md` 停止；数据工程、建模、验证、图表和论文准备分别止于自己的 handoff。PW0 只能在 `paper-framework-handoff.md` 与 `figure-preparation-handoff.md` 落盘后显式启动，停止于 `paper-writing/formal-paper-handoff.md`。FD0 还必须取得外部正式图、引用状态、最终结果数据/运行脚本和官方要求，停止于 `final-delivery/final-delivery-handoff.md`；终审后 Agent 不再修改，由人微调并投稿。
+前半程在 `routes/route-handoff.md` 停止，但 L2 前必须消费 `literature/route-alignment/route-evidence-handoff.md`。REF6 停止于 `literature/citation-preparation/references-handoff.md`；CP4/CP6/PW0 必须取得该文件、claim-to-citation map 和 `literature/references.bib`。FD0 还必须取得外部正式图、最终结果数据/运行脚本和官方要求，停止于 `final-delivery/final-delivery-handoff.md`；终审后 Agent 不再修改，由人微调并投稿。
 
 ## 3. 阶段文件路由
 
@@ -112,9 +116,26 @@ W0 来源封箱
 | W4 消歧与反共识 | `Workflow/protocols/deliberation-protocol.md` | `prompts/roles/probe-designer.md`、`prompts/roles/fresh-context-reviewer.md` | `templates/probe-memo.md` → `reviews/W4/` |
 | L1 题意基线 | 全部 W1–W4 原始报告 | 无；Leader 综合 | `templates/problem-baseline.md` → `synthesis/problem-baseline.md` |
 | W5A 路线竞标 | `Workflow/protocols/route-tournament.md` | Route A/B 均用 `prompts/roles/route-proposer.md`，相互隔离 | `templates/route-proposal.md` → `routes/route-a.md`、`routes/route-b.md` |
-| W5B 路线审查 | 题意基线与 A/B 原报告 | `prompts/roles/route-critic.md` | `templates/route-review.md` → `routes/route-review.md` |
-| W5C 路线提案者回应 | 路线评审与各自原路线 | `prompts/roles/route-proposer-response.md`，复用原 A/B subagent | `routes/responses/` |
-| L2 路线交接 | `Workflow/protocols/route-tournament.md` 与全部路线 memo | 无；Leader 综合 | `templates/route-handoff.md` → `routes/route-handoff.md` |
+| W5B 路线审查 | 题意基线与 A/B 原报告；禁止读取文献结果 | `prompts/roles/route-critic.md` | `templates/route-review.md` → `routes/route-review.md` |
+| REF0–REF2 路线证据 | A/B 原提案、检索合同和隔离 brief | `prompts/literature/route-literature-scout.md`、`human-consultation-recorder.md` | route scouts、source notes、真实 human response |
+| REF3 文献证据审查 | A/B、结构 review、来源与 human response | `prompts/literature/literature-evidence-auditor.md`；新 subagent | evidence-review、route-evidence-handoff |
+| W5C 路线提案者回应 | 路线评审、route-evidence-handoff 与各自原路线 | `prompts/roles/route-proposer-response.md`，复用原 A/B subagent | `routes/responses/` |
+| L2 路线交接 | 全部路线 memo、文献证据与人的意见 | 无；Leader 综合 | `templates/route-handoff.md` → `routes/route-handoff.md` |
+
+### 3.1.1 文献与引用证据
+
+| 阶段 | Leader 必读 | 角色 prompt | 主要产物 |
+|---|---|---|---|
+| 模块启动 | `Workflow/literature-research.md`、`Workflow/literature-team.json`、`prompts/literature/leader.md` | `prompts/literature/worker-base.md` | `templates/literature/task-brief.md` |
+| REF0 路线检索合同 | W5A 两份原提案与题意基线 | 无；Leader 写 | `route-alignment/search-briefs/` |
+| REF1 路线检索 | 本路线 search brief 与提案；另一条路线隐藏 | `prompts/literature/route-literature-scout.md`；每方向新 subagent | scout memo、REF source notes |
+| REF2 人类咨询 | A/B 高影响差异 | `prompts/literature/human-consultation-recorder.md`；先新建、真实回复后复用 | consultation brief、response record |
+| REF3 路线证据审查 | 来源原文/notes、真实 human response、结构 review | `prompts/literature/literature-evidence-auditor.md`；新 subagent | evidence-review、route-evidence-handoff |
+| REF4 引用缺口 | V6 claim map、CP1 chapter-map-v0、route evidence | `prompts/literature/citation-gap-analyst.md`；新 subagent | citation-gap-map |
+| REF5 定向引用检索 | 分配的 CIT-ID 与验证主张 | `prompts/literature/citation-literature-scout.md`；每主题簇新 subagent | source notes、candidate BibTeX |
+| REF6 引用审查与交接 | gap、sources、candidate BibTeX、章节与 claim | `prompts/literature/citation-auditor.md`；新 subagent；Leader整理元数据 | citation-audit、references.bib、claim map、references-handoff |
+
+Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存或修改本地 Zotero 库需要用户明确授权。Zotero item key 与 BibTeX key 必须分开记录。文献数量、引用量、期刊名气和获奖论文惯例不替代结构或证据判断。
 
 ### 3.2 数据工程
 
@@ -182,7 +203,7 @@ W0 来源封箱
 | 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
 |---|---|---|---|
 | 论文准备启动 | `Workflow/paper-preparation.md`、`Workflow/paper-preparation-team.json`、`prompts/paper-preparation/leader.md` | `prompts/paper-preparation/worker-base.md` | `templates/paper-preparation/task-brief.md` |
-| CP0 输入冻结 | validation handoff/claim map、官方要求、授权结果、工程文稿与图表状态 | 无；Leader 执行 | `templates/paper-preparation/frozen-inputs.md` → `paper-prep/scope/frozen-inputs.md` |
+| CP0 输入冻结 | validation handoff/claim map、route evidence、引用状态、官方要求、授权结果、工程文稿与图表状态 | 无；Leader 执行 | `templates/paper-preparation/frozen-inputs.md` → `paper-prep/scope/frozen-inputs.md` |
 | CP1 最小骨架 | CP0、题意基线和题间接口 | `prompts/paper-preparation/paper-structure-architect.md`；新 subagent | chapter-map-v0、narrative-spine、page-budget |
 | CP2 逐问材料 | CP0、chapter-map-v0 与本问授权证据 | `prompts/paper-preparation/question-chapter-curator.md`；每问新 subagent | `paper-prep/questions/qN/chapter-material-v1.md` |
 | CP3 证据审查 | 本问 v1、冻结证据与接口 | `prompts/paper-preparation/chapter-evidence-auditor.md`；新 subagent | `paper-prep/questions/qN/evidence-review.md` |
@@ -199,7 +220,7 @@ W0 来源封箱
 | 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
 |---|---|---|---|
 | 正式写作启动 | `Workflow/paper-writing.md`、`Workflow/paper-writing-team.json`、`prompts/paper-writing/leader.md` | `prompts/paper-writing/worker-base.md` | `templates/paper-writing/task-brief.md` |
-| PW0 输入冻结 | paper framework、figure handoff、validation claim map、官方要求 | 无；Leader 执行 | `paper-writing/scope/frozen-inputs.md` |
+| PW0 输入冻结 | paper framework、figure handoff、references handoff/references.bib、validation claim map、官方要求 | 无；Leader 执行 | `paper-writing/scope/frozen-inputs.md` |
 | PW1 写作计划 | PW0、章节地图、符号和表图计划 | 无；Leader 执行 | writing-plan、section-contracts、prose-boundary、figure-table-slots |
 | PW2 逐问正文 | 本问 contract、最终材料、授权证据和全局术语 | `prompts/paper-writing/question-manuscript-writer.md`；每问新 subagent | `sections/qN/section-v1.md` |
 | PW3 全文 v1 | 全部 section-v1 与公共章节材料 | 无；Leader 是唯一全文作者 | `manuscript/full-paper-v1.md` |
@@ -217,7 +238,7 @@ Markdown 是唯一正文源。只有 Leader 可以写 `paper-writing/manuscript/
 | 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
 |---|---|---|---|
 | 最终交付启动 | `Workflow/final-delivery.md`、`Workflow/final-delivery-team.json`、`prompts/final-delivery/leader.md` | `prompts/final-delivery/worker-base.md` | `templates/final-delivery/task-brief.md` |
-| FD0 输入冻结 | formal-paper handoff、最终正文、正式图、引用、授权结果/代码和官方要求 | 无；Leader 执行 | `final-delivery/scope/frozen-inputs.md` |
+| FD0 输入冻结 | formal-paper handoff、最终正文、正式图、references handoff/references.bib、授权结果/代码和官方要求 | 无；Leader 执行 | `final-delivery/scope/frozen-inputs.md` |
 | FD1 支撑材料 | FD0 白名单中的结果数据、实际运行脚本和 run 证据 | `prompts/final-delivery/supporting-material-curator.md`；新 subagent | results、两个 manifest、execution-order、完整 `source-code.md`、supporting-materials |
 | FD2 候选组装 | 冻结正文、图、引用与 FD1 | `prompts/final-delivery/submission-typesetter.md`；新 subagent | source、candidate、typesetting-memo |
 | FD3 机械预检/冻结 | 候选文件与官方机械规则 | 复用原 Typesetter 只修机械问题；Leader 写快照 | preflight-report、`scope/candidate-snapshot.md` |
@@ -252,6 +273,7 @@ Task brief 必须明确：
 - 论文准备任务还必须写明问题/全篇单元、材料版本、验证授权范围、唯一 owner、正文/附录边界、图表状态、两遍竞赛审读的上下文隔离、国奖蒸馏暴露时点和禁止生成完整论文；
 - 正式写作任务还必须写明全文/section 版本、唯一主稿 owner、逐问 contract、技术术语与工程词边界、Figure/Table 占位、Reviewer 只读权限、peer review 隔离和禁止生成非 Markdown 交付；
 - 最终交付任务还必须写明冻结候选/官方规则、结果与运行脚本白名单、支撑材料写入根、排版可改与事实不可改边界、FD4 同快照隔离审查、第五路可读的精确全链路 handoff、终审后零 Agent 修改和人工接管状态；
+- 文献任务还必须写明路线/主题、检索问题、来源优先级、元数据/摘要/全文状态、负面搜证、Zotero 权限、真实人类咨询状态、BibTeX 写权和禁止编造来源；
 - 停止条件和禁止越权事项。
 
 派工时必须告诉 worker：
@@ -286,8 +308,10 @@ Task brief 必须明确：
 - PW3/PW5R/PW7：由当前 Leader独写全文主稿、全局 response 和最终 handoff，不创建全文写作 subagent。
 - PW4：创建新 Full-Paper Fact Auditor；PW5 创建三个互相隔离的新 Competition/Coherence/AI Reviewer，三者审同一冻结 v2。
 - PW6：复用原四个 Reviewer，只检查原 review 的处理，不新增全面审稿轮次。
+- REF1 每条路线创建新 Scout；REF2 Human Recorder 在真实回复到达后复用，未回复时不得模拟；REF3 创建新 Literature Auditor。
+- REF4 创建新 Citation Gap Analyst；REF5 每独立主题簇创建新 Citation Scout；REF6 创建新 Citation Auditor。最终 BibTeX 与 references handoff 由 Leader 根据 review 整理。
 - 无独立输入或只会重复已有报告：不创建 Agent。
-- W/D/M/V 原有波次仍最多并行 3 个 worker；图表、论文准备和 PW2 不设固定数字上限，只能按独立问题/共享单元、独立写入路径和平台容量并行，不能重复派 owner。
+- W/D/M/V 原有波次仍最多并行 3 个 worker；图表、论文准备、PW2、FD4 和文献 Scout 不设固定数字上限，只能按独立问题/路线/主题簇、独立写入路径和平台容量并行，不能按单篇论文或单条引用重复派 owner。
 - Leader 保存 Agent 句柄；W/D/M/V 同步波全部返回、失败或取消后才综合，图表 F2 与论文 CP3 按问题流式独立复核；PW5 三份 review 全部落盘后才进入 Leader 修订。
 - subagent 完成后先确认指定文件已经落盘；聊天摘要不能替代原始 memo。
 
@@ -329,6 +353,8 @@ Task brief 必须明确：
 - FD1 Curator 只写 `final-delivery/supporting-materials/`；FD2/FD3 Typesetter 只在候选冻结前写 `source/`、`candidate/`、preflight 和 typesetting memo。
 - FD4 五个 Reviewer 各自只写一份 review；End-to-End Consistency Auditor 可额外读取 FD0 冻结的全链路 handoff，但不读 peer review。candidate snapshot 冻结后任何 Agent 不得修改正文、候选稿、支撑材料或上游文件。
 - FD5–FD7 只有 Leader 可写问题索引、人工指南、提交清单和 handoff；Leader 不得创建审后修订版或代替人提交。
+- Route/Citation Scout 只写 Leader 预分配 REF-ID 下的 source notes、自己的 memo 和主题候选 BibTeX；共享 references-candidate.bib 由 Leader 合并。Literature/Citation Auditor 只写 review，不修改来源或 BibTeX。
+- Human Recorder 只能记录真实回复；`route-evidence-handoff.md`、`references.bib`、`claim-to-citation-map.md` 和 `references-handoff.md` 由 Leader 独写。未获授权时 Zotero 库只读。
 - JSON 只保存配置、路径、哈希、版本、状态和运行参数；语义内容写开放 Markdown。
 
 ## 8. 失败、重开与停止
@@ -350,6 +376,7 @@ Task brief 必须明确：
 - `paper-prep/paper-framework-handoff.md` 是论文准备停止点；完整论文、参考文献检索、正式图、排版和提交包不由本模块创建。
 - PW7 只有在 fact review/response、三路语言 review、Leader v3 和四份关闭检查完成后才能交接。
 - `paper-writing/formal-paper-handoff.md` 是正式写作停止点；Word/LaTeX、正式图片、参考文献检索、排版、答卷和提交包仍不创建。
+- L2 前必须完成 REF3 route-evidence-handoff；CP4/CP6/PW0 前必须完成 REF6 references-handoff、claim-to-citation map 和 references.bib。未核验来源保留 citation-needed，不得虚构。
 - `final-delivery/final-delivery-handoff.md` 是最终交付停止点；FD4 后问题只报告不自动修改，状态必须为 `AWAITING_HUMAN_FINALIZATION`，实际微调和投稿由人完成。
 
-验证后可并行进入图表与论文准备；两个 handoff 完成后才能进入正式写作。只有正式图、引用状态、结果数据/代码和官方要求齐备时才能显式启动 FD0；FD7 后 Leader 不得继续自动修稿或投稿。
+验证后可并行进入图表、论文和 REF4–REF6 引用准备；figure、paper framework 与 references handoff 齐备后才能进入正式写作。只有正式图、引用交接、结果数据/代码和官方要求齐备时才能显式启动 FD0；FD7 后 Leader 不得继续自动修稿或投稿。

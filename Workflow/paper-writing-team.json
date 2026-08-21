@@ -16,6 +16,11 @@
     "starts_at": "paper_framework_handoff",
     "ends_at": "formal_paper_handoff",
     "canonical_manuscript_format": "markdown",
+    "required_literature_inputs": [
+      "literature/citation-preparation/references-handoff.md",
+      "literature/citation-preparation/claim-to-citation-map.md",
+      "literature/references.bib"
+    ],
     "out_of_scope": [
       "docx_generation",
       "latex_generation",

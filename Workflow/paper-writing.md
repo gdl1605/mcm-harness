@@ -4,7 +4,7 @@
 
 ## 1. 入口、目标与停止点
 
-入口为 `paper-prep/paper-framework-handoff.md`、`figure-prep/figure-preparation-handoff.md`、验证授权证据和官方论文要求。正式图尚未交付时允许稳定 Figure ID 占位，但不得虚构图片、caption 或结果。
+入口为 paper framework、figure handoff、`literature/citation-preparation/references-handoff.md`、`literature/references.bib`、验证授权证据和官方论文要求。正式图尚未交付时允许 Figure ID 占位；引用缺口只能保留 CITATION-NEEDED，不得虚构。
 
 目标是形成连续、可提交前继续加工的竞赛论文 Markdown 正文，并通过四种彼此独立的审查：事实一致性、竞赛表达、全文连贯、AI/口水文风。Reviewer 永久只写修改单；原问题作者修局部，Leader 组装并统一全文。
 
@@ -30,6 +30,7 @@ Leader 写 `paper-writing/scope/frozen-inputs.md`，至少冻结：
 - figure handoff、Figure/Table ID、正式图片状态和占位方式；
 - 官方页数、格式、匿名、语言和答卷要求；
 - 已有参考文献、待补引用和禁止虚构来源；
+- references handoff、claim-to-citation map、references.bib、引用键和人的意见边界；
 - 旧材料、旧数字、未验证候选和上游只读边界；
 - 每问 writer/reviewer 句柄、写入根与版本保留规则。
 
@@ -50,7 +51,7 @@ Leader 写：
 
 每问创建一个新的 Question Manuscript Writer。它只读对应 section contract、最终章节材料、全局符号/术语和获批表图，写 `sections/qN/section-v1.md`。
 
-正文必须是连续竞赛论文内容，而不是提纲或工程索引，至少涵盖：问题分析、模型选择理由、假设/变量/公式、模型建立与求解、验证结果与解释、表图引入与图后说明、评价/限制和题间过渡。
+正文必须是连续竞赛论文内容，而不是提纲或工程索引，至少涵盖：问题分析、模型选择理由、假设/变量/公式、模型建立与求解、验证结果与解释、已审引用、表图引入与图后说明、评价/限制和题间过渡。
 
 不得把 run、config、debug、pipeline、文件路径、调参日志和版本处理写入正文，除非它们对可复现性不可替代且 section contract 明确要求。不得自行写摘要、总结合并段或修改其他问题。
 
@@ -66,7 +67,7 @@ Leader 随后创建新的 Full-Paper Fact Auditor。它只读 v1、验证授权�
 - 题间 producer–consumer 接口；
 - 限制是否在正文保留。
 
-每项必须含正文位置、来源、失败影响和责任 owner，不用笼统“有误”。
+每项必须含正文位置、来源、失败影响和责任 owner，不用笼统“有误”。同时检查引用键是否来自 references handoff、引用句是否越过文献支持范围、人的意见是否被写成事实。
 
 PW4R 中，局部事实问题退给原 Question Manuscript Writer，写 `section-fact-response.md` 和 `section-v2.md`；全局复述由 Leader 修；上游证据错误写 change request。Leader 保留 v1，写 `responses/fact-response.md` 和 `manuscript/full-paper-v2.md`。
 
@@ -108,7 +109,7 @@ PW6 复用原四个 Reviewer，各自只检查原 review 的处置：Fact Audito
 
 ## 9. PW7：正式论文交接
 
-Leader 根据 v3 和 closure 形成 `manuscript/final-paper.md` 与 `formal-paper-handoff.md`。Handoff 至少链接正文版本、授权结果/公式、Figure/Table、四类 review、关闭状态、未完成图片/引用/排版/提交事项，以及后续不得改变的数字、公式、单位和 claim。
+Leader 根据 v3 和 closure 形成 `manuscript/final-paper.md` 与 `formal-paper-handoff.md`。Handoff 至少链接正文版本、授权结果/公式、Figure/Table、references handoff/references.bib、四类 review、关闭状态、未完成图片/引用/排版/提交事项，以及后续不得改变的数字、公式、单位和 claim。
 
 完成后停止，不生成 Word/LaTeX、正式图片、参考文献检索、版式文件、答卷或提交包。
 

@@ -9,7 +9,7 @@
 - `paper-writing/formal-paper-handoff.md` 与 `paper-writing/manuscript/final-paper.md`；
 - `figure-prep/figure-preparation-handoff.md` 以及外部模块交付的正式图片；
 - 验证授权的结果、公式、单位、精度、限制和 claim；
-- 最终引用库与引用交接（若当前 run 已实现）；
+- `literature/citation-preparation/references-handoff.md`、claim-to-citation map 与 `literature/references.bib`；
 - 生成最终结果的实际数据文件、运行脚本和版本证据；
 - 官方模板、页数、匿名、答卷、附件和文件命名要求。
 
@@ -37,7 +37,7 @@ Leader 写 `scope/frozen-inputs.md`，列出精确路径、版本、哈希、用
 - 正文 Markdown 与 formal-paper handoff；
 - 正式图片文件、Figure/Table ID、caption 和来源版本；
 - 结果数据、公式、单位、精度、限制和 claim；
-- 引用库、已有引用核实状态与缺失引用；
+- route-evidence-handoff、references handoff、claim-to-citation map、references.bib、已有引用核实状态与 citation-needed；
 - 官方模板、页数、匿名、答卷和附件规则；
 - 最终运行脚本、运行记录、输入和结果版本；
 - `problem-baseline`、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff 的精确版本，供第五路全链路反查；

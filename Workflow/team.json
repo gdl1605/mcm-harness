@@ -111,20 +111,22 @@
       "dispatch": "new_independent_reviewer",
       "roles": ["route_critic"],
       "visibility": "problem_baseline_and_both_routes",
+      "forbidden_visibility": "literature_scouts_human_opinion_and_leader_literature_summary",
+      "parallel_with": ["REF0", "REF1", "REF2"],
       "handoff": "routes/route-review.md"
     },
     {
       "id": "W5C",
       "dispatch": "reuse_original_route_proposers",
       "roles": ["route_proposer_responder"],
-      "visibility": "own_route_problem_baseline_and_route_review",
+      "visibility": "own_route_problem_baseline_route_review_and_assigned_route_evidence_handoff",
       "handoff": "routes/responses/*.md"
     },
     {
       "id": "L2",
       "dispatch": "leader_only",
       "roles": ["leader"],
-      "visibility": "all_route_memos",
+      "visibility": "all_route_memos_route_evidence_handoff_and_human_response_record",
       "handoff": "routes/route-handoff.md"
     }
   ],
@@ -137,6 +139,7 @@
     "BASELINE",
     "ROUTE_BIDDING",
     "ROUTE_REVIEW",
+    "ROUTE_EVIDENCE_ALIGNMENT",
     "ROUTE_REBUTTAL",
     "ROUTE_HANDOFF",
     "REOPENED"

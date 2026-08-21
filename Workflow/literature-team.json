@@ -1,0 +1,80 @@
+{
+  "workflow_name": "cumcm-c-literature-and-citation-evidence",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/literature-research.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent",
+    "external_orchestrator_required": false,
+    "leader_prompt": "prompts/literature/leader.md",
+    "worker_base_prompt": "prompts/literature/worker-base.md",
+    "route_scouts_parallel_by_direction": true,
+    "citation_scouts_parallel_by_topic_cluster": true,
+    "reviewers_may_modify_sources_or_bibtex": false
+  },
+  "source_channels": {
+    "user_provided_papers": true,
+    "scholarly_web_search": true,
+    "official_sources": true,
+    "local_zotero_optional": true,
+    "zotero_required": false,
+    "zotero_writes_require_explicit_user_authorization": true
+  },
+  "roles": {
+    "route_literature_scout": {
+      "prompt": "prompts/literature/route-literature-scout.md",
+      "new_agent_required": true,
+      "one_owner_per_route_direction": true,
+      "writes": ["literature/route-alignment/route-X/**", "literature/route-alignment/sources/ASSIGNED-REF-ID/source-note.md"]
+    },
+    "human_consultation_recorder": {
+      "prompt": "prompts/literature/human-consultation-recorder.md",
+      "new_agent_required": true,
+      "reuse_for_response_record": true,
+      "must_not_simulate_human": true,
+      "writes": ["literature/route-alignment/human-consultation/consultation-brief.md", "literature/route-alignment/human-consultation/response-record.md"]
+    },
+    "literature_evidence_auditor": {
+      "prompt": "prompts/literature/literature-evidence-auditor.md",
+      "new_agent_required": true,
+      "review_only": true,
+      "writes": ["literature/route-alignment/evidence-review.md"]
+    },
+    "citation_gap_analyst": {
+      "prompt": "prompts/literature/citation-gap-analyst.md",
+      "new_agent_required": true,
+      "writes": ["literature/citation-preparation/citation-gap-map.md"]
+    },
+    "citation_literature_scout": {
+      "prompt": "prompts/literature/citation-literature-scout.md",
+      "new_agent_required": true,
+      "one_owner_per_topic_cluster": true,
+      "writes": ["literature/citation-preparation/scouts/TOPIC/**", "literature/citation-preparation/sources/ASSIGNED-REF-ID/source-note.md", "literature/citation-preparation/scouts/TOPIC/references-candidate.bib"]
+    },
+    "citation_auditor": {
+      "prompt": "prompts/literature/citation-auditor.md",
+      "new_agent_required": true,
+      "review_only": true,
+      "writes": ["literature/citation-preparation/citation-audit.md"]
+    }
+  },
+  "phases": [
+    {"id": "REF0", "dispatch": "leader_only_after_W5A", "handoff": "route-specific search briefs"},
+    {"id": "REF1", "dispatch": "one_new_scout_per_route", "parallel_with": ["W5B_structural_critic", "REF2_human_consultation"]},
+    {"id": "REF2", "dispatch": "one_consultation_recorder_then_real_human_checkpoint", "missing_human_response": "record_gap_and_continue_after_timebox"},
+    {"id": "REF3", "dispatch": "one_new_literature_evidence_auditor_then_leader_handoff", "handoff": "literature/route-alignment/route-evidence-handoff.md"},
+    {"id": "REF4", "dispatch": "one_new_citation_gap_analyst_after_V6_and_CP1", "handoff": "citation-gap-map.md"},
+    {"id": "REF5", "dispatch": "new_scouts_per_independent_topic_cluster_then_leader_merges_candidate_bibtex", "handoff": "topic-scoped source notes/BibTeX and leader-owned references-candidate.bib"},
+    {"id": "REF6", "dispatch": "one_new_citation_auditor_then_leader_finalizes_metadata", "handoff": "references.bib, claim-to-citation-map.md and references-handoff.md"}
+  ],
+  "evidence_rules": {
+    "citation_count_is_not_route_evidence": true,
+    "human_opinion_is_not_publication_evidence": true,
+    "award_paper_is_not_scientific_authority": true,
+    "negative_and_alternative_evidence_required": true,
+    "metadata_abstract_and_fulltext_review_must_be_distinguished": true,
+    "unverified_reference_fabrication_forbidden": true
+  },
+  "final_phase": "REFERENCES_HANDOFF"
+}

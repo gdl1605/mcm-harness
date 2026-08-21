@@ -104,6 +104,13 @@ class WorkflowToolTests(unittest.TestCase):
                 "routes/route-a.md",
                 "routes/route-b.md",
                 "routes/route-review.md",
+                "literature/route-alignment/route-a/scout-memo.md",
+                "literature/route-alignment/route-b/scout-memo.md",
+                "literature/route-alignment/human-consultation/consultation-brief.md",
+                "literature/route-alignment/human-consultation/response-record.md",
+                "literature/route-alignment/evidence-review.md",
+                "literature/route-alignment/route-evidence-handoff.md",
+                "literature/route-alignment/sources/REF-001/source-note.md",
                 "routes/route-handoff.md",
             )
             for relative in stage_reports:
@@ -409,6 +416,152 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertNotIn("必须生成正式论文图", scope_text)
         self.assertNotIn("要求生成论文级图表", scope_text)
 
+    def test_literature_workspace_prompts_and_templates(self) -> None:
+        template_root = PROJECT_ROOT / "templates/literature"
+        expected_templates = {
+            "task-brief.md", "route-search-brief.md", "source-note.md",
+            "route-scout-memo.md", "human-consultation-brief.md",
+            "human-response-record.md", "literature-evidence-review.md",
+            "route-evidence-handoff.md", "citation-gap-map.md",
+            "citation-scout-memo.md", "claim-to-citation-map.md",
+            "citation-audit.md", "references-handoff.md",
+        }
+        self.assertTrue(expected_templates.issubset({path.name for path in template_root.glob("*.md")}))
+        for name in expected_templates:
+            self.assertIn("最低责任", (template_root / name).read_text(encoding="utf-8"), name)
+
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            for relative in (
+                "literature/scope", "literature/route-alignment/search-briefs",
+                "literature/route-alignment/route-a", "literature/route-alignment/route-b",
+                "literature/route-alignment/sources",
+                "literature/route-alignment/human-consultation",
+                "literature/citation-preparation/search-briefs",
+                "literature/citation-preparation/scouts",
+                "literature/citation-preparation/sources",
+            ):
+                self.assertTrue((run_dir / relative).is_dir(), relative)
+            self.assertFalse(any((run_dir / "literature").rglob("*.md")))
+            self.assertFalse((run_dir / "literature/references.bib").exists())
+
+            leader = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_prompt.py"), "--literature-leader"],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(leader.returncode, 0, leader.stderr)
+            self.assertIn("REF0", leader.stdout)
+            self.assertIn("REF6", leader.stdout)
+
+            brief = run_dir / "literature/route-alignment/search-briefs/route-a.md"
+            brief.write_text("# Search task\n\n校准路线 A。\n", encoding="utf-8")
+            scout = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_prompt.py"), "--literature-role",
+                 "route_literature_scout", "--task-brief", str(brief)],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(scout.returncode, 0, scout.stderr)
+            self.assertIn("文献与引用证据 Worker Base Prompt", scout.stdout)
+            self.assertIn("Route Literature Scout", scout.stdout)
+
+    def test_literature_stage_is_mechanical(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+
+            missing = subprocess.run(
+                [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
+                 "--stage", "literature", "--json"],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(missing.returncode, 1)
+            missing_report = json.loads(missing.stdout)
+            self.assertFalse(missing_report["literature_semantics_checked"])
+            self.assertFalse(missing_report["human_opinion_authenticity_checked"])
+            self.assertFalse(missing_report["citation_support_checked"])
+
+            required_files = (
+                "literature/route-alignment/search-briefs/route-a.md",
+                "literature/route-alignment/search-briefs/route-b.md",
+                "literature/route-alignment/route-a/scout-memo.md",
+                "literature/route-alignment/route-b/scout-memo.md",
+                "literature/route-alignment/sources/REF-001/source-note.md",
+                "literature/route-alignment/human-consultation/consultation-brief.md",
+                "literature/route-alignment/human-consultation/response-record.md",
+                "literature/route-alignment/evidence-review.md",
+                "literature/route-alignment/route-evidence-handoff.md",
+                "literature/citation-preparation/citation-gap-map.md",
+                "literature/citation-preparation/scouts/methods/scout-memo.md",
+                "literature/citation-preparation/sources/REF-002/source-note.md",
+                "literature/citation-preparation/references-candidate.bib",
+                "literature/citation-preparation/claim-to-citation-map.md",
+                "literature/citation-preparation/citation-audit.md",
+                "literature/citation-preparation/references-handoff.md",
+                "literature/references.bib",
+            )
+            for relative in required_files:
+                path = run_dir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+
+            checked = subprocess.run(
+                [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
+                 "--stage", "literature", "--json"],
+                text=True, capture_output=True, check=False,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+            report = json.loads(checked.stdout)
+            self.assertEqual(report["errors"], [])
+            self.assertFalse(report["literature_semantics_checked"])
+
+    def test_literature_team_human_and_zotero_boundaries(self) -> None:
+        team = json.loads((PROJECT_ROOT / "Workflow/literature-team.json").read_text(encoding="utf-8"))
+        self.assertEqual(team["execution"]["mode"], "leader_with_native_subagents")
+        self.assertFalse(team["execution"]["external_orchestrator_required"])
+        self.assertTrue(team["source_channels"]["local_zotero_optional"])
+        self.assertFalse(team["source_channels"]["zotero_required"])
+        self.assertTrue(team["source_channels"]["zotero_writes_require_explicit_user_authorization"])
+        self.assertTrue(team["roles"]["human_consultation_recorder"]["must_not_simulate_human"])
+        self.assertTrue(team["roles"]["literature_evidence_auditor"]["review_only"])
+        self.assertTrue(team["roles"]["citation_auditor"]["review_only"])
+        citation_writes = team["roles"]["citation_literature_scout"]["writes"]
+        self.assertIn("literature/citation-preparation/scouts/TOPIC/references-candidate.bib", citation_writes)
+        self.assertNotIn("literature/citation-preparation/references-candidate.bib", citation_writes)
+        self.assertTrue(team["evidence_rules"]["negative_and_alternative_evidence_required"])
+        self.assertTrue(team["evidence_rules"]["unverified_reference_fabrication_forbidden"])
+        for role in team["roles"].values():
+            self.assertTrue((PROJECT_ROOT / role["prompt"]).is_file(), role["prompt"])
+
+        human_prompt = (PROJECT_ROOT / "prompts/literature/human-consultation-recorder.md").read_text(encoding="utf-8")
+        self.assertIn("不得模拟人类意见", human_prompt)
+        self.assertIn("已请求但未获得", human_prompt)
+        worker = (PROJECT_ROOT / "prompts/literature/worker-base.md").read_text(encoding="utf-8")
+        self.assertIn("元数据、摘要和全文", worker)
+        self.assertIn("Zotero", worker)
+
+        front_team = json.loads((PROJECT_ROOT / "Workflow/team.json").read_text(encoding="utf-8"))
+        w5b = next(wave for wave in front_team["waves"] if wave["id"] == "W5B")
+        w5c = next(wave for wave in front_team["waves"] if wave["id"] == "W5C")
+        self.assertIn("REF1", w5b["parallel_with"])
+        self.assertIn("literature", w5b["forbidden_visibility"])
+        self.assertIn("route_evidence_handoff", w5c["visibility"])
+
+        paper_prep = json.loads((PROJECT_ROOT / "Workflow/paper-preparation-team.json").read_text(encoding="utf-8"))
+        paper_writing = json.loads((PROJECT_ROOT / "Workflow/paper-writing-team.json").read_text(encoding="utf-8"))
+        self.assertIn("literature/citation-preparation/references-handoff.md",
+                      paper_prep["scope"]["required_literature_inputs_before_CP4_CP6"])
+        self.assertIn("literature/references.bib",
+                      paper_writing["scope"]["required_literature_inputs"])
+
     def test_paper_preparation_workspace_prompts_and_templates(self) -> None:
         template_root = PROJECT_ROOT / "templates/paper-preparation"
         expected_templates = {
@@ -524,6 +677,9 @@ class WorkflowToolTests(unittest.TestCase):
                 "validation/validation-handoff.md",
                 "validation/claims/claim-evidence-map.md",
                 "figure-prep/figure-preparation-handoff.md",
+                "literature/citation-preparation/references-handoff.md",
+                "literature/citation-preparation/claim-to-citation-map.md",
+                "literature/references.bib",
                 "paper-prep/scope/frozen-inputs.md",
                 "paper-prep/structure/chapter-map-v0.md",
                 "paper-prep/structure/chapter-map-v1.md",
@@ -742,6 +898,9 @@ class WorkflowToolTests(unittest.TestCase):
                 "validation/claims/claim-evidence-map.md",
                 "figure-prep/figure-preparation-handoff.md",
                 "paper-prep/paper-framework-handoff.md",
+                "literature/citation-preparation/references-handoff.md",
+                "literature/citation-preparation/claim-to-citation-map.md",
+                "literature/references.bib",
                 "paper-writing/scope/frozen-inputs.md",
                 "paper-writing/plan/writing-plan.md",
                 "paper-writing/plan/section-contracts.md",
@@ -1019,6 +1178,10 @@ class WorkflowToolTests(unittest.TestCase):
                 "modeling/model-handoff.md",
                 "validation/validation-handoff.md",
                 "validation/claims/claim-evidence-map.md",
+                "literature/route-alignment/route-evidence-handoff.md",
+                "literature/citation-preparation/references-handoff.md",
+                "literature/citation-preparation/claim-to-citation-map.md",
+                "literature/references.bib",
                 "paper-writing/manuscript/final-paper.md",
                 "paper-writing/formal-paper-handoff.md",
                 "figure-prep/figure-preparation-handoff.md",
@@ -1139,6 +1302,9 @@ class WorkflowToolTests(unittest.TestCase):
         writing_team = json.loads(
             (PROJECT_ROOT / "Workflow/paper-writing-team.json").read_text(encoding="utf-8")
         )
+        literature_team = json.loads(
+            (PROJECT_ROOT / "Workflow/literature-team.json").read_text(encoding="utf-8")
+        )
 
         prompt_paths = {role["prompt"] for role in front_team["roles"].values()}
         prompt_paths.add(data_team["execution"]["worker_base_prompt"])
@@ -1147,6 +1313,8 @@ class WorkflowToolTests(unittest.TestCase):
         prompt_paths.update(role["prompt"] for role in paper_team["roles"].values())
         prompt_paths.add(writing_team["execution"]["worker_base_prompt"])
         prompt_paths.update(role["prompt"] for role in writing_team["roles"].values())
+        prompt_paths.add(literature_team["execution"]["worker_base_prompt"])
+        prompt_paths.update(role["prompt"] for role in literature_team["roles"].values())
 
         for prompt_path in sorted(prompt_paths):
             self.assertTrue((PROJECT_ROOT / prompt_path).is_file(), prompt_path)
@@ -1158,6 +1326,7 @@ class WorkflowToolTests(unittest.TestCase):
             "Workflow/data-team.json",
             "Workflow/paper-preparation-team.json",
             "Workflow/paper-writing-team.json",
+            "Workflow/literature-team.json",
             "prompts/leader.md",
             "prompts/worker-base.md",
             "prompts/data-engineering/leader.md",
@@ -1166,10 +1335,13 @@ class WorkflowToolTests(unittest.TestCase):
             "prompts/paper-preparation/worker-base.md",
             "prompts/paper-writing/leader.md",
             "prompts/paper-writing/worker-base.md",
+            "prompts/literature/leader.md",
+            "prompts/literature/worker-base.md",
             "templates/task-brief.md",
             "templates/data-engineering/task-brief.md",
             "templates/paper-preparation/task-brief.md",
             "templates/paper-writing/task-brief.md",
+            "templates/literature/task-brief.md",
         }
         for routed_path in sorted(routed_paths):
             self.assertIn(routed_path, agents, routed_path)

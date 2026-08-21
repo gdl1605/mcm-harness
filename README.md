@@ -1,6 +1,6 @@
 # C 题建模 Harness
 
-这是一个独立的 Leader + Subagents 协作工程，不是 Skill，也不需要额外 orchestrator。当前主 Agent 自动担任 Leader，直接使用原生 subagent 完成审题、路线竞标、数据工程、建模构建、独立验证、图表与论文准备、正式论文 Markdown 写作，以及最终排版终审与人工交接。
+这是一个独立的 Leader + Subagents 协作工程，不是 Skill，也不需要额外 orchestrator。当前主 Agent 自动担任 Leader，直接使用原生 subagent 完成审题、路线竞标、文献与真实人的意见校准、数据工程、建模构建、独立验证、图表与论文准备、正式引用、正式论文 Markdown 写作，以及最终排版终审与人工交接。
 
 当前已实现八段工作流：
 
@@ -13,7 +13,9 @@
 7. **正式论文写作与全文组装**：每问 subagent 写正式章节，Leader 独占全文主稿，并通过事实、竞赛表达、连贯性和 AI/口水文风四类独立审查。
 8. **最终排版、终审与人工交付**：装配 PDF/可编辑候选稿和含结果数据、完整运行脚本源码的支撑材料；冻结后由五个独立 Reviewer 并行审排版、扣题、文风、交付证据和全链路一致性，只报问题并交给人最终微调和投稿。
 
-主 harness 现在可以从正式论文 Markdown 继续生成提交候选包和人工终审交接。正式绘图与引用检索仍由外部/前置模块提供；FD4 终审后不自动改稿、不自动投稿，最终状态为 `AWAITING_HUMAN_FINALIZATION`。
+另有一个贯穿模块：**文献、人的意见与引用证据**。它在 W5A 后校准 Route A/B，在 V6/CP1 后生成 claim-to-citation map、`references.bib` 和引用交接。Agent 不得模拟人的意见，Zotero 可选且默认只读。
+
+主 harness 现在可以完成文献/引用检索与审查、正式论文 Markdown、提交候选包和人工终审交接。正式绘图仍由外部模块提供；FD4 终审后不自动改稿、不自动投稿，最终状态为 `AWAITING_HUMAN_FINALIZATION`。
 
 项目坚持开放 Markdown 交接：角色必须回答最低问题，也可以补充任务单未预见的新发现；JSON 只保存团队配置、路径、哈希、版本、运行参数和状态，不承载或裁决语义结论。
 
@@ -22,6 +24,8 @@
 - [AGENTS.md](AGENTS.md)：Leader 调度、上下文隔离、角色复用、所有权和跨模块交接规则。
 - [Workflow/README.md](Workflow/README.md)：已实现波次、运行目录与模块交接顺序。
 - [Workflow/team.json](Workflow/team.json)：前半程机械调度配置。
+- [Workflow/literature-research.md](Workflow/literature-research.md)：路线文献校准、真实人类咨询、正式引用补齐和 Zotero 可选接口。
+- [Workflow/literature-team.json](Workflow/literature-team.json)：文献 Scout、两类 Auditor、咨询记录和引用角色配置。
 - [Workflow/data-engineering.md](Workflow/data-engineering.md)：数据工程职责、D0–D5、数据分层与回滚设计。
 - [Workflow/data-team.json](Workflow/data-team.json)：数据工程完整/精简模式配置。
 - [Workflow/modeling-construction.md](Workflow/modeling-construction.md)：建模构建模块的边界、Agent Team、逐问调度和工程留档设计。

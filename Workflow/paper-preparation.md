@@ -4,7 +4,7 @@
 
 ## 1. 入口、目标与停止点
 
-入口是 `validation/validation-handoff.md` 与 `validation/claims/claim-evidence-map.md`。图表准备可以与本模块并行；CP1 产生的 `paper-prep/structure/chapter-map-v0.md` 立即提供给图表 F3，图表最终 handoff 再由 CP4/CP5 纳入论文框架。
+入口包括 validation handoff/claim map、`literature/route-alignment/route-evidence-handoff.md` 和既有来源。图表与 REF4–REF6 可以并行；CP1 的 chapter-map-v0 同时提供给图表 F3 和 Citation Gap Analyst，最终图表与 references handoff 再由 CP4/CP5 纳入论文框架。
 
 材料只能来自 Leader 在 CP0 明列的题意、路线、数据、建模、验证和图表交接。论文角色不得遍历 `modeling/runs/` 挑更好看的结果，也不得从代码猜公式、修改数字或把诊断观察升级为结论。
 
@@ -32,6 +32,7 @@ Leader 写 `paper-prep/scope/frozen-inputs.md`，至少记录：
 - 官方论文格式、页数、答卷要求和已有引用来源；
 - 禁止使用的旧 run、未验证候选、诊断猜想和失效版本；
 - 图表支线的当前状态，以及尚未形成的 Figure ID/数据包；
+- route-evidence-handoff、已有 source notes、引用缺口和 REF4–REF6 状态；
 - 国奖论文蒸馏材料的精确路径，但标记为 CP5 第二遍之前禁止暴露；
 - 每问写入根、Agent 句柄和版本保留规则。
 
@@ -82,7 +83,7 @@ Review 不使用笼统“通过/不通过”，而写来源、失败机制、影
 
 ## 7. CP4：全文框架整合
 
-所有纳入问题完成 evidence review/response 后，Leader 创建新的 Paper Framework Integrator。若某问题被明确暂缓，必须在范围中保留其影响，不能由 Integrator 补造内容。
+所有纳入问题完成 evidence review/response 且 `literature/citation-preparation/references-handoff.md` 已落盘后，Leader 创建新的 Paper Framework Integrator。若某问题被明确暂缓，必须在范围中保留其影响，不能由 Integrator 补造内容。
 
 Integrator 产出：
 
@@ -92,7 +93,7 @@ Integrator 产出：
 - `shared/table-and-figure-plan.md`；
 - `integration/paper-framework-v1.md`。
 
-它负责统一术语、符号、单位、精度、模型名、题间衔接、摘要/结论候选信息和篇幅；删除重复的工程过程，标记正文/附录/可删除内容；纳入已完成的 `figure-preparation-handoff.md`，未完成时保留 Figure ID 占位和来源状态。它不能润色成完整论文，也不能改逐问事实。
+它负责统一术语、符号、单位、精度、模型名、题间衔接、引用、摘要/结论候选信息和篇幅；删除重复工程过程，标记正文/附录/可删除内容；纳入 references handoff 与 figure handoff。它不能润色成完整论文、编造引用或改逐问事实。
 
 ## 8. CP5：竞赛论文双遍独立审读
 
@@ -120,7 +121,7 @@ Leader 按问题归属派发一次修订：
 
 Integrator 写 `integration/framework-response.md` 和 `paper-framework-v2.md`。原 Competition Manuscript Reviewer 只做一次关闭检查，写 `integration/competition-review-closure.md`，仅核对原问题如何处理，不引入全新审稿轮次。仍有高影响分歧时限制表达、保留分支或升级用户。
 
-最后在 `figure-prep/figure-preparation-handoff.md` 已落盘后，复用原 Integrator 把最终 Figure ID、位置和限制纳入 v2，并写 `paper-prep/paper-framework-handoff.md`。Integrator 是该文件唯一内容 owner；Leader 只核对文件、版本、未决请求和停止边界后宣布交接。
+最后在 figure handoff、references handoff 和 `literature/references.bib` 已落盘后，复用原 Integrator 把最终 Figure ID、引用位置和限制纳入 v2，并写 `paper-prep/paper-framework-handoff.md`。Integrator 是该文件唯一内容 owner；Leader 只核对后宣布交接。
 
 ## 10. 目录与开放交接
 

@@ -70,6 +70,13 @@ def main() -> int:
         "inputs", "state", "briefs", "submissions/W1", "submissions/W2",
         "submissions/W3R", "reviews/W3", "reviews/W4", "synthesis",
         "routes/responses",
+        "literature/scope", "literature/route-alignment/search-briefs",
+        "literature/route-alignment/route-a", "literature/route-alignment/route-b",
+        "literature/route-alignment/sources",
+        "literature/route-alignment/human-consultation",
+        "literature/citation-preparation/search-briefs",
+        "literature/citation-preparation/scouts",
+        "literature/citation-preparation/sources",
         "data/briefs", "data/contracts", "data/profiling", "data/decisions",
         "data/pipeline/src", "data/pipeline/tests", "data/staging",
         "data/processed/canonical", "data/processed/analytical",
@@ -147,9 +154,9 @@ def main() -> int:
             "after figure-prep/figure-preparation-handoff.md and paper preparation stops after "
             "paper-prep/paper-framework-handoff.md. Formal Markdown writing stops after "
             "paper-writing/formal-paper-handoff.md. When FD0 is explicitly started with formal figures, "
-            "citation status, official rules, final result data and executed scripts, final delivery stops "
+            "verified literature/references handoff, official rules, final result data and executed scripts, final delivery stops "
             "after final-delivery/final-delivery-handoff.md with status AWAITING_HUMAN_FINALIZATION. "
-            "Formal figure rendering, new citation search, post-review human tuning and actual submission "
+            "Formal figure rendering, post-review human tuning and actual submission "
             "remain outside this harness. Semantic content belongs in Markdown reports."
         )
     }

@@ -18,7 +18,7 @@
 
 ## 图表与引用状态
 
-记录 figure-prep 的当前路径/版本、已有 Figure ID、仍待补的图表，以及已有引用来源和需要后续检索的引用缺口。
+记录 figure-prep 的路径/版本、已有 Figure ID、仍待补的图表；链接 route-evidence-handoff、REF4–REF6 状态、source notes、references-handoff/references.bib 和 citation-needed。
 
 ## 两遍竞赛审读隔离
 
