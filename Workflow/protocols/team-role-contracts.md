@@ -3,7 +3,7 @@
 ## 1. 模块化拓扑
 
 - 全程只有一个 Leader。W/D/M/V 与前半程同步波最多使用三个 worker 槽位。
-- V6 后的图表、论文准备与正式写作逐问任务是显式异步例外：不设固定数字上限，只在输入已经冻结、写入根互不冲突且平台容量允许时并行；不得按候选图、段落或小节制造 Agent。
+- V6 后的图表、论文准备、正式写作逐问任务，以及 FD4 五路独立终审是显式并行例外：不设固定数字上限，只在输入已经冻结、写入根互不冲突且平台容量允许时并行；不得按候选图、段落、小节或单个问题点制造 Agent。
 - 当前主 Agent 自动担任 Leader，直接使用原生 subagent；不另造 orchestrator。
 - 角色是一次任务的视角，不是永久人格。
 - 只有独立发现、竞争解释或互不依赖的取证才并行；不为填满槽位制造重复任务。
@@ -65,7 +65,7 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 - 需要真正盲审、重大重解释、反共识攻击时创建新 Agent。
 - 需要回答自己旧判断或保持数据版本连续时复用原 Agent。
 - Leader 必须保存 subagent 句柄，原判断角色复核和路线提案者回应不得由新角色代写。
-- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、论文准备和正式写作是 artifact-bundle 例外：单元 writer 只拥有自己的独立根；Reviewer 只写 review；全文 manuscript 和正式 handoff 只由 Leader 写。不同 owner 不得共享写入根。
+- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、论文准备、正式写作和最终交付是 artifact-bundle 例外：单元 worker 只拥有自己的独立根；Reviewer 只写 review；不同 owner 不得共享写入根。FD3 candidate snapshot 后候选包与支撑材料永久只读。
 - 提案者可以回应一次，但不能做自己的唯一独立终审。
 - 如果任务没有独立输入、不同视角或可区分交付，就不创建 Agent。
 
@@ -73,4 +73,4 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 
 W/D/M/V 与前半程同步波中，本波所有角色已返回、失败或取消，且原文已保存后，Leader 才能综合。缺失角色要明确记录，不能用 Leader 自己补写来冒充独立意见。
 
-图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。正式写作 PW2 可逐问并行；PW5 三个 Reviewer 必须审同一冻结 v2，并在全部返回后由 Leader 综合。PW6 只关闭原问题，不开启新全面审稿。
+图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。正式写作 PW2 可逐问并行；PW5 三个 Reviewer 必须审同一冻结 v2，并在全部返回后由 Leader 综合。PW6 只关闭原问题，不开启新全面审稿。最终交付 FD4 五个 Reviewer 必须审同一 candidate snapshot；全链路 Reviewer 使用 fresh context 和额外冻结 handoff。全部返回后 Leader 只建立人工问题索引，不创建修订或关闭轮次。

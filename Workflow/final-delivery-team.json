@@ -1,0 +1,137 @@
+{
+  "workflow_name": "cumcm-c-final-delivery",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "design_document": "Workflow/final-delivery.md",
+  "execution": {
+    "mode": "leader_with_native_subagents",
+    "leader": "current_primary_agent_is_final_delivery_controller",
+    "external_orchestrator_required": false,
+    "leader_prompt": "prompts/final-delivery/leader.md",
+    "worker_base_prompt": "prompts/final-delivery/worker-base.md",
+    "terminal_reviewers_run_in_parallel": true,
+    "reviewers_may_edit_candidate": false,
+    "post_review_agent_revision_forbidden": true
+  },
+  "scope": {
+    "starts_at": "paper-writing/formal-paper-handoff.md",
+    "ends_at": "final-delivery/final-delivery-handoff.md",
+    "terminal_status": "AWAITING_HUMAN_FINALIZATION",
+    "inputs": [
+      "paper-writing/formal-paper-handoff.md",
+      "paper-writing/manuscript/final-paper.md",
+      "figure-prep/figure-preparation-handoff.md",
+      "formal figure assets selected in frozen-inputs.md",
+      "validation-authorized results, formulas, units, limits and claims",
+      "final citation library and citation handoff when available",
+      "actual result data, executed scripts and run-version evidence",
+      "official format, page, anonymity, answer-sheet and submission rules",
+      "frozen problem baseline, route, data, model, validation, claim, figure, paper-framework and paper-writing handoffs for end-to-end review"
+    ],
+    "out_of_scope": [
+      "automatic_submission",
+      "post_terminal_review_agent_rewrite",
+      "ai_detection_score",
+      "automatic_ai_style_rewrite",
+      "new_model_selection",
+      "silent_code_redaction",
+      "semantic_pass_fail_gate"
+    ]
+  },
+  "ownership": {
+    "fd0_and_human_handoff": "leader_only",
+    "supporting_materials": "supporting_material_curator_until_candidate_freeze",
+    "source_and_candidate": "submission_typesetter_until_candidate_freeze",
+    "terminal_reviews": "one_independent_review_only_agent_per_review",
+    "after_candidate_freeze": "source_candidate_supporting_materials_and_upstream_are_read_only",
+    "after_terminal_reviews": "leader_may_only_write_issue_index_guide_checklist_and_handoff"
+  },
+  "roles": {
+    "supporting_material_curator": {
+      "prompt": "prompts/final-delivery/supporting-material-curator.md",
+      "new_agent_required": true,
+      "writes": ["final-delivery/supporting-materials/**"],
+      "source_code_must_be_embedded": true
+    },
+    "submission_typesetter": {
+      "prompt": "prompts/final-delivery/submission-typesetter.md",
+      "new_agent_required": true,
+      "writes_before_freeze": [
+        "final-delivery/source/**",
+        "final-delivery/candidate/**",
+        "final-delivery/preflight-report.md",
+        "final-delivery/typesetting-memo.md"
+      ],
+      "content_rewrite_forbidden": true
+    },
+    "layout_compliance_auditor": {
+      "prompt": "prompts/final-delivery/layout-compliance-auditor.md",
+      "new_agent_required": true,
+      "writes": ["final-delivery/reviews/layout-and-compliance-review.md"],
+      "review_only": true
+    },
+    "answer_relevance_reviewer": {
+      "prompt": "prompts/final-delivery/answer-relevance-reviewer.md",
+      "new_agent_required": true,
+      "writes": ["final-delivery/reviews/answer-relevance-review.md"],
+      "review_only": true
+    },
+    "prose_engineering_style_auditor": {
+      "prompt": "prompts/final-delivery/prose-engineering-style-auditor.md",
+      "new_agent_required": true,
+      "writes": ["final-delivery/reviews/prose-and-engineering-style-review.md"],
+      "review_only": true,
+      "ai_score_forbidden": true,
+      "automatic_rewrite_forbidden": true
+    },
+    "delivery_evidence_auditor": {
+      "prompt": "prompts/final-delivery/delivery-evidence-auditor.md",
+      "new_agent_required": true,
+      "writes": ["final-delivery/reviews/delivery-evidence-review.md"],
+      "review_only": true
+    },
+    "end_to_end_consistency_auditor": {
+      "prompt": "prompts/final-delivery/end-to-end-consistency-auditor.md",
+      "new_agent_required": true,
+      "fresh_context_required": true,
+      "writes": ["final-delivery/reviews/end-to-end-consistency-review.md"],
+      "review_only": true,
+      "reads_frozen_chain": [
+        "synthesis/problem-baseline.md",
+        "routes/route-handoff.md",
+        "data/data-handoff.md",
+        "modeling/model-handoff.md",
+        "validation/validation-handoff.md",
+        "validation/claims/claim-evidence-map.md",
+        "figure-prep/figure-preparation-handoff.md",
+        "paper-prep/paper-framework-handoff.md",
+        "paper-writing/formal-paper-handoff.md",
+        "final-delivery/scope/candidate-snapshot.md"
+      ]
+    }
+  },
+  "phases": [
+    {"id": "FD0", "dispatch": "leader_only", "handoff": "final-delivery/scope/frozen-inputs.md"},
+    {"id": "FD1", "dispatch": "one_new_supporting_material_curator", "handoff": "supporting-materials bundle"},
+    {"id": "FD2", "dispatch": "one_new_submission_typesetter", "handoff": "source and candidate bundle"},
+    {"id": "FD3", "dispatch": "reuse_submission_typesetter_for_mechanical_preflight_then_leader_freezes", "handoff": "preflight-report.md and scope/candidate-snapshot.md"},
+    {"id": "FD4", "dispatch": "five_new_isolated_terminal_reviewers", "parallel": true, "frozen_input": "scope/candidate-snapshot.md"},
+    {"id": "FD5", "dispatch": "leader_only_no_candidate_writes", "handoff": "human-review/issue-index.md"},
+    {"id": "FD6", "dispatch": "leader_only_no_candidate_writes", "handoff": "human-finalization-guide.md and submission-checklist.md"},
+    {"id": "FD7", "dispatch": "leader_only_no_candidate_writes", "handoff": "final-delivery-handoff.md"}
+  ],
+  "review_isolation": {
+    "all_terminal_reviewers_read_same_candidate_snapshot": true,
+    "peer_reviews_hidden": true,
+    "leader_defense_hidden": true,
+    "reviewers_may_write_response_or_closure": false,
+    "terminal_reviews_may_trigger_agent_revision": false
+  },
+  "branch_policy": {
+    "fd1_and_fd2_may_overlap_only_after_paths_and_versions_are_frozen": true,
+    "fd4_reviewers_may_run_in_parallel": true,
+    "no_agent_edits_after_fd4_starts": true,
+    "human_is_final_editor_and_submitter": true
+  },
+  "final_phase": "AWAITING_HUMAN_FINALIZATION"
+}

@@ -103,6 +103,13 @@ def main() -> int:
         "paper-writing/sections", "paper-writing/manuscript",
         "paper-writing/reviews/closure", "paper-writing/responses",
         "paper-writing/change-requests",
+        # Final delivery creates only ownership roots.  Candidate files,
+        # semantic reports and human handoff are created when FD0 explicitly
+        # starts; no successful package is implied by initialization.
+        "final-delivery/briefs", "final-delivery/scope",
+        "final-delivery/source", "final-delivery/supporting-materials/results",
+        "final-delivery/candidate", "final-delivery/reviews",
+        "final-delivery/human-review",
     ]
     for relative in directories:
         (run_dir / relative).mkdir(parents=True, exist_ok=True)
@@ -139,9 +146,11 @@ def main() -> int:
             "When post-V6 preparation branches are explicitly started, figure preparation stops "
             "after figure-prep/figure-preparation-handoff.md and paper preparation stops after "
             "paper-prep/paper-framework-handoff.md. Formal Markdown writing stops after "
-            "paper-writing/formal-paper-handoff.md. Word/LaTeX generation, formal figure rendering, "
-            "layout, aesthetic review, citation search, and submission packaging remain outside this "
-            "harness. Semantic content belongs in Markdown reports."
+            "paper-writing/formal-paper-handoff.md. When FD0 is explicitly started with formal figures, "
+            "citation status, official rules, final result data and executed scripts, final delivery stops "
+            "after final-delivery/final-delivery-handoff.md with status AWAITING_HUMAN_FINALIZATION. "
+            "Formal figure rendering, new citation search, post-review human tuning and actual submission "
+            "remain outside this harness. Semantic content belongs in Markdown reports."
         )
     }
     write_json(run_dir / "state/run-state.json", state)

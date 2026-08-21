@@ -2,7 +2,7 @@
 
 本文是 Leader 的逐波调度手册。根目录 `AGENTS.md` 规定 Leader 的行为、判断纪律和文件路由；本文说明每一波创建谁、复用谁、给什么 prompt、允许看什么、写到哪里。各模块 `*-team.json` 只是同一安排的机器可读清单，不能替代本文。
 
-当前实现范围包括独立验证、两条准备支线，以及正式论文 Markdown 写作交接：
+当前实现范围包括独立验证、两条准备支线、正式论文 Markdown 写作，以及最终排版终审与人工交接：
 
 ```text
 题意诊断与路线竞标 W0–L2
@@ -14,9 +14,11 @@
 → 分别停止于 figure-preparation-handoff / paper-framework-handoff
 → 正式论文写作 PW0–PW7
 → 停止于 paper-writing/formal-paper-handoff.md
+→ 最终交付 FD0–FD7
+→ 停止于 final-delivery/final-delivery-handoff.md
 ```
 
-图表支线准备数据和图型建议；论文准备整理可成文材料与段落级框架；正式写作由 Leader 组装唯一 Markdown 主稿并接受四类独立审查。仍不生成正式图片、Word/LaTeX、排版、引用检索或提交包。
+图表支线准备数据和图型建议；论文准备整理可成文材料与段落级框架；正式写作由 Leader 组装唯一 Markdown 主稿并接受四类独立审查。最终交付消费外部正式图与引用状态，生成候选包和支撑材料，冻结后只审不改并交给人微调。正式绘图、引用检索和实际投稿仍不在本模块内。
 
 ## 1. Leader 怎样使用本文
 
@@ -41,6 +43,9 @@
 - 正式写作配置：`Workflow/paper-writing-team.json`
 - 正式写作设计：`Workflow/paper-writing.md`
 - 正式写作 Leader prompt：`prompts/paper-writing/leader.md`
+- 最终交付配置：`Workflow/final-delivery-team.json`
+- 最终交付设计：`Workflow/final-delivery.md`
+- 最终交付 Leader prompt：`prompts/final-delivery/leader.md`
 - 图表准备 Leader prompt：`prompts/figure-preparation/leader.md`
 
 每个 subagent 的完整派工上下文由三部分拼成：
@@ -119,17 +124,27 @@ prompts/paper-writing/worker-base.md
 
 Question Writer 只写本问 section；四个 Reviewer 只写修改单；Leader 是全文主稿、全局 response 和最终 handoff 的唯一 owner。不得调用 AI 检测器或自动改写。
 
+最终交付使用：
+
+```text
+prompts/final-delivery/worker-base.md
++ 当前角色 prompt
++ 基于 templates/final-delivery/task-brief.md 的开放 brief
+```
+
+Supporting Material Curator 只写结果数据和完整运行脚本源码包；Typesetter 只在 candidate freeze 前处理版式；FD4 五个 Reviewer 只写报告，其中 End-to-End Consistency Auditor 使用 fresh context 反查全链路 handoff。终审开始后所有候选和支撑材料只读，Leader 只建立人工问题索引与 handoff。
+
 Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。subagent 可以改变报告结构，并必须继续报告任何会改变题意、数据边界、题间接口、风险或路线的新发现。
 
 ## 2. 通用派工动作
 
 每次派工都按以下顺序执行：
 
-1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、论文准备和 PW2 按独立问题派工，不设固定数字上限。
+1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、论文准备、PW2 和 FD4 独立终审按隔离写入根派工，不受该数字上限约束。
 2. 根据下表决定创建新 subagent，还是复用原 subagent。
 3. 从对应模板新建开放 task brief，写明允许读取、禁止读取、唯一主输出路径、额外工程写入权限和停止条件。
 4. 向 subagent 发送完整三段 prompt，并直接给出绝对或 run 内可解析路径。
-5. W/D/M/V 等同步波等待本波全部 subagent 返回、失败或取消；图表 F2 与论文 CP3 按问题流式等待；PW5 三个 Reviewer 同波等齐后综合。
+5. W/D/M/V 等同步波等待本波全部 subagent 返回、失败或取消；图表 F2 与论文 CP3 按问题流式等待；PW5 三个 Reviewer 同波等齐后综合；FD4 五个 Reviewer 同快照等齐后只建立人工问题索引。
 6. 核对指定 Markdown 已落盘。聊天摘要不能代替原始 memo。
 7. 保留原报告后再综合；不得把报告压成固定 JSON 字段后删除框架外发现。
 
@@ -148,6 +163,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 - CP5 blind review 落盘前禁止加载国奖论文蒸馏；第二遍和关闭检查复用同一 Reviewer。CP5R/CP6 复用原 Integrator，事实修订复用原 Question Curator。
 - PW2 每问新建 Question Manuscript Writer；PW4R 复用原 writer。PW4 新建 Fact Auditor；PW5 新建三个独立 Reviewer；PW6 复用原四个 Reviewer。
 - PW3/PW5R/PW7 全文主稿和 handoff 只由 Leader写，不创建全文作者 subagent。
+- FD1 创建新 Supporting Material Curator；FD2 创建新 Submission Typesetter，FD3 只复用原 Typesetter 修纯机械问题；FD4 创建五个互相隔离的新 Reviewer，其中全链路审查者必须 fresh-context；FD5–FD7 只由 Leader 写人工索引和 handoff，不创建修稿角色。
 - 没有独立输入或只会重复已有报告：不创建角色。
 
 ## 3. 前半程总览
@@ -829,9 +845,57 @@ PW6 复用原四个 Reviewer，各自只检查原问题，写 `reviews/closure/`
 
 PW7 由 Leader 独写 `manuscript/final-paper.md` 与 `formal-paper-handoff.md`。Handoff 完成后停止，不生成 Word/LaTeX、正式图片、引用检索、排版或提交包。
 
-## 10. 等待、失败与局部重开
+## 10. 最终排版、终审与人工交付 FD0–FD7
 
-- W/D/M/V 同步波在本波所有任务返回、失败或取消前，Leader 不进入综合阶段；图表 F2、论文 CP3 与 PW2 是问题级并行例外；PW5 三个 Reviewer 必须全部结束后再综合。
+完整设计见 [`Workflow/final-delivery.md`](final-delivery.md)。本模块不重写论文内容；它把冻结 Markdown、外部正式图、引用、结果数据和实际运行脚本装配为供人最终处理的候选包。
+
+### 10.1 FD0 输入冻结
+
+Leader 读取 `Workflow/final-delivery-team.json` 和 `prompts/final-delivery/leader.md`，写 `final-delivery/scope/frozen-inputs.md`。必须列出题意基线、路线、数据/模型/验证/图表/论文各阶段 handoff，以及正文、正式图、引用、结果/公式/claim、实际执行脚本、官方要求、精确版本/哈希和禁止旧候选。缺项可以记录，但不得伪装候选包完整。
+
+### 10.2 FD1 支撑材料
+
+创建新的 Supporting Material Curator，使用 `prompts/final-delivery/supporting-material-curator.md`。它只写 `final-delivery/supporting-materials/`：
+
+- `results/` 与 `result-data-manifest.md` 保存论文实际使用的精确结果；
+- `source-code-manifest.md` 和 `execution-order.md` 记录脚本—run—结果关系；
+- `source-code.md` 必须完整粘贴实际生成最终结果的运行脚本，不能只给路径或链接；
+- `supporting-materials.md` 供后续排版为正文后附或独立附件。
+
+废弃候选、debug 临时脚本、缓存、第三方库源码和密钥不得混入；发现敏感内容只报告，不静默改写。
+
+### 10.3 FD2/FD3 候选组装、机械预检与冻结
+
+创建新的 Submission Typesetter，使用 `prompts/final-delivery/submission-typesetter.md`，只写 `source/`、`candidate/`、`typesetting-memo.md` 和 `preflight-report.md`。它可以修字体、分页、公式渲染、图表/引用编号、交叉引用、乱码和截断，但不得润色正文、删减内容或改变数学事实。
+
+FD3 只复用原 Typesetter 修纯机械问题。Leader 随后写 `scope/candidate-snapshot.md`，记录候选和支撑材料的精确哈希。从快照落盘起，正文、候选文件、支撑材料和全部上游永久只读。
+
+### 10.4 FD4 五路独立终审
+
+并行创建四个互相隔离的新 Reviewer，读取同一 candidate snapshot，不读 peer review 或 Leader 辩护：
+
+- `prompts/final-delivery/layout-compliance-auditor.md`：页数、模板、匿名、公式图表、引用、答卷、附件、命名和可见版面问题；
+- `prompts/final-delivery/answer-relevance-reviewer.md`：逐问是否扣题、答案是否醒目、方法—结果—解释和摘要正文结论是否闭合；
+- `prompts/final-delivery/prose-engineering-style-auditor.md`：AI 套话、机械关联词、工程报告风、口水话、无必要比喻、模糊结论和开发流水账；
+- `prompts/final-delivery/delivery-evidence-auditor.md`：正文—图表—精确结果—完整脚本—run—引用是否使用同一授权版本。
+- `prompts/final-delivery/end-to-end-consistency-auditor.md`：从候选稿反查题意、路线、数据、模型、验证、图表和论文各阶段 handoff，定位跨阶段漂移、接口断裂、旧候选混入和问题未传播；必须使用 fresh context。
+
+五者各写 `final-delivery/reviews/` 下唯一报告，不给 AI 分数，不修改候选，不写 response/closure。前四者按本角色白名单读取；第五个额外读取 FD0 精确冻结的全链路 handoff，但同样不能读取 peer review。
+
+### 10.5 FD5–FD7 人工问题包与停止
+
+五份 review 全部落盘后，Leader 只写：
+
+- `human-review/issue-index.md`：保留原 review，按必须处理、强烈建议、可选润色建立人工索引；
+- `human-review/human-finalization-guide.md`：可改范围、事实锁定和修改后复查项；
+- `submission-checklist.md`：官方文件、匿名、页数、附件、命名和人工投稿动作；
+- `final-delivery-handoff.md`：候选、支撑材料、审查、未决项和文件哈希。
+
+FD4 后不创建 Agent 修订版。FD7 状态必须为 `AWAITING_HUMAN_FINALIZATION`；人完成微调和实际投稿。
+
+## 11. 等待、失败与局部重开
+
+- W/D/M/V 同步波在本波所有任务返回、失败或取消前，Leader 不进入综合阶段；图表 F2、论文 CP3 与 PW2 是问题级并行例外；PW5 三个 Reviewer 必须全部结束后再综合；FD4 五个 Reviewer 必须全部结束后才能建立人工问题索引。
 - subagent 未返回时，同角色重试一次；仍失败则记录缺失，不由 Leader 冒充独立意见。
 - memo 偏离角色时，向原 subagent 发一次补充任务，写追加 memo，不覆盖原文。
 - 出现字段语义、目标可构造性、总体、粒度、单位、时间或题间接口被推翻时，回到最早受影响阶段。
@@ -848,14 +912,16 @@ python3 scripts/build_prompt.py --model-role model_builder --task-brief RUN_DIR/
 python3 scripts/build_prompt.py --validation-role experimental_evidence_auditor --task-brief RUN_DIR/validation/briefs/V1/q1-evidence.md
 python3 scripts/build_prompt.py --paper-prep-role question_chapter_curator --task-brief RUN_DIR/paper-prep/briefs/CP2-q1.md
 python3 scripts/build_prompt.py --paper-writing-role question_manuscript_writer --task-brief RUN_DIR/paper-writing/briefs/PW2-q1.md
+python3 scripts/build_prompt.py --final-delivery-role supporting_material_curator --task-brief RUN_DIR/final-delivery/briefs/FD1-support.md
 python3 scripts/check_workspace.py RUN_DIR --stage data --json
 python3 scripts/check_workspace.py RUN_DIR --stage paper-prep --json
 python3 scripts/check_workspace.py RUN_DIR --stage paper-writing --json
+python3 scripts/check_workspace.py RUN_DIR --stage final-delivery --json
 ```
 
 这些脚本不创建或调度 subagent，不解析 Markdown 语义，也不证明题意、模型、事实、竞赛表达或 AI 文风正确。当前没有 `check_workspace.py --stage validation`；后半程 checker 只检查交接文件和路径。
 
-## 11. 运行目录与最终停止边界
+## 12. 运行目录与最终停止边界
 
 ```text
 run/
@@ -917,7 +983,7 @@ run/
 │   ├── shared/
 │   ├── integration/
 │   └── paper-framework-handoff.md
-└── paper-writing/
+├── paper-writing/
     ├── scope/frozen-inputs.md
     ├── plan/{writing-plan.md,section-contracts.md,prose-boundary.md,figure-table-slots.md}
     ├── sections/qN/{section-v1.md,section-fact-response.md,section-v2.md}
@@ -925,9 +991,20 @@ run/
     ├── reviews/{fact-consistency-review.md,competition-expression-review.md,full-paper-coherence-review.md,ai-prose-review.md,closure/}
     ├── responses/{fact-response.md,language-review-response.md}
     ├── change-requests/
-    └── formal-paper-handoff.md
+│   └── formal-paper-handoff.md
+└── final-delivery/
+    ├── scope/{frozen-inputs.md,candidate-snapshot.md}
+    ├── source/{submission-source.md,supporting-materials.md}
+    ├── supporting-materials/{results/,result-data-manifest.md,source-code-manifest.md,execution-order.md,source-code.md,supporting-materials.md}
+    ├── candidate/{paper.pdf,paper.docx-or-tex,supporting-materials.pdf}
+    ├── preflight-report.md
+    ├── typesetting-memo.md
+    ├── reviews/{layout-and-compliance-review.md,answer-relevance-review.md,prose-and-engineering-style-review.md,delivery-evidence-review.md,end-to-end-consistency-review.md}
+    ├── human-review/{issue-index.md,human-finalization-guide.md}
+    ├── submission-checklist.md
+    └── final-delivery-handoff.md
 ```
 
 目录表示所有权与追溯边界，不是固定语义 schema。报告使用开放 Markdown；JSON 只保存配置、状态、路径、哈希、版本和运行参数。
 
-验证后可并行完成图表与论文准备；两个 handoff 齐备后启动 PW0–PW7，停止于 `paper-writing/formal-paper-handoff.md`。Leader 不得从该交接自动创建 Word/LaTeX、正式图片、引用检索、排版、答卷或提交包。
+验证后可并行完成图表与论文准备；两个 handoff 齐备后启动 PW0–PW7。外部正式图、引用状态、最终结果/代码和官方要求齐备后显式启动 FD0–FD7，停止于 `final-delivery/final-delivery-handoff.md`。终审后 Leader 不得自动修改或投稿。

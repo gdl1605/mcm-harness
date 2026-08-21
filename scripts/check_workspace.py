@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 
 
-STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6}
-ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing"}
+STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "final-delivery": 7}
+ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "final-delivery"}
 
 DATA_DIRS = (
     "data/briefs",
@@ -51,6 +51,16 @@ PAPER_WRITING_DIRS = (
     "paper-writing/reviews/closure",
     "paper-writing/responses",
     "paper-writing/change-requests",
+)
+
+FINAL_DELIVERY_DIRS = (
+    "final-delivery/briefs",
+    "final-delivery/scope",
+    "final-delivery/source",
+    "final-delivery/supporting-materials/results",
+    "final-delivery/candidate",
+    "final-delivery/reviews",
+    "final-delivery/human-review",
 )
 
 
@@ -273,6 +283,99 @@ def check_paper_writing(run_dir: Path, errors: list[str], warnings: list[str]) -
             )
 
 
+def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) -> None:
+    """Check FD0–FD7 artifact mechanics without judging layout or prose."""
+
+    for relative in FINAL_DELIVERY_DIRS:
+        if not (run_dir / relative).is_dir():
+            errors.append(f"missing final-delivery directory: {relative}")
+
+    required_files = (
+        "synthesis/problem-baseline.md",
+        "routes/route-handoff.md",
+        "data/data-handoff.md",
+        "modeling/model-handoff.md",
+        "validation/validation-handoff.md",
+        "validation/claims/claim-evidence-map.md",
+        "paper-writing/manuscript/final-paper.md",
+        "paper-writing/formal-paper-handoff.md",
+        "figure-prep/figure-preparation-handoff.md",
+        "paper-prep/paper-framework-handoff.md",
+        "final-delivery/scope/frozen-inputs.md",
+        "final-delivery/scope/candidate-snapshot.md",
+        "final-delivery/source/submission-source.md",
+        "final-delivery/source/supporting-materials.md",
+        "final-delivery/supporting-materials/result-data-manifest.md",
+        "final-delivery/supporting-materials/source-code-manifest.md",
+        "final-delivery/supporting-materials/execution-order.md",
+        "final-delivery/supporting-materials/source-code.md",
+        "final-delivery/supporting-materials/supporting-materials.md",
+        "final-delivery/candidate/paper.pdf",
+        "final-delivery/candidate/supporting-materials.pdf",
+        "final-delivery/preflight-report.md",
+        "final-delivery/typesetting-memo.md",
+        "final-delivery/reviews/layout-and-compliance-review.md",
+        "final-delivery/reviews/answer-relevance-review.md",
+        "final-delivery/reviews/prose-and-engineering-style-review.md",
+        "final-delivery/reviews/delivery-evidence-review.md",
+        "final-delivery/reviews/end-to-end-consistency-review.md",
+        "final-delivery/human-review/issue-index.md",
+        "final-delivery/human-review/human-finalization-guide.md",
+        "final-delivery/submission-checklist.md",
+        "final-delivery/final-delivery-handoff.md",
+    )
+    for relative in required_files:
+        if not nonempty_file(run_dir / relative):
+            errors.append(f"missing or empty final-delivery file: {relative}")
+
+    results_root = run_dir / "final-delivery/supporting-materials/results"
+    result_files = (
+        [path for path in results_root.rglob("*") if nonempty_file(path)]
+        if results_root.is_dir()
+        else []
+    )
+    if not result_files:
+        errors.append("final-delivery supporting materials must contain at least one non-empty result data file")
+
+    candidate_root = run_dir / "final-delivery/candidate"
+    editable_candidates = [
+        path
+        for pattern in ("*.docx", "*.tex")
+        for path in candidate_root.glob(pattern)
+        if nonempty_file(path)
+    ] if candidate_root.is_dir() else []
+    if not editable_candidates:
+        warnings.append(
+            "no non-empty DOCX or TeX candidate found; checker cannot determine whether the official submission requires one"
+        )
+
+    snapshot = run_dir / "final-delivery/scope/candidate-snapshot.md"
+    review_paths = [
+        run_dir / relative
+        for relative in required_files
+        if relative.startswith("final-delivery/reviews/")
+    ]
+    if nonempty_file(snapshot):
+        for review in review_paths:
+            if nonempty_file(review) and review.stat().st_mtime < snapshot.stat().st_mtime:
+                warnings.append(
+                    f"terminal review predates candidate snapshot: {review.relative_to(run_dir)}"
+                )
+
+    forbidden_post_review_roots = (
+        run_dir / "final-delivery/responses",
+        run_dir / "final-delivery/reviews/closure",
+    )
+    for forbidden_root in forbidden_post_review_roots:
+        if forbidden_root.is_dir() and any(
+            path.is_file() and path.stat().st_size > 0 for path in forbidden_root.rglob("*")
+        ):
+            errors.append(
+                f"final-delivery terminal review must not create response or closure artifacts: "
+                f"{forbidden_root.relative_to(run_dir)}"
+            )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", type=Path)
@@ -351,6 +454,8 @@ def main() -> int:
         check_paper_preparation(run_dir, errors, warnings)
     if args.stage == "paper-writing":
         check_paper_writing(run_dir, errors, warnings)
+    if args.stage == "final-delivery":
+        check_final_delivery(run_dir, errors, warnings)
 
     payload = {
         "stage": args.stage,
@@ -362,6 +467,11 @@ def main() -> int:
         "award_distillation_context_isolation_checked": False,
         "ai_prose_quality_checked": False,
         "reviewer_independence_checked": False,
+        "layout_quality_checked": False,
+        "answer_relevance_checked": False,
+        "delivery_evidence_semantics_checked": False,
+        "end_to_end_consistency_semantics_checked": False,
+        "post_review_human_edits_checked": False,
         "errors": errors,
         "warnings": warnings,
     }

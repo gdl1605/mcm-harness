@@ -17,6 +17,7 @@ VALIDATION_PROMPT_ROOT = PROMPT_ROOT / "validation"
 FIGURE_PROMPT_ROOT = PROMPT_ROOT / "figure-preparation"
 PAPER_PROMPT_ROOT = PROMPT_ROOT / "paper-preparation"
 PAPER_WRITING_PROMPT_ROOT = PROMPT_ROOT / "paper-writing"
+FINAL_DELIVERY_PROMPT_ROOT = PROMPT_ROOT / "final-delivery"
 DATA_ROLE_ALIASES = {
     "data_contract_architect": "data-contract-architect",
     "data_profiler": "data-profiler",
@@ -78,6 +79,15 @@ PAPER_WRITING_ROLE_ALIASES = {
     "competition_expression_reviewer": "competition-expression-reviewer",
     "full_paper_coherence_reviewer": "full-paper-coherence-reviewer",
     "ai_prose_auditor": "ai-prose-auditor",
+}
+FINAL_DELIVERY_ROLE_ALIASES = {
+    "supporting_material_curator": "supporting-material-curator",
+    "submission_typesetter": "submission-typesetter",
+    "layout_compliance_auditor": "layout-compliance-auditor",
+    "answer_relevance_reviewer": "answer-relevance-reviewer",
+    "prose_engineering_style_auditor": "prose-engineering-style-auditor",
+    "delivery_evidence_auditor": "delivery-evidence-auditor",
+    "end_to_end_consistency_auditor": "end-to-end-consistency-auditor",
 }
 
 
@@ -207,6 +217,30 @@ def paper_writing_role_path(name: str) -> Path | None:
     return None
 
 
+def final_delivery_roles() -> list[str]:
+    """Return available final-delivery role prompt stems."""
+
+    return sorted(
+        path.stem
+        for path in FINAL_DELIVERY_PROMPT_ROOT.glob("*.md")
+        if path.stem not in {"leader", "worker-base"}
+    )
+
+
+def final_delivery_role_path(name: str) -> Path | None:
+    """Resolve a final-delivery role by prompt stem or team key."""
+
+    raw = name.strip()
+    candidates = [FINAL_DELIVERY_ROLE_ALIASES.get(raw), raw, raw.replace("_", "-")]
+    for stem in candidates:
+        if not stem:
+            continue
+        path = FINAL_DELIVERY_PROMPT_ROOT / f"{stem}.md"
+        if path.is_file():
+            return path
+    return None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -274,6 +308,22 @@ def parse_args() -> argparse.Namespace:
             f"available stems: {', '.join(paper_writing_roles())})"
         ),
     )
+    mode.add_argument(
+        "--final-delivery-leader",
+        "--delivery-leader",
+        dest="final_delivery_leader",
+        action="store_true",
+    )
+    mode.add_argument(
+        "--final-delivery-role",
+        "--delivery-role",
+        dest="final_delivery_role",
+        metavar="ROLE",
+        help=(
+            "Final-delivery role (accepts a prompt stem or team key; "
+            f"available stems: {', '.join(final_delivery_roles())})"
+        ),
+    )
     parser.add_argument("--task-brief", type=Path, help="Markdown brief required for a worker role")
     parser.add_argument("--output", type=Path, help="Optional rendered prompt path")
     return parser.parse_args()
@@ -289,6 +339,7 @@ def main() -> int:
         or args.figure_leader
         or args.paper_prep_leader
         or args.paper_writing_leader
+        or args.final_delivery_leader
     ):
         if args.task_brief:
             print(
@@ -308,6 +359,8 @@ def main() -> int:
             leader_prompt = PAPER_PROMPT_ROOT / "leader.md"
         elif args.paper_writing_leader:
             leader_prompt = PAPER_WRITING_PROMPT_ROOT / "leader.md"
+        elif args.final_delivery_leader:
+            leader_prompt = FINAL_DELIVERY_PROMPT_ROOT / "leader.md"
         else:
             leader_prompt = PROMPT_ROOT / "leader.md"
         if not leader_prompt.is_file():
@@ -378,6 +431,17 @@ def main() -> int:
                 )
                 return 2
             worker_prompt = PAPER_WRITING_PROMPT_ROOT / "worker-base.md"
+        elif args.final_delivery_role:
+            role_prompt = final_delivery_role_path(args.final_delivery_role)
+            if role_prompt is None:
+                available = ", ".join(final_delivery_roles()) or "(no final-delivery role prompts found)"
+                print(
+                    f"error: unknown final-delivery role {args.final_delivery_role!r}; "
+                    f"choose a prompt stem or team key from: {available}",
+                    file=sys.stderr,
+                )
+                return 2
+            worker_prompt = FINAL_DELIVERY_PROMPT_ROOT / "worker-base.md"
         else:
             role_prompt = ROLE_ROOT / f"{args.role}.md"
             worker_prompt = PROMPT_ROOT / "worker-base.md"

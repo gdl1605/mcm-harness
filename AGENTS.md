@@ -1,6 +1,6 @@
 # C 题 Agent Team：Leader 运行规则
 
-当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程、数据工程、建模构建和独立验证由同一个 Leader 连续管理；V6 后并行运行图表准备与论文准备，再进入正式论文写作。正式绘图、排版、引用检索和提交包仍不在本 harness 内。
+当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程、数据工程、建模构建和独立验证由同一个 Leader 连续管理；V6 后并行运行图表准备与论文准备，再进入正式论文写作和最终排版终审。正式绘图与引用检索仍由外部/前置模块完成，实际人工微调和投稿不在本 harness 内。
 
 详细波次、角色输入、prompt 路径和输出路径以 `Workflow/README.md` 为准。本文件只规定 Leader 应怎样工作，以及做到某阶段必须读取哪些文件。
 
@@ -13,7 +13,7 @@ Leader 负责：
 - 为每个 subagent 创建开放 task brief，明确允许/禁止上下文和唯一输出路径；
 - 创建新视角 Agent，复用需要保持原判断连续性的 Agent；
 - 保存原始 memo 和 subagent 句柄；
-- W/D/M/V 与前半程同步波等待本波全部任务返回、失败或取消后再综合；图表、论文准备和 PW2 按独立问题推进，PW5 三个 Reviewer 同波等齐后由 Leader 综合；
+- W/D/M/V 与前半程同步波等待本波全部任务返回、失败或取消后再综合；图表、论文准备和 PW2 按独立问题推进，PW5 三个 Reviewer 同波等齐后由 Leader 综合；FD4 五个终审 Reviewer 同快照并行且等齐后只建立人工问题索引；
 - 保留共同认识、实质分歧、少数意见和框架外发现；
 - 管理版本、题间接口、局部回滚和模块交接；
 - 在当前模块停止边界结束，不擅自进入尚未实现的模块。
@@ -33,7 +33,7 @@ Leader 不得：
 启动任何 run 时，Leader 先读取：
 
 1. `Workflow/README.md`：唯一详细调度说明；
-2. 当前模块配置：前半程 `Workflow/team.json`，数据工程 `Workflow/data-team.json`，建模构建 `Workflow/modeling-team.json`，独立验证 `Workflow/validation-team.json`，图表准备 `Workflow/figure-preparation-team.json`，论文准备 `Workflow/paper-preparation-team.json`，正式写作 `Workflow/paper-writing-team.json`；
+2. 当前模块配置：前半程 `Workflow/team.json`，数据工程 `Workflow/data-team.json`，建模构建 `Workflow/modeling-team.json`，独立验证 `Workflow/validation-team.json`，图表准备 `Workflow/figure-preparation-team.json`，论文准备 `Workflow/paper-preparation-team.json`，正式写作 `Workflow/paper-writing-team.json`，最终交付 `Workflow/final-delivery-team.json`；
 3. 当前模块 Leader prompt；
 4. 当前阶段在第 3 节路由表中列出的协议、角色 prompt 和模板；
 5. `inputs/source-manifest.json` 与当前阶段允许读取的已有 memo。
@@ -85,9 +85,16 @@ W0 来源封箱
 → PW5R Leader 统一修订
 → PW6 四角色关闭检查与事实回归
 → PW7 正式论文 Markdown 交接
+→ FD0 最终交付输入冻结
+→ FD1 支撑材料：结果数据与完整运行脚本源码
+→ FD2/FD3 候选包组装、机械预检与候选快照冻结
+⇉ FD4 排版合规 / 扣题 / AI与工程文风 / 交付证据 / 全链路一致性五路终审
+→ FD5 问题索引（不修稿）
+→ FD6 人工微调指南与提交清单
+→ FD7 人工交接并停止
 ```
 
-前半程在 `routes/route-handoff.md` 停止；数据工程、建模、验证、图表和论文准备分别止于自己的 handoff。PW0 只能在 `paper-framework-handoff.md` 与 `figure-preparation-handoff.md` 落盘后显式启动，停止于 `paper-writing/formal-paper-handoff.md`。随后由外部/后续模块负责正式绘图、引用检索、排版和提交包。
+前半程在 `routes/route-handoff.md` 停止；数据工程、建模、验证、图表和论文准备分别止于自己的 handoff。PW0 只能在 `paper-framework-handoff.md` 与 `figure-preparation-handoff.md` 落盘后显式启动，停止于 `paper-writing/formal-paper-handoff.md`。FD0 还必须取得外部正式图、引用状态、最终结果数据/运行脚本和官方要求，停止于 `final-delivery/final-delivery-handoff.md`；终审后 Agent 不再修改，由人微调并投稿。
 
 ## 3. 阶段文件路由
 
@@ -205,6 +212,22 @@ W0 来源封箱
 
 Markdown 是唯一正文源。只有 Leader 可以写 `paper-writing/manuscript/` 和最终 handoff；Question Writer 只写本问 section，四个 Reviewer 永久只写修改单。不得创建 AI 检测分数、机械文风脚本、自动改写、Word/LaTeX、正式图片、引用检索或提交包。
 
+### 3.8 最终排版、终审与人工交付
+
+| 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
+|---|---|---|---|
+| 最终交付启动 | `Workflow/final-delivery.md`、`Workflow/final-delivery-team.json`、`prompts/final-delivery/leader.md` | `prompts/final-delivery/worker-base.md` | `templates/final-delivery/task-brief.md` |
+| FD0 输入冻结 | formal-paper handoff、最终正文、正式图、引用、授权结果/代码和官方要求 | 无；Leader 执行 | `final-delivery/scope/frozen-inputs.md` |
+| FD1 支撑材料 | FD0 白名单中的结果数据、实际运行脚本和 run 证据 | `prompts/final-delivery/supporting-material-curator.md`；新 subagent | results、两个 manifest、execution-order、完整 `source-code.md`、supporting-materials |
+| FD2 候选组装 | 冻结正文、图、引用与 FD1 | `prompts/final-delivery/submission-typesetter.md`；新 subagent | source、candidate、typesetting-memo |
+| FD3 机械预检/冻结 | 候选文件与官方机械规则 | 复用原 Typesetter 只修机械问题；Leader 写快照 | preflight-report、`scope/candidate-snapshot.md` |
+| FD4 五路终审 | 同一 candidate snapshot；peer review/Leader 辩护隐藏 | Layout、Answer Relevance、Prose & Engineering Style、Delivery Evidence、End-to-End Consistency 五个 prompt；五个新 subagent，第五个使用 fresh context | `final-delivery/reviews/` 五份独立报告 |
+| FD5 问题索引 | 五份原始 review | 无；Leader 只建立索引，不改候选 | `human-review/issue-index.md` |
+| FD6 人工包 | 问题索引、官方规则和事实锁定 | 无；Leader 执行 | human-finalization-guide、submission-checklist |
+| FD7 人工交接 | 全部冻结文件、review 和未决项 | 无；Leader 执行 | `final-delivery/final-delivery-handoff.md` |
+
+FD4 开始后，`source/`、`candidate/`、`supporting-materials/` 和全部上游永久只读。不创建 response、closure 或自动修订任务；状态为 `AWAITING_HUMAN_FINALIZATION`，实际微调和投稿由人完成。
+
 ## 4. 派工合同
 
 每个 worker task 由以下内容组成：
@@ -228,6 +251,7 @@ Task brief 必须明确：
 - 图表任务还必须写明问题/共享结果单元、冻结结果和版本、诊断图与论文候选的边界、数据包导出写入根、review/response 路径、章节依赖、是否允许共享结果读取以及禁止修改的上游目录；
 - 论文准备任务还必须写明问题/全篇单元、材料版本、验证授权范围、唯一 owner、正文/附录边界、图表状态、两遍竞赛审读的上下文隔离、国奖蒸馏暴露时点和禁止生成完整论文；
 - 正式写作任务还必须写明全文/section 版本、唯一主稿 owner、逐问 contract、技术术语与工程词边界、Figure/Table 占位、Reviewer 只读权限、peer review 隔离和禁止生成非 Markdown 交付；
+- 最终交付任务还必须写明冻结候选/官方规则、结果与运行脚本白名单、支撑材料写入根、排版可改与事实不可改边界、FD4 同快照隔离审查、第五路可读的精确全链路 handoff、终审后零 Agent 修改和人工接管状态；
 - 停止条件和禁止越权事项。
 
 派工时必须告诉 worker：
@@ -302,6 +326,9 @@ Task brief 必须明确：
 - `paper-writing/manuscript/`、`responses/` 和 `formal-paper-handoff.md` 只有 Leader 可写；逐问 writer 只拥有自己的 `sections/qN/`。
 - PW4/PW5 四个 Reviewer 只写各自 review；Reviewer 不得修改 section、manuscript、response 或上游材料，也不得读取 peer review。
 - PW4R 事实修改复用原问题 writer；PW5R 全文结构、摘要结论、过渡和统一文风只由 Leader 修改。
+- FD1 Curator 只写 `final-delivery/supporting-materials/`；FD2/FD3 Typesetter 只在候选冻结前写 `source/`、`candidate/`、preflight 和 typesetting memo。
+- FD4 五个 Reviewer 各自只写一份 review；End-to-End Consistency Auditor 可额外读取 FD0 冻结的全链路 handoff，但不读 peer review。candidate snapshot 冻结后任何 Agent 不得修改正文、候选稿、支撑材料或上游文件。
+- FD5–FD7 只有 Leader 可写问题索引、人工指南、提交清单和 handoff；Leader 不得创建审后修订版或代替人提交。
 - JSON 只保存配置、路径、哈希、版本、状态和运行参数；语义内容写开放 Markdown。
 
 ## 8. 失败、重开与停止
@@ -323,5 +350,6 @@ Task brief 必须明确：
 - `paper-prep/paper-framework-handoff.md` 是论文准备停止点；完整论文、参考文献检索、正式图、排版和提交包不由本模块创建。
 - PW7 只有在 fact review/response、三路语言 review、Leader v3 和四份关闭检查完成后才能交接。
 - `paper-writing/formal-paper-handoff.md` 是正式写作停止点；Word/LaTeX、正式图片、参考文献检索、排版、答卷和提交包仍不创建。
+- `final-delivery/final-delivery-handoff.md` 是最终交付停止点；FD4 后问题只报告不自动修改，状态必须为 `AWAITING_HUMAN_FINALIZATION`，实际微调和投稿由人完成。
 
-验证后可并行进入图表与论文准备；两个 handoff 完成后才能进入正式写作，并停止于 `paper-writing/formal-paper-handoff.md`。Leader 不得越过该交接自动生成正式图、非 Markdown 文档、排版或提交包。
+验证后可并行进入图表与论文准备；两个 handoff 完成后才能进入正式写作。只有正式图、引用状态、结果数据/代码和官方要求齐备时才能显式启动 FD0；FD7 后 Leader 不得继续自动修稿或投稿。

@@ -841,6 +841,262 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertIn("不直接修改正文", ai_prompt)
         self.assertIn("不要把必要技术术语", ai_prompt)
 
+    def test_final_delivery_workspace_prompts_templates_and_team(self) -> None:
+        template_root = PROJECT_ROOT / "templates/final-delivery"
+        expected_templates = {
+            "task-brief.md",
+            "frozen-inputs.md",
+            "result-data-manifest.md",
+            "source-code-manifest.md",
+            "execution-order.md",
+            "source-code.md",
+            "supporting-materials.md",
+            "typesetting-memo.md",
+            "preflight-report.md",
+            "candidate-snapshot.md",
+            "layout-and-compliance-review.md",
+            "answer-relevance-review.md",
+            "prose-and-engineering-style-review.md",
+            "delivery-evidence-review.md",
+            "end-to-end-consistency-review.md",
+            "issue-index.md",
+            "human-finalization-guide.md",
+            "submission-checklist.md",
+            "final-delivery-handoff.md",
+        }
+        self.assertTrue(expected_templates.issubset({path.name for path in template_root.glob("*.md")}))
+        for name in expected_templates:
+            self.assertIn("最低责任", (template_root / name).read_text(encoding="utf-8"), name)
+
+        team = json.loads(
+            (PROJECT_ROOT / "Workflow/final-delivery-team.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(team["scope"]["terminal_status"], "AWAITING_HUMAN_FINALIZATION")
+        self.assertTrue(team["execution"]["post_review_agent_revision_forbidden"])
+        self.assertTrue(team["branch_policy"]["no_agent_edits_after_fd4_starts"])
+        self.assertNotIn("response", " ".join(team["roles"]))
+        for role in team["roles"].values():
+            self.assertTrue((PROJECT_ROOT / role["prompt"]).is_file(), role["prompt"])
+        for reviewer_name in (
+            "layout_compliance_auditor",
+            "answer_relevance_reviewer",
+            "prose_engineering_style_auditor",
+            "delivery_evidence_auditor",
+            "end_to_end_consistency_auditor",
+        ):
+            self.assertTrue(team["roles"][reviewer_name]["review_only"])
+        self.assertTrue(team["roles"]["end_to_end_consistency_auditor"]["fresh_context_required"])
+        self.assertEqual(
+            next(phase for phase in team["phases"] if phase["id"] == "FD4")["dispatch"],
+            "five_new_isolated_terminal_reviewers",
+        )
+
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            for relative in (
+                "final-delivery/briefs",
+                "final-delivery/scope",
+                "final-delivery/source",
+                "final-delivery/supporting-materials/results",
+                "final-delivery/candidate",
+                "final-delivery/reviews",
+                "final-delivery/human-review",
+            ):
+                self.assertTrue((run_dir / relative).is_dir(), relative)
+            self.assertFalse(any((run_dir / "final-delivery").rglob("*.md")))
+
+            leader = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_prompt.py"), "--final-delivery-leader"],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(leader.returncode, 0, leader.stderr)
+            self.assertIn("FD0–FD7", leader.stdout)
+            self.assertIn("不再修改", leader.stdout)
+
+            brief = run_dir / "final-delivery/briefs/FD1-support.md"
+            brief.write_text("# FD1\n\n整理结果数据和运行脚本源码。\n", encoding="utf-8")
+            curator = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--final-delivery-role",
+                    "supporting_material_curator",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(curator.returncode, 0, curator.stderr)
+            self.assertIn("完整粘贴", curator.stdout)
+            self.assertIn("最终排版与终审 Worker Base Prompt", curator.stdout)
+
+            prose = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--final-delivery-role",
+                    "prose_engineering_style_auditor",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(prose.returncode, 0, prose.stderr)
+            for marker in ("首先", "比喻", "口水话", "pipeline", "不给 AI 分数", "不得直接修改"):
+                self.assertIn(marker, prose.stdout)
+
+            chain = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--final-delivery-role",
+                    "end_to_end_consistency_auditor",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(chain.returncode, 0, chain.stderr)
+            for marker in ("fresh-context", "题意", "路线", "数据", "验证", "最早产生偏差"):
+                self.assertIn(marker, chain.stdout)
+
+    def test_final_delivery_stage_is_mechanical_and_terminal(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            run_dir = Path(temp) / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+
+            missing = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "final-delivery",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(missing.returncode, 1)
+            missing_report = json.loads(missing.stdout)
+            self.assertFalse(missing_report["layout_quality_checked"])
+            self.assertFalse(missing_report["answer_relevance_checked"])
+            self.assertTrue(
+                any("final-delivery-handoff.md" in error for error in missing_report["errors"]),
+                missing_report["errors"],
+            )
+            self.assertTrue(
+                any("end-to-end-consistency-review.md" in error for error in missing_report["errors"]),
+                missing_report["errors"],
+            )
+
+            required_files = (
+                "synthesis/problem-baseline.md",
+                "routes/route-handoff.md",
+                "data/data-handoff.md",
+                "modeling/model-handoff.md",
+                "validation/validation-handoff.md",
+                "validation/claims/claim-evidence-map.md",
+                "paper-writing/manuscript/final-paper.md",
+                "paper-writing/formal-paper-handoff.md",
+                "figure-prep/figure-preparation-handoff.md",
+                "paper-prep/paper-framework-handoff.md",
+                "final-delivery/scope/frozen-inputs.md",
+                "final-delivery/scope/candidate-snapshot.md",
+                "final-delivery/source/submission-source.md",
+                "final-delivery/source/supporting-materials.md",
+                "final-delivery/supporting-materials/result-data-manifest.md",
+                "final-delivery/supporting-materials/source-code-manifest.md",
+                "final-delivery/supporting-materials/execution-order.md",
+                "final-delivery/supporting-materials/source-code.md",
+                "final-delivery/supporting-materials/supporting-materials.md",
+                "final-delivery/supporting-materials/results/final-results.csv",
+                "final-delivery/candidate/paper.pdf",
+                "final-delivery/candidate/paper.docx",
+                "final-delivery/candidate/supporting-materials.pdf",
+                "final-delivery/preflight-report.md",
+                "final-delivery/typesetting-memo.md",
+                "final-delivery/reviews/layout-and-compliance-review.md",
+                "final-delivery/reviews/answer-relevance-review.md",
+                "final-delivery/reviews/prose-and-engineering-style-review.md",
+                "final-delivery/reviews/delivery-evidence-review.md",
+                "final-delivery/reviews/end-to-end-consistency-review.md",
+                "final-delivery/human-review/issue-index.md",
+                "final-delivery/human-review/human-finalization-guide.md",
+                "final-delivery/submission-checklist.md",
+                "final-delivery/final-delivery-handoff.md",
+            )
+            for relative in required_files:
+                path = run_dir / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+
+            checked = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "final-delivery",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+            report = json.loads(checked.stdout)
+            self.assertEqual(report["errors"], [])
+            self.assertFalse(report["markdown_content_parsed"])
+            self.assertFalse(report["ai_prose_quality_checked"])
+            self.assertFalse(report["delivery_evidence_semantics_checked"])
+            self.assertFalse(report["end_to_end_consistency_semantics_checked"])
+
+            forbidden = run_dir / "final-delivery/responses/automatic-rewrite.md"
+            forbidden.parent.mkdir(parents=True, exist_ok=True)
+            forbidden.write_text("forbidden post-review rewrite\n", encoding="utf-8")
+            rejected = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "final-delivery",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(rejected.returncode, 1)
+            rejected_report = json.loads(rejected.stdout)
+            self.assertTrue(
+                any("response or closure" in error for error in rejected_report["errors"]),
+                rejected_report["errors"],
+            )
+
     def test_refuses_nonempty_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp) / "run"
