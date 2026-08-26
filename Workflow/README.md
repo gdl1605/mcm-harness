@@ -20,7 +20,7 @@
 → 停止于 final-delivery/final-delivery-handoff.md
 ```
 
-文献模块在 W5A 后验证、反驳并扩展候选，H1 由真实用户选择模型，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；正式绘图使用强制 sol-high Producer/Reviewer 生成与审查正式图片；论文准备和正式写作可与绘图并行。最终交付消费 rendering handoff 与已审引用，生成候选包和支撑材料，冻结后只审不改并交给人微调。实际投稿仍不在本模块内。
+文献模块在 W5A 后验证、反驳并扩展候选，H1 由真实用户选择模型，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；正式绘图使用强制 sol-high Producer/Reviewer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`（Python backend）并采用用户选择的 Cassatt2 安静期刊风完成两轮视觉迭代；论文准备和正式写作可与绘图并行。最终交付消费 rendering handoff 与已审引用，在参考文献后生成“支撑材料”结果/代码展示，并生成含处理后数据、结果和完整原始脚本的独立 ZIP；冻结后只审不改并交给人微调。实际投稿仍不在本模块内。
 
 ## 1. Leader 怎样使用本文
 
@@ -44,6 +44,8 @@
 - 图表准备设计：`Workflow/figure-preparation.md`
 - 正式绘图配置：`Workflow/formal-figure-team.json`
 - 正式绘图设计：`Workflow/formal-figure-rendering.md`
+- 正式绘图 skill 锁：`Workflow/nature-figure-skill.lock.json`、`Workflow/ssci-plots-skill.lock.json`
+- 正式绘图视觉配置：`Workflow/formal-figure-style-profile.cassatt2.json`
 - 正式绘图 Leader prompt：`prompts/formal-figures/leader.md`
 - 论文准备配置：`Workflow/paper-preparation-team.json`
 - 论文准备设计：`Workflow/paper-preparation.md`
@@ -55,11 +57,13 @@
 - 最终交付设计：`Workflow/final-delivery.md`
 - 最终交付 Leader prompt：`prompts/final-delivery/leader.md`
 - 图表准备 Leader prompt：`prompts/figure-preparation/leader.md`
+- 内置 mcm Skill 路由：`Workflow/mcm-skill-integration.json` 与 `.agents/skills/mcm/SKILL.md`
 
-每个 subagent 的完整派工上下文由三部分拼成：
+每个 subagent 的完整派工上下文由四部分拼成；第一部分由 `build_prompt.py` 按角色自动生成：
 
 ```text
-当前模块 worker-base prompt
+内置 mcm Skill 运行/隔离协议
++ 当前模块 worker-base prompt
 + 当前角色 prompt
 + 本轮开放 task brief
 ```
@@ -67,7 +71,8 @@
 前半程使用：
 
 ```text
-prompts/worker-base.md
+build_prompt 生成的 mcm profile
++ prompts/worker-base.md
 + 下表指定的 prompts/roles/*.md
 + 基于 templates/task-brief.md 写出的本轮 brief
 ```
@@ -130,7 +135,7 @@ prompts/formal-figures/worker-base.md
 + 基于 templates/formal-figures/task-brief.md 的开放 brief
 ```
 
-Leader 创建每个新 Producer/Reviewer 时必须显式指定 `model=gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并写 `formal-figures/scope/dispatch-log.json`。默认 Luna 禁止；覆盖不可用时停止并报告。Producer 每问/共享单元一个，负责规划、绘制和回应；默认一个 Portfolio Reviewer 统一审准确性、图型、审美和真实版面。
+Leader 创建每个新 Producer/Reviewer 时必须显式指定 `model=gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并写 `formal-figures/scope/dispatch-log.json`。每条派工还必须显式写完整 skill chain、`backend=python`、两个 lock/hash、`visual_profile=cassatt2_quiet_journal_v1` 和 `palette=metbrewer_cassatt2`；任一不可检测时停止，不得静默回退。Producer 每问/共享单元一个，负责 `v1 → Round 1 → v2`；默认一个 Portfolio Reviewer 审 v2，原 Producer 再完成 `Round 2 → final`。
 
 论文准备使用：
 
@@ -160,7 +165,7 @@ prompts/final-delivery/worker-base.md
 + 基于 templates/final-delivery/task-brief.md 的开放 brief
 ```
 
-Supporting Material Curator 只写结果数据和完整运行脚本源码包；Typesetter 只在 candidate freeze 前处理版式；FD4 五个 Reviewer 只写报告，其中 End-to-End Consistency Auditor 使用 fresh context 反查全链路 handoff。终审开始后所有候选和支撑材料只读，Leader 只建立人工问题索引与 handoff。
+Supporting Material Curator 只写处理后数据、结果、完整原始脚本和正文展示源；Typesetter 只在 candidate freeze 前处理版式、把“支撑材料”追加到参考文献之后并生成独立 ZIP；FD4 五个 Reviewer 只写报告，其中 End-to-End Consistency Auditor 使用 fresh context 反查全链路 handoff。终审开始后所有候选和支撑材料只读，Leader 只建立人工问题索引与 handoff。
 
 Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。subagent 可以改变报告结构，并必须继续报告任何会改变题意、数据边界、题间接口、风险或路线的新发现。
 
@@ -171,7 +176,8 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、正式绘图、论文准备、PW2、FD4 独立终审和文献 Scout 按隔离写入根派工，不受该数字上限约束。正式绘图额外强制 sol-high。
 2. 根据下表决定创建新 subagent，还是复用原 subagent。
 3. 从对应模板新建开放 task brief，写明允许读取、禁止读取、唯一主输出路径、额外工程写入权限和停止条件。
-4. 向 subagent 发送完整三段 prompt，并直接给出绝对或 run 内可解析路径。
+4. 用 `scripts/build_prompt.py` 生成提示词；脚本会先按 `Workflow/mcm-skill-integration.json` 注入内置 `$mcm` 的模式和精确参考文件，再组合 worker-base、角色 prompt 与 task brief。向 subagent 发送完整 prompt，并直接给出绝对或 run 内可解析路径。
+   Leader 自身进入模块时同样使用对应 `--*-leader` 模式；若直接读取 Leader prompt，则按 integration config 加载相同 profile。
 5. W/D/M/V 等同步波等待本波全部 subagent 返回、失败或取消；图表 F2 与论文 CP3 按问题流式等待；PW5 三个 Reviewer 同波等齐后综合；FD4 五个 Reviewer 同快照等齐后只建立人工问题索引。
 6. 核对指定 Markdown 已落盘。聊天摘要不能代替原始 memo。
 7. 保留原报告后再综合；不得把报告压成固定 JSON 字段后删除框架外发现。
@@ -189,7 +195,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 - 正式绘图 FR1 每问/共享单元创建一个显式 sol-high Visual Producer，不按图拆 Agent；FR2 创建一个 fresh-context sol-high Portfolio Reviewer；FR2R/FR3 分别复用原 Producer/Reviewer；FR4 Leader 独写 manifest/handoff。
 - F3 Integrator 是 `figure-plan.md` 与 `figure-preparation-handoff.md` 的唯一内容 owner；F4 Leader 只核对条件、处理回滚和宣布汇合。
 - 论文 CP1 创建新 Structure Architect；CP2 每问新 Curator；CP3 每个 v1 完成即创建新 Evidence Auditor；CP3R 复用原 Curator；CP4 创建新 Integrator；CP5 创建新 Competition Reviewer。
-- CP5 blind review 落盘前禁止加载国奖论文蒸馏；第二遍和关闭检查复用同一 Reviewer。CP5R/CP6 复用原 Integrator，事实修订复用原 Question Curator。
+- CP5 blind review 使用 `competition_manuscript_reviewer` 的默认 `blind-review` profile，落盘前禁止加载 `$mcm` 和国奖论文蒸馏；第二遍复用同一 Reviewer，并用 `--mcm-profile judge-review` 重建后续 prompt。CP5R/CP6 复用原 Integrator，事实修订复用原 Question Curator。
 - PW2 每问新建 Question Manuscript Writer；PW4R 复用原 writer。PW4 新建 Fact Auditor；PW5 新建三个独立 Reviewer；PW6 复用原四个 Reviewer。
 - PW3/PW5R/PW7 全文主稿和 handoff 只由 Leader写，不创建全文作者 subagent。
 - FD1 创建新 Supporting Material Curator；FD2 创建新 Submission Typesetter，FD3 只复用原 Typesetter 修纯机械问题；FD4 创建五个互相隔离的新 Reviewer，其中全链路审查者必须 fresh-context；FD5–FD7 只由 Leader 写人工索引和 handoff，不创建修稿角色。
@@ -806,40 +812,41 @@ F4 不是新的写作角色。Integrator 已写出 `figure-plan.md` 和 `figure-
 
 ## 7A. 正式论文绘图 FR0–FR4
 
-完整设计见 [`Workflow/formal-figure-rendering.md`](formal-figure-rendering.md)。模块只有两类 subagent：Question Visual Producer 和 Figure Portfolio Reviewer。所有新 Agent 都必须由 Leader 显式创建为 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`；默认 Luna 不得使用，覆盖失败时停止并报告用户。
+完整设计见 [`Workflow/formal-figure-rendering.md`](formal-figure-rendering.md)。模块只有两类 subagent：Question Visual Producer 和 Figure Portfolio Reviewer。所有新 Agent 都必须由 Leader 显式创建为 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并在 prompt/brief/dispatch 中显式调用 `$visualize-data → $ssci-plots → $nature-figure`、固定 Python/Cassatt2 profile。默认 Luna、隐式 skill/profile 选择和静默 fallback 均不得使用。
 
 ### 7A.1 FR0 冻结与 sol-high 调度
 
-F4 handoff 和 `chapter-map-v0.md` 落盘后，Leader 写 `formal-figures/scope/frozen-inputs.md`，解析每个 Figure ID 的数据包、provenance、recommendation、claim、章节、官方版心、路径、版本和哈希。
+F4 handoff 和 `chapter-map-v0.md` 落盘后，Leader 先核对两个 skill lock、项目本地 `ssci-plots`/`nature-figure` 哈希、`$visualize-data` 可发现性和 Cassatt2 profile，再写 `formal-figures/scope/frozen-inputs.md`，解析每个 Figure ID 的数据包、provenance、recommendation、claim、章节、官方版心、路径、版本和哈希。
 
-每次新建 Producer/Reviewer 都必须把请求模型、reasoning、fork、角色、单元和 Agent 句柄追加到 `formal-figures/scope/dispatch-log.json`。因为覆盖模型不能配合 full-history fork，使用 `fork_turns=none`，完整上下文通过 prompt、brief 和文件路径提供。未显式覆盖不算完成派工。
+每次新建 Producer/Reviewer 都必须把请求模型、reasoning、fork、角色、单元、Agent 句柄、`required_skills`、三个 `skill_invocations`、`backend=python`、Cassatt2 profile/palette 和 lock hashes 追加到 `formal-figures/scope/dispatch-log.json`。因为覆盖模型不能配合 full-history fork，使用 `fork_turns=none`，完整上下文通过 prompt、brief 和文件路径提供。模型、skill chain 或 profile 任一未显式指定都不算完成派工。
 
-Leader指定一个 Producer 兼任 style owner，先写 `style/visual-system.md`、`paper.mplstyle` 和 `theme.py`；这是同一角色，不新增样式 Agent。
+Leader 指定一个 Producer 兼任 style owner。Cassatt2 palette、白底、低装饰、图外总标题/长注释从 profile 起即固定；须等所有 v1 可见后才汇总布局与语义角色映射并写 `style/visual-system.md`、`paper.mplstyle` 和 `theme.py`。C 不等于所有图固定 2×2。
 
 ### 7A.2 FR1 每问/共享 Visual Producer
 
 每问创建一个新的 sol-high Producer；真实共享结果可创建一个同角色 shared Producer。不得按 Figure ID 拆 Agent。Producer 写：
 
-- `visual-plan.md`：数据/统计、关系、模型结构、核心结果、baseline、误差/稳健性、情景/决策和题间接口覆盖；
-- 每图 `chart-contract.md` 与 `data-ref.md`：claim、粒度、单位、时间、样本量、误差、比较任务、图型、轴、尺度、颜色、标注和版心；
-- pilot：用极值、零/负值、长标签、缺失、稀有类别和密集区域调试，不进入 handoff；
-- `render.py`、render config/memo 和使用完整冻结数据的 v1 PNG/PDF/SVG。
+- `visual-plan.md`：由 `$visualize-data` 规划数据/统计、关系、模型结构、核心结果、baseline、误差/稳健性、情景/决策和题间接口覆盖，并在 Cassatt2 语言内保留可比较布局方向；
+- 每图 `chart-contract.md` 与 `data-ref.md`：固定 claim、粒度、单位、时间、样本量、误差和比较任务；首稿前不把布局、颜色和装饰硬锁成唯一答案；
+- pilot：只用极值、零/负值、长标签、缺失、稀有类别和密集区域测试稳健性；
+- `render.py`、render config/memo 和使用 `$ssci-plots` Cassatt2 profile/完整冻结数据的 v1 PNG/PDF/SVG；
+- 实际打开 v1，在 `iteration-log.md` 写 Round 1 诊断：是否普通/不好看、Cassatt2 漂移、2×2 强套、重复图例/caption、未授权派生 claim、层级弱、重叠、裁切、压缩、失真、目标宽度不可读、颜色或留白失衡，并生成 v2。
 
 典型每问先考虑数据/结构、核心结果、比较/不确定性三类，必要时加情景图；典型三至四问题目的 12–20 候选、正文 8–14 张只是规划参考。没有 claim、重复表格或证据不足时放弃/转附录，不按数量凑图。缺关键数据包时写 coverage request 返回 F1/F2。
 
 ### 7A.3 FR2/FR2R 统一审图与原 Producer 修订
 
-所有 v1 落盘后，创建一个 fresh-context sol-high Portfolio Reviewer，使用 `prompts/formal-figures/figure-portfolio-reviewer.md`，只写 `formal-figures/figure-review.md`。默认一次审全部图；确实超出上下文才按问题包拆多个同角色 Reviewer。
+所有 v2 落盘后，创建一个 fresh-context sol-high Portfolio Reviewer，使用完整 skill chain/Cassatt2 profile 和 `prompts/formal-figures/figure-portfolio-reviewer.md`，只写 `formal-figures/figure-review.md`。默认一次审全部图；确实超出上下文才按问题包拆多个同角色 Reviewer。
 
-Reviewer 在同一报告中审：数据/单位/样本量/误差/轴域与 claim，图型与图量覆盖，字体/颜色/层级/碰撞/灰度与全篇风格，以及目标版心中的可读性。它不改图、不打综合美观分。
+Reviewer 在同一报告中审：数据/单位/样本量/误差/轴域与 claim，图型与图量覆盖，视觉是否显得默认/粗糙、字体/颜色/层级/碰撞/裁切/压缩/灰度与全篇风格，以及目标版心中的可读性。它不改图、不用单一综合分掩盖具体问题。
 
-FR2R 复用各原 Producer，保留 v1，写 response 并生成 final PNG/PDF/SVG。默认一轮；只有数值/尺度错误、关键不可读或导出损坏允许第二次定向修复。数据或 claim 问题返回上游。
+FR2R 复用各原 Producer，保留 v1/v2，在同一 `iteration-log.md` 写 Round 2 的 reviewer issue → 修改 → 视觉证据映射，随后生成 final PNG/PDF/SVG。这是必需的第二轮；若 final 仍有重叠、裁切、压缩、不可读或导出损坏，只允许定向修复，数据或 claim 问题返回上游。
 
 ### 7A.4 FR3/FR4 真实版面关闭与交接
 
-`full-paper-v2.md` 和 `figure-table-slots.md` 可用后，生成只读 contact sheet/in-paper preview，复用原 Reviewer 只关闭原问题，写 `figure-review-closure.md`，不再全面审稿。
+`full-paper-v2.md` 和 `figure-table-slots.md` 可用后，生成只读 contact sheet 和真实 A4/版心内嵌 preview；不能用原始单图代替目标宽度检查。复用原 Reviewer 只关闭原问题，写 `figure-review-closure.md`，不再全面审稿。
 
-Leader 随后写 `figure-coverage-map.md`、`figure-manifest.md`、`placement-and-caption-handoff.md` 和 `figure-rendering-handoff.md`。FD0 只消费 manifest 授权的 final 图，不从散乱目录挑图。
+Leader 随后写 `figure-coverage-map.md`、`figure-manifest.md`、`placement-and-caption-handoff.md` 和 `figure-rendering-handoff.md`。manifest 必须记录批准宽度、最小可读宽度、长宽比和 preview 路径。FD0 只消费授权 final 图；FD2/FD3 若改变宽度/长宽比或造成压缩、重叠、不可读，FR3 关闭状态失效并回流 FR3。
 
 ## 8. 章节材料包与竞赛论文框架 CP0–CP6
 
@@ -967,18 +974,19 @@ Leader 读取 `Workflow/final-delivery-team.json` 和 `prompts/final-delivery/le
 
 创建新的 Supporting Material Curator，使用 `prompts/final-delivery/supporting-material-curator.md`。它只写 `final-delivery/supporting-materials/`：
 
+- `processed-data/` 与 `processed-data-manifest.md` 保存最终运行实际使用、允许提交的处理后数据；
 - `results/` 与 `result-data-manifest.md` 保存论文实际使用的精确结果；
-- `source-code-manifest.md` 和 `execution-order.md` 记录脚本—run—结果关系；
-- `source-code.md` 必须完整粘贴实际生成最终结果的运行脚本，不能只给路径或链接；
-- `supporting-materials.md` 供后续排版为正文后附或独立附件。
+- `source-code/` 保存实际生成最终结果的完整原始脚本文件，`source-code-manifest.md` 和 `execution-order.md` 记录脚本—数据—run—结果关系；
+- `source-code.md` 供论文展示：代码量可控时展示完整代码，代码过多时展示若干关键原始片段，每段映射到 ZIP 完整脚本、版本/哈希和行号；
+- `supporting-materials.md` 的标题必须为“支撑材料”，至少含结果展示和代码展示。
 
-废弃候选、debug 临时脚本、缓存、第三方库源码和密钥不得混入；发现敏感内容只报告，不静默改写。
+废弃候选、debug 临时脚本、缓存、第三方库源码和密钥不得混入；发现敏感内容只报告，不静默改写。论文代码片段不能替代 ZIP 中的完整原始脚本。
 
 ### 10.3 FD2/FD3 候选组装、机械预检与冻结
 
-创建新的 Submission Typesetter，使用 `prompts/final-delivery/submission-typesetter.md`，只写 `source/`、`candidate/`、`typesetting-memo.md` 和 `preflight-report.md`。它可以修字体、分页、公式渲染、图表/引用编号、交叉引用、乱码和截断，但不得润色正文、删减内容或改变数学事实。
+创建新的 Submission Typesetter，使用 `prompts/final-delivery/submission-typesetter.md`，只写 `source/`、`candidate/`、`typesetting-memo.md` 和 `preflight-report.md`。它必须把标题恰为“支撑材料”的结果/代码展示追加到参考文献之后，并生成 `candidate/supporting-materials.zip`；ZIP 根目录含 `README.md`、三个 manifest、`execution-order.md` 和非空的 `processed-data/`、`results/`、`source-code/`。它可以修字体、分页、公式渲染、图表/引用编号、交叉引用、乱码和截断，但不得润色正文、删减内容、改变数学事实或改写原始脚本。
 
-FD3 只复用原 Typesetter 修纯机械问题。Leader 随后写 `scope/candidate-snapshot.md`，记录候选和支撑材料的精确哈希。从快照落盘起，正文、候选文件、支撑材料和全部上游永久只读。
+FD3 只复用原 Typesetter 修纯机械问题，并实际解包核对 ZIP 三类必需文件、检查论文顺序为正文—参考文献—“支撑材料”。Leader 随后写 `scope/candidate-snapshot.md`，记录候选、ZIP 内容清单和精确哈希。从快照落盘起，正文、候选文件、支撑材料和全部上游永久只读。
 
 ### 10.4 FD4 五路独立终审
 
@@ -987,7 +995,7 @@ FD3 只复用原 Typesetter 修纯机械问题。Leader 随后写 `scope/candida
 - `prompts/final-delivery/layout-compliance-auditor.md`：页数、模板、匿名、公式图表、引用、答卷、附件、命名和可见版面问题；
 - `prompts/final-delivery/answer-relevance-reviewer.md`：逐问是否扣题、答案是否醒目、方法—结果—解释和摘要正文结论是否闭合；
 - `prompts/final-delivery/prose-engineering-style-auditor.md`：AI 套话、机械关联词、工程报告风、口水话、无必要比喻、模糊结论和开发流水账；
-- `prompts/final-delivery/delivery-evidence-auditor.md`：正文—图表—精确结果—完整脚本—run—引用是否使用同一授权版本。
+- `prompts/final-delivery/delivery-evidence-auditor.md`：正文展示—图表—处理后数据—精确结果—ZIP 完整原始脚本—run—引用是否使用同一授权版本。
 - `prompts/final-delivery/end-to-end-consistency-auditor.md`：从候选稿反查题意、路线、数据、模型、验证、图表和论文各阶段 handoff，定位跨阶段漂移、接口断裂、旧候选混入和问题未传播；必须使用 fresh context。
 
 五者各写 `final-delivery/reviews/` 下唯一报告，不给 AI 分数，不修改候选，不写 response/closure。前四者按本角色白名单读取；第五个额外读取 FD0 精确冻结的全链路 handoff，但同样不能读取 peer review。
@@ -1022,6 +1030,7 @@ python3 scripts/build_prompt.py --data-role data_profiler --task-brief RUN_DIR/d
 python3 scripts/build_prompt.py --model-role model_builder --task-brief RUN_DIR/modeling/briefs/M3/q1-builder.md
 python3 scripts/build_prompt.py --validation-role experimental_evidence_auditor --task-brief RUN_DIR/validation/briefs/V1/q1-evidence.md
 python3 scripts/build_prompt.py --paper-prep-role question_chapter_curator --task-brief RUN_DIR/paper-prep/briefs/CP2-q1.md
+python3 scripts/build_prompt.py --paper-prep-role competition_manuscript_reviewer --mcm-profile judge-review --task-brief RUN_DIR/paper-prep/briefs/CP5-pattern-sweep.md
 python3 scripts/build_prompt.py --paper-writing-role question_manuscript_writer --task-brief RUN_DIR/paper-writing/briefs/PW2-q1.md
 python3 scripts/build_prompt.py --formal-figure-role question_visual_producer --task-brief RUN_DIR/formal-figures/briefs/FR1-q1.md
 python3 scripts/build_prompt.py --final-delivery-role supporting_material_curator --task-brief RUN_DIR/final-delivery/briefs/FD1-support.md
@@ -1033,7 +1042,7 @@ python3 scripts/check_workspace.py RUN_DIR --stage final-delivery --json
 python3 scripts/check_workspace.py RUN_DIR --stage literature --json
 ```
 
-这些脚本不创建或调度 subagent，不解析 Markdown 语义，也不证明题意、模型、图形准确/美观、竞赛表达或 AI 文风正确。formal-figures checker 只验证 dispatch log 请求了 sol-high，不能证明运行平台实际提供了该模型；Leader 仍需保存真实创建结果。当前没有 `check_workspace.py --stage validation`。
+这些脚本不创建或调度 subagent；`build_prompt.py` 只路由 Skill 语义上下文，不产生语义结论。`check_workspace.py` 不解析 Markdown 语义，也不证明题意、模型、图形准确/美观、竞赛表达或 AI 文风正确。formal-figures checker 只验证 dispatch log 请求了 sol-high，不能证明运行平台实际提供了该模型；Leader 仍需保存真实创建结果。当前没有 `check_workspace.py --stage validation`。
 
 ## 12. 运行目录与最终停止边界
 
@@ -1134,8 +1143,8 @@ run/
 └── final-delivery/
     ├── scope/{frozen-inputs.md,candidate-snapshot.md}
     ├── source/{submission-source.md,supporting-materials.md}
-    ├── supporting-materials/{results/,result-data-manifest.md,source-code-manifest.md,execution-order.md,source-code.md,supporting-materials.md}
-    ├── candidate/{paper.pdf,paper.docx-or-tex,supporting-materials.pdf}
+    ├── supporting-materials/{processed-data/,results/,source-code/,README.md,processed-data-manifest.md,result-data-manifest.md,source-code-manifest.md,execution-order.md,source-code.md,supporting-materials.md}
+    ├── candidate/{paper.pdf,paper.docx-or-tex,supporting-materials.zip[,supporting-materials.pdf]}
     ├── preflight-report.md
     ├── typesetting-memo.md
     ├── reviews/{layout-and-compliance-review.md,answer-relevance-review.md,prose-and-engineering-style-review.md,delivery-evidence-review.md,end-to-end-consistency-review.md}

@@ -4,7 +4,23 @@
   "required_runtime": {
     "model": "gpt-5.6-sol",
     "reasoning_effort": "high",
-    "fork_turns": "none"
+    "fork_turns": "none",
+    "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
+    "skill_invocations": ["$visualize-data", "$ssci-plots", "$nature-figure"],
+    "backend": "python",
+    "visual_profile": "cassatt2_quiet_journal_v1",
+    "palette": "metbrewer_cassatt2",
+    "style_profile_file": "Workflow/formal-figure-style-profile.cassatt2.json",
+    "skill_locks": [
+      {
+        "file": "Workflow/ssci-plots-skill.lock.json",
+        "skill_md_sha256": "514790baffc7f7cafdbf18e69a9a559ef608bac4356697de5e39221e3d3a2d27"
+      },
+      {
+        "file": "Workflow/nature-figure-skill.lock.json",
+        "skill_md_sha256": "b4fd8daf9b5b4fa8b048e89234c9afadcca25aa2ee696521380671b286bd5f5f"
+      }
+    ]
   },
   "tasks": [
     {
@@ -15,7 +31,12 @@
       "task_brief": "formal-figures/briefs/FR1-q1.md",
       "requested_model": "gpt-5.6-sol",
       "requested_reasoning_effort": "high",
-      "fork_turns": "none"
+      "fork_turns": "none",
+      "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
+      "skill_invocations": ["$visualize-data", "$ssci-plots", "$nature-figure"],
+      "backend": "python",
+      "visual_profile": "cassatt2_quiet_journal_v1",
+      "palette": "metbrewer_cassatt2"
     },
     {
       "phase": "FR2",
@@ -25,7 +46,12 @@
       "task_brief": "formal-figures/briefs/FR2-portfolio.md",
       "requested_model": "gpt-5.6-sol",
       "requested_reasoning_effort": "high",
-      "fork_turns": "none"
+      "fork_turns": "none",
+      "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
+      "skill_invocations": ["$visualize-data", "$ssci-plots", "$nature-figure"],
+      "backend": "python",
+      "visual_profile": "cassatt2_quiet_journal_v1",
+      "palette": "metbrewer_cassatt2"
     }
   ]
 }

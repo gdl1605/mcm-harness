@@ -10,6 +10,8 @@
 
 终点是 `paper-prep/paper-framework-handoff.md`。后续正式论文 Agent 应当不打开代码目录就能准确成文；本模块仍不负责完整论文、参考文献检索、正式绘图、排版和提交文件。
 
+本模块通过 `scripts/build_prompt.py` 使用内置 `$mcm`：Leader、Structure Architect、Question Curator、Framework Integrator 和 Response 默认采用 `paper-material`；Evidence Auditor 采用 `validation`。这些 profile 只提供答案形状和证据组织语义，不改变白名单与 owner。Competition Manuscript Reviewer 第一遍采用 `blind-review`，第二遍必须显式覆盖为 `judge-review`；精确路由以 `Workflow/mcm-skill-integration.json` 为准。
+
 ## 2. Team 与所有权
 
 - **Leader**：冻结输入、派工、保存句柄、处理 change request、控制上下文暴露和宣布交接；不写章节材料或框架。
@@ -33,6 +35,7 @@ Leader 写 `paper-prep/scope/frozen-inputs.md`，至少记录：
 - 禁止使用的旧 run、未验证候选、诊断猜想和失效版本；
 - 图表支线的当前状态，以及尚未形成的 Figure ID/数据包；
 - route-evidence-handoff、已有 source notes、引用缺口和 REF4–REF6 状态；
+- `state/mcm-skill-snapshot.json`、`Workflow/mcm-skill-integration.json` 及其记录的 Skill 版本；
 - 国奖论文蒸馏材料的精确路径，但标记为 CP5 第二遍之前禁止暴露；
 - 每问写入根、Agent 句柄和版本保留规则。
 
@@ -101,13 +104,13 @@ Leader 创建新的 Competition Manuscript Reviewer，与 Curator、Evidence Aud
 
 ### 第一遍：盲审
 
-只允许读取原题、官方要求、chapter-map-v1、paper-framework-v1、逐问最终材料和 Figure/Table 占位。禁止读取代码、工程日志、Leader 辩护、Evidence review 和国奖论文蒸馏。先写并冻结 `integration/competition-review-blind.md`。
+只允许读取原题、官方要求、chapter-map-v1、paper-framework-v1、逐问最终材料和 Figure/Table 占位。`build_prompt.py` 保持默认 `blind-review`；禁止调用 `$mcm`，也禁止读取代码、工程日志、Leader 辩护、Evidence review 和国奖论文蒸馏。先写并冻结 `integration/competition-review-blind.md`。
 
 盲审重点是：每问答案是否醒目；是否按“问题—方法—结果—意义”组织；模型选择是否有理由；结果是否被解释；摘要、结论和题间主线是否闭合；篇幅是否失衡；正文是否仍充满 run、debug、路径、调参流水账等工程语言。
 
 ### 第二遍：模式扫描
 
-盲审落盘后，Leader 才向同一 Reviewer 开放 CP0 登记的国奖论文蒸馏材料，写 `integration/competition-review-pattern-sweep.md`。蒸馏材料只能作为结构、信息密度和表达镜头；不得照搬章节、引入其他题目的模型/结论、猜评分权重或覆盖本题证据。
+盲审落盘后，Leader 才以 `--mcm-profile judge-review` 重建后续 prompt，向同一 Reviewer 开放内置评委语义 reference 与 CP0 登记的国奖论文蒸馏材料，写 `integration/competition-review-pattern-sweep.md`。蒸馏材料只能作为答案层级、证据闭环、结构、信息密度和表达镜头；不得照搬章节、引入其他题目的模型/结论、猜评分权重或覆盖本题证据。
 
 两遍 review 都必须指出具体位置、读者障碍、对答题效果的影响和修改方向，不给虚假的获奖概率或总体“通过”标签。
 

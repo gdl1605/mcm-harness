@@ -7,6 +7,7 @@
 - Run / source snapshot：{{RUN_AND_SNAPSHOT}}
 - 阶段 / 问题或共享构建单元：{{PHASE_AND_BUILD_UNIT}}
 - Role / 原 Agent 句柄：{{ROLE_AND_AGENT_HANDLE}}
+- mcm profile：`auto`；若覆盖则写 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 当前 build contract / 分支 / 父运行：{{CONTRACT_BRANCH_PARENT_RUN}}
 - 当前数据、代码与接口版本：{{DATA_CODE_INTERFACE_VERSIONS}}
 - 候选模型汇报与真实人工决定：{{MODEL_CANDIDATE_BRIEFING_AND_HUMAN_DECISION}}

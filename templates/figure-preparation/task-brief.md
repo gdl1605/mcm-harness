@@ -7,6 +7,7 @@
 - 阶段：{{FIGURE_PREPARATION_STAGE}}
 - 题目/问题/共享结果单元：{{QUESTION_OR_SHARED_UNIT}}
 - 角色与 Agent 句柄：{{ROLE_AND_AGENT_HANDLE}}
+- mcm profile：`auto`；若覆盖则写 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 当前目标：{{TASK_GOAL}}
 - 父运行、分支和输入冻结版本：{{PARENT_RUN_BRANCH_FREEZE}}
 

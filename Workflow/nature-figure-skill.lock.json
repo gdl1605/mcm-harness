@@ -1,0 +1,12 @@
+{
+  "metadata_only": true,
+  "skill": "nature-figure",
+  "source_repo": "lth0/codexSkill",
+  "source_ref": "main",
+  "source_path": "skills/codex/nature-figure",
+  "skill_md_sha256": "b4fd8daf9b5b4fa8b048e89234c9afadcca25aa2ee696521380671b286bd5f5f",
+  "install_scope": "project_local_agents_skills",
+  "required_invocation": "$nature-figure",
+  "required_backend": "python",
+  "license_status": "no_license_file_detected_in_source_repository; local workflow use only; verify before redistribution"
+}

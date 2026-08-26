@@ -4,9 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from zipfile import BadZipFile, ZipFile
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MCM_INTEGRATION_PATH = PROJECT_ROOT / "Workflow" / "mcm-skill-integration.json"
 
 STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "formal-figures": 7, "final-delivery": 8, "literature": 9}
 ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "formal-figures", "final-delivery", "literature"}
@@ -57,7 +62,9 @@ FINAL_DELIVERY_DIRS = (
     "final-delivery/briefs",
     "final-delivery/scope",
     "final-delivery/source",
+    "final-delivery/supporting-materials/processed-data",
     "final-delivery/supporting-materials/results",
+    "final-delivery/supporting-materials/source-code",
     "final-delivery/candidate",
     "final-delivery/reviews",
     "final-delivery/human-review",
@@ -103,6 +110,59 @@ def has_diagnostic_records(path: Path) -> bool:
     if not path.is_dir():
         return False
     return any(child.is_file() and child.stat().st_size > 0 for child in path.rglob("*"))
+
+
+def check_mcm_skill_snapshot(
+    snapshot: object,
+    errors: list[str],
+    warnings: list[str],
+) -> bool:
+    """Check embedded-skill paths and hashes only; never judge semantic behavior."""
+
+    if not isinstance(snapshot, dict):
+        errors.append("missing or invalid state/mcm-skill-snapshot.json")
+        return False
+    expected = {
+        "metadata_only": True,
+        "skill_name": "mcm",
+        "skill_invocation": "$mcm",
+        "skill_entrypoint": ".agents/skills/mcm/SKILL.md",
+        "integration_config": "Workflow/mcm-skill-integration.json",
+        "semantic_quality_checked": False,
+    }
+    for field, value in expected.items():
+        if snapshot.get(field) != value:
+            errors.append(f"mcm skill snapshot must set {field}={value!r}")
+
+    drift_detected = False
+    expected_config_hash = snapshot.get("integration_config_sha256")
+    if not MCM_INTEGRATION_PATH.is_file():
+        errors.append("missing embedded mcm integration config")
+    elif isinstance(expected_config_hash, str):
+        actual = hashlib.sha256(MCM_INTEGRATION_PATH.read_bytes()).hexdigest()
+        if actual != expected_config_hash:
+            warnings.append("embedded mcm integration config changed after run initialization")
+            drift_detected = True
+    else:
+        errors.append("mcm skill snapshot is missing integration_config_sha256")
+
+    file_hashes = snapshot.get("file_sha256")
+    if not isinstance(file_hashes, dict) or not file_hashes:
+        errors.append("mcm skill snapshot must contain non-empty file_sha256 metadata")
+        return drift_detected
+    for relative, expected_hash in file_hashes.items():
+        if not isinstance(relative, str) or not isinstance(expected_hash, str):
+            errors.append("mcm skill snapshot file_sha256 entries must be string pairs")
+            continue
+        path = PROJECT_ROOT / relative
+        if not path.is_file():
+            errors.append(f"embedded mcm skill file is missing: {relative}")
+            continue
+        actual_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            warnings.append(f"embedded mcm skill file changed after run initialization: {relative}")
+            drift_detected = True
+    return drift_detected
 
 
 def check_figure_candidate(candidate: Path, errors: list[str], warnings: list[str]) -> None:
@@ -341,13 +401,15 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
         "final-delivery/scope/candidate-snapshot.md",
         "final-delivery/source/submission-source.md",
         "final-delivery/source/supporting-materials.md",
+        "final-delivery/supporting-materials/README.md",
+        "final-delivery/supporting-materials/processed-data-manifest.md",
         "final-delivery/supporting-materials/result-data-manifest.md",
         "final-delivery/supporting-materials/source-code-manifest.md",
         "final-delivery/supporting-materials/execution-order.md",
         "final-delivery/supporting-materials/source-code.md",
         "final-delivery/supporting-materials/supporting-materials.md",
         "final-delivery/candidate/paper.pdf",
-        "final-delivery/candidate/supporting-materials.pdf",
+        "final-delivery/candidate/supporting-materials.zip",
         "final-delivery/preflight-report.md",
         "final-delivery/typesetting-memo.md",
         "final-delivery/reviews/layout-and-compliance-review.md",
@@ -364,14 +426,70 @@ def check_final_delivery(run_dir: Path, errors: list[str], warnings: list[str]) 
         if not nonempty_file(run_dir / relative):
             errors.append(f"missing or empty final-delivery file: {relative}")
 
-    results_root = run_dir / "final-delivery/supporting-materials/results"
-    result_files = (
-        [path for path in results_root.rglob("*") if nonempty_file(path)]
-        if results_root.is_dir()
-        else []
-    )
-    if not result_files:
-        errors.append("final-delivery supporting materials must contain at least one non-empty result data file")
+    preflight = run_dir / "final-delivery/preflight-report.md"
+    if nonempty_file(preflight):
+        preflight_text = preflight.read_text(encoding="utf-8")
+        for marker in ("actual_embedded_width_mm", "aspect_ratio", "in-paper-preview", "FR3"):
+            if marker not in preflight_text:
+                errors.append(
+                    f"final-delivery preflight report is missing figure-layout marker: {marker!r}"
+                )
+
+    required_material_roots = {
+        "processed data": run_dir / "final-delivery/supporting-materials/processed-data",
+        "result data": run_dir / "final-delivery/supporting-materials/results",
+        "original source code": run_dir / "final-delivery/supporting-materials/source-code",
+    }
+    for label, material_root in required_material_roots.items():
+        material_files = (
+            [path for path in material_root.rglob("*") if nonempty_file(path)]
+            if material_root.is_dir()
+            else []
+        )
+        if not material_files:
+            errors.append(
+                f"final-delivery supporting materials must contain at least one non-empty {label} file"
+            )
+
+    archive_path = run_dir / "final-delivery/candidate/supporting-materials.zip"
+    if nonempty_file(archive_path):
+        try:
+            with ZipFile(archive_path) as archive:
+                corrupt_member = archive.testzip()
+                if corrupt_member is not None:
+                    errors.append(
+                        f"final-delivery supporting-materials.zip has a corrupt member: {corrupt_member}"
+                    )
+                members = [
+                    info
+                    for info in archive.infolist()
+                    if not info.is_dir() and info.file_size > 0
+                ]
+                member_names = {info.filename for info in members}
+                for info in members:
+                    member_path = PurePosixPath(info.filename)
+                    if member_path.is_absolute() or ".." in member_path.parts:
+                        errors.append(
+                            f"final-delivery supporting-materials.zip has unsafe member path: {info.filename}"
+                        )
+                for required_member in (
+                    "README.md",
+                    "processed-data-manifest.md",
+                    "result-data-manifest.md",
+                    "source-code-manifest.md",
+                    "execution-order.md",
+                ):
+                    if required_member not in member_names:
+                        errors.append(
+                            f"final-delivery supporting-materials.zip is missing root file: {required_member}"
+                        )
+                for prefix in ("processed-data/", "results/", "source-code/"):
+                    if not any(name.startswith(prefix) for name in member_names):
+                        errors.append(
+                            f"final-delivery supporting-materials.zip has no non-empty file under {prefix}"
+                        )
+        except (BadZipFile, OSError) as exc:
+            errors.append(f"invalid final-delivery supporting-materials.zip: {exc}")
 
     candidate_root = run_dir / "final-delivery/candidate"
     editable_candidates = [
@@ -430,10 +548,14 @@ def check_formal_figure_bundle(bundle: Path, errors: list[str]) -> None:
             "render.py",
             "render-config.md",
             "render-memo.md",
+            "iteration-log.md",
             "response.md",
             "v1/figure.png",
             "v1/figure.pdf",
             "v1/figure.svg",
+            "v2/figure.png",
+            "v2/figure.pdf",
+            "v2/figure.svg",
             "final/figure.png",
             "final/figure.pdf",
             "final/figure.svg",
@@ -442,8 +564,95 @@ def check_formal_figure_bundle(bundle: Path, errors: list[str]) -> None:
                 errors.append(f"missing or empty formal-figure file: {figure_root / relative}")
 
 
+def check_project_skill_lock(
+    *,
+    lock_file: str,
+    skill_name: str,
+    invocation: str,
+    project_skill_path: str,
+    errors: list[str],
+) -> None:
+    """Validate one project skill lock and its local copy when present."""
+
+    lock_path = PROJECT_ROOT / lock_file
+    lock: object | None = None
+    if not nonempty_file(lock_path):
+        errors.append(f"missing {skill_name} skill lock: {lock_file}")
+    else:
+        try:
+            lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"invalid {skill_name} skill lock JSON: {exc}")
+    if isinstance(lock, dict):
+        expected_lock = {
+            "metadata_only": True,
+            "skill": skill_name,
+            "required_invocation": invocation,
+            "required_backend": "python",
+        }
+        for field, value in expected_lock.items():
+            if lock.get(field) != value:
+                errors.append(f"{skill_name} skill lock must set {field}={value!r}")
+        skill_path = PROJECT_ROOT / project_skill_path
+        expected_hash = lock.get("skill_md_sha256")
+        if skill_path.is_file() and isinstance(expected_hash, str):
+            actual_hash = hashlib.sha256(skill_path.read_bytes()).hexdigest()
+            if actual_hash != expected_hash:
+                errors.append(
+                    f"project-local {skill_name} SKILL.md does not match the lock hash"
+                )
+
+
 def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) -> None:
-    """Check FR0–FR4 files and explicit model request metadata only."""
+    """Check FR0–FR4 files and explicit model/skill/profile metadata only."""
+
+    check_project_skill_lock(
+        lock_file="Workflow/nature-figure-skill.lock.json",
+        skill_name="nature-figure",
+        invocation="$nature-figure",
+        project_skill_path=".agents/skills/nature-figure/SKILL.md",
+        errors=errors,
+    )
+    check_project_skill_lock(
+        lock_file="Workflow/ssci-plots-skill.lock.json",
+        skill_name="ssci-plots",
+        invocation="$ssci-plots",
+        project_skill_path=".agents/skills/ssci-plots/SKILL.md",
+        errors=errors,
+    )
+
+    profile_path = PROJECT_ROOT / "Workflow/formal-figure-style-profile.cassatt2.json"
+    profile: object | None = None
+    if not nonempty_file(profile_path):
+        errors.append(
+            "missing formal-figure visual profile: "
+            "Workflow/formal-figure-style-profile.cassatt2.json"
+        )
+    else:
+        try:
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"invalid formal-figure visual profile JSON: {exc}")
+    if isinstance(profile, dict):
+        expected_profile = {
+            "metadata_only": True,
+            "profile_id": "cassatt2_quiet_journal_v1",
+            "selected_direction": "C",
+            "design_skill": "$visualize-data",
+            "style_skill": "$ssci-plots",
+            "render_and_qa_skill": "$nature-figure",
+            "backend": "python",
+        }
+        for field, value in expected_profile.items():
+            if profile.get(field) != value:
+                errors.append(
+                    f"formal-figure visual profile must set {field}={value!r}"
+                )
+        palette = profile.get("palette")
+        if not isinstance(palette, dict) or palette.get("name") != "metbrewer_cassatt2":
+            errors.append(
+                "formal-figure visual profile must set palette.name='metbrewer_cassatt2'"
+            )
 
     for relative in FORMAL_FIGURE_DIRS:
         if not (run_dir / relative).is_dir():
@@ -468,6 +677,8 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
         "formal-figures/figure-manifest.md",
         "formal-figures/placement-and-caption-handoff.md",
         "formal-figures/figure-rendering-handoff.md",
+        "formal-figures/previews/contact-sheet.pdf",
+        "formal-figures/previews/in-paper-preview.pdf",
     )
     for relative in required_files:
         if not nonempty_file(run_dir / relative):
@@ -506,12 +717,27 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
                     "requested_model": "gpt-5.6-sol",
                     "requested_reasoning_effort": "high",
                     "fork_turns": "none",
+                    "backend": "python",
+                    "visual_profile": "cassatt2_quiet_journal_v1",
+                    "palette": "metbrewer_cassatt2",
                 }
                 for field, value in expected.items():
                     if task.get(field) != value:
                         errors.append(
                             f"formal-figure dispatch task {index} must set {field}={value!r}"
                         )
+                expected_skills = ["visualize-data", "ssci-plots", "nature-figure"]
+                expected_invocations = ["$visualize-data", "$ssci-plots", "$nature-figure"]
+                if task.get("required_skills") != expected_skills:
+                    errors.append(
+                        f"formal-figure dispatch task {index} must set "
+                        f"required_skills={expected_skills!r}"
+                    )
+                if task.get("skill_invocations") != expected_invocations:
+                    errors.append(
+                        f"formal-figure dispatch task {index} must set "
+                        f"skill_invocations={expected_invocations!r}"
+                    )
                 if not task.get("agent_handle"):
                     errors.append(f"formal-figure dispatch task {index} is missing agent_handle")
                 brief_ref = task.get("task_brief")
@@ -521,7 +747,19 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
                     )
                 else:
                     brief_text = (run_dir / brief_ref).read_text(encoding="utf-8")
-                    for marker in ("gpt-5.6-sol", "high", "fork_turns=none"):
+                    for marker in (
+                        "gpt-5.6-sol",
+                        "high",
+                        "fork_turns=none",
+                        "$visualize-data",
+                        "$ssci-plots",
+                        "$nature-figure",
+                        "backend=python",
+                        "cassatt2_quiet_journal_v1",
+                        "metbrewer_cassatt2",
+                        "ssci-plots-skill.lock.json",
+                        "nature-figure-skill.lock.json",
+                    ):
                         if marker not in brief_text:
                             errors.append(
                                 f"formal-figure task brief for dispatch task {index} is missing {marker!r}"
@@ -614,7 +852,11 @@ def main() -> int:
             errors.append(f"missing directory: {relative}")
 
     metadata: dict[str, object] = {}
-    for relative in ("inputs/source-manifest.json", "state/run-state.json"):
+    for relative in (
+        "inputs/source-manifest.json",
+        "state/run-state.json",
+        "state/mcm-skill-snapshot.json",
+    ):
         path = run_dir / relative
         if not path.is_file():
             errors.append(f"missing metadata file: {relative}")
@@ -626,6 +868,7 @@ def main() -> int:
 
     manifest = metadata.get("inputs/source-manifest.json")
     state = metadata.get("state/run-state.json")
+    mcm_snapshot = metadata.get("state/mcm-skill-snapshot.json")
     if isinstance(manifest, dict) and manifest.get("metadata_only") is not True:
         warnings.append("source-manifest.json should declare metadata_only=true")
     if isinstance(state, dict) and state.get("metadata_only") is not True:
@@ -635,6 +878,8 @@ def main() -> int:
             errors.append("source snapshot differs between manifest and run state")
         if not manifest.get("materials"):
             warnings.append("no source files are registered")
+
+    mcm_skill_drift_detected = check_mcm_skill_snapshot(mcm_snapshot, errors, warnings)
 
     # ``figure-prep`` is a post-V6 asynchronous branch, not a cumulative
     # legacy stage.  Its entry contract is checked above; it must not pretend
@@ -700,6 +945,9 @@ def main() -> int:
         "run_dir": str(run_dir),
         "markdown_content_parsed": False,
         "semantic_correctness_checked": False,
+        "embedded_mcm_skill_files_checked": True,
+        "embedded_mcm_skill_drift_detected": mcm_skill_drift_detected,
+        "mcm_semantic_behavior_checked": False,
         "figure_aesthetic_checked": False,
         "formal_figure_data_accuracy_checked": False,
         "formal_figure_visual_quality_checked": False,

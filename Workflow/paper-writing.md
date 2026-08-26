@@ -10,6 +10,8 @@
 
 停止于 `paper-writing/formal-paper-handoff.md`，正文为 `paper-writing/manuscript/final-paper.md`。后续排版与最终交付不得改变已冻结的数字、公式、单位和 claim。
 
+本模块的正式作者默认由 `build_prompt.py` 注入 `$mcm submission-draft`；Fact Auditor 使用 `validation`，Competition Expression 与 Coherence Reviewer 使用 `judge-review`，AI Prose Auditor 使用 `prose-revision`。Skill 只影响语义取舍和阅读判断，不能增加事实、引用、写权或审查可见范围；精确 reference 由 `Workflow/mcm-skill-integration.json` 路由。
+
 ## 2. Team 与文件所有权
 
 - **Leader/全文作者**：写 PW0/PW1、公共章节、摘要结论、全部 `manuscript/` 版本、全局 response 与最终 handoff；只有 Leader 可修改全文主稿。
@@ -31,6 +33,7 @@ Leader 写 `paper-writing/scope/frozen-inputs.md`，至少冻结：
 - 官方页数、格式、匿名、语言和答卷要求；
 - 已有参考文献、待补引用和禁止虚构来源；
 - references handoff、claim-to-citation map、references.bib、引用键和人的意见边界；
+- `state/mcm-skill-snapshot.json` 与本轮 `submission-draft` / reviewer profile 路由；
 - 旧材料、旧数字、未验证候选和上游只读边界；
 - 每问 writer/reviewer 句柄、写入根与版本保留规则。
 

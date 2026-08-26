@@ -6,6 +6,8 @@
 
 说明 V 阶段、验证单元、主张/问题范围和本轮唯一目标。
 
+mcm profile 默认为 `auto`；若覆盖，记录 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
+
 ## 冻结版本与允许读取
 
 逐路径列出题意、候选模型汇报、真实人工模型决定、路线、数据、build contract、代码、配置、run、结果、接口和已存验证产物的允许版本。

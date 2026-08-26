@@ -1,0 +1,13 @@
+{
+  "metadata_only": true,
+  "skill": "ssci-plots",
+  "source_repo": "O0000-code/SSCI-Plots",
+  "source_ref": "main",
+  "source_commit": "f697b922e8fc11ca13a61f29d58c1f83963c5b1b",
+  "source_path": ".",
+  "skill_md_sha256": "514790baffc7f7cafdbf18e69a9a559ef608bac4356697de5e39221e3d3a2d27",
+  "license": "MIT",
+  "install_scope": "project_local_agents_skills",
+  "required_invocation": "$ssci-plots",
+  "required_backend": "python"
+}

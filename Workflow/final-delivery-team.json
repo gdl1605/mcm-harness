@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-final-delivery",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "language": "zh-CN",
   "design_document": "Workflow/final-delivery.md",
   "execution": {
@@ -27,7 +27,7 @@
       "literature/citation-preparation/references-handoff.md",
       "literature/citation-preparation/claim-to-citation-map.md",
       "literature/references.bib",
-      "actual result data, executed scripts and run-version evidence",
+      "actual processed data, final result data, original executed scripts and run-version evidence",
       "official format, page, anonymity, answer-sheet and submission rules",
       "frozen problem baseline, route, data, model, validation, claim, figure, paper-framework and paper-writing handoffs for end-to-end review"
     ],
@@ -54,7 +54,10 @@
       "prompt": "prompts/final-delivery/supporting-material-curator.md",
       "new_agent_required": true,
       "writes": ["final-delivery/supporting-materials/**"],
-      "source_code_must_be_embedded": true
+      "processed_data_must_be_copied": true,
+      "result_data_must_be_copied": true,
+      "original_source_files_must_be_copied": true,
+      "paper_display_may_use_mapped_code_excerpts_when_full_code_is_impractical": true
     },
     "submission_typesetter": {
       "prompt": "prompts/final-delivery/submission-typesetter.md",
@@ -65,7 +68,18 @@
         "final-delivery/preflight-report.md",
         "final-delivery/typesetting-memo.md"
       ],
-      "content_rewrite_forbidden": true
+      "content_rewrite_forbidden": true,
+      "figure_layout_contract": {
+        "preserve_manifest_approved_width_and_aspect_ratio": true,
+        "never_below_minimum_readable_width": true,
+        "actual_embedded_width_mm_required_in_preflight": true,
+        "compare_against_fr3_in_paper_preview": true,
+        "visual_failure_returns_to": "FR3_before_candidate_freeze"
+      },
+      "paper_appendix_title": "支撑材料",
+      "paper_appendix_must_follow_references": true,
+      "supporting_materials_zip_required": true,
+      "supporting_materials_pdf_is_optional": true
     },
     "layout_compliance_auditor": {
       "prompt": "prompts/final-delivery/layout-compliance-auditor.md",
@@ -121,9 +135,9 @@
   },
   "phases": [
     {"id": "FD0", "dispatch": "leader_only", "handoff": "final-delivery/scope/frozen-inputs.md"},
-    {"id": "FD1", "dispatch": "one_new_supporting_material_curator", "handoff": "supporting-materials bundle"},
-    {"id": "FD2", "dispatch": "one_new_submission_typesetter", "handoff": "source and candidate bundle"},
-    {"id": "FD3", "dispatch": "reuse_submission_typesetter_for_mechanical_preflight_then_leader_freezes", "handoff": "preflight-report.md and scope/candidate-snapshot.md"},
+    {"id": "FD1", "dispatch": "one_new_supporting_material_curator", "handoff": "processed-data, results, original-source and paper-display bundle"},
+    {"id": "FD2", "dispatch": "one_new_submission_typesetter", "handoff": "paper with post-reference 支撑材料 section and candidate/supporting-materials.zip"},
+    {"id": "FD3", "dispatch": "reuse_submission_typesetter_for_mechanical_preflight_then_leader_freezes", "gate": "render every PDF page; verify actual figure width/aspect against FR3 preview; return visual failures to FR3 before freeze", "handoff": "preflight-report.md and scope/candidate-snapshot.md"},
     {"id": "FD4", "dispatch": "five_new_isolated_terminal_reviewers", "parallel": true, "frozen_input": "scope/candidate-snapshot.md"},
     {"id": "FD5", "dispatch": "leader_only_no_candidate_writes", "handoff": "human-review/issue-index.md"},
     {"id": "FD6", "dispatch": "leader_only_no_candidate_writes", "handoff": "human-finalization-guide.md and submission-checklist.md"},

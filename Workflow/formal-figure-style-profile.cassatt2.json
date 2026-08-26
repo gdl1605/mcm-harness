@@ -1,0 +1,58 @@
+{
+  "metadata_only": true,
+  "profile_id": "cassatt2_quiet_journal_v1",
+  "selected_by_user": true,
+  "selected_direction": "C",
+  "design_skill": "$visualize-data",
+  "style_skill": "$ssci-plots",
+  "render_and_qa_skill": "$nature-figure",
+  "backend": "python",
+  "palette": {
+    "registry": "ssci-plots",
+    "name": "metbrewer_cassatt2",
+    "api": "get_palette(n, 'metbrewer_cassatt2')",
+    "cvd_grade": "strict_pass",
+    "hardcoded_hex_forbidden": true,
+    "binary_default": {
+      "focal_series_palette_index_zero_based": 8,
+      "reference_series_palette_index_zero_based": 1,
+      "redundant_encoding_required": true
+    }
+  },
+  "visual_language": {
+    "background": "white_or_near_white",
+    "text": "deep_charcoal",
+    "axes": "quiet_l_shaped",
+    "grid": "off_by_default_or_sparse_when_comparison_requires",
+    "panel_labels": "small_bold_lowercase_top_left",
+    "figure_title_and_long_note": "outside_figure_in_caption_or_manuscript",
+    "panel_titles": "short_neutral_descriptive",
+    "legend": "direct_labels_or_one_shared_legend; never_duplicate_existing_labels",
+    "color_only_encoding_forbidden": true,
+    "decorative_boxes_gradients_and_large_ui_headers_forbidden": true
+  },
+  "layout_policy": {
+    "evidence_driven_before_profile": true,
+    "quiet_2x2_preferred_only_when": "exactly four same-family panels form one coherent comparison and remain readable at target width",
+    "quiet_2x2_never_forced": true,
+    "independent_scales_must_be_explicit": true,
+    "shared_axes_required_when_semantically_comparable": true,
+    "asymmetric_or_vertical_layout_allowed_when_evidence_hierarchy_or_labels_require_it": true
+  },
+  "qa": {
+    "required_visual_iterations": 2,
+    "target_width_preview_required": true,
+    "a4_in_paper_preview_required": true,
+    "reject": [
+      "generic_library_look",
+      "overlap",
+      "clipping",
+      "compression",
+      "distortion",
+      "unreadable_at_target_width",
+      "palette_drift",
+      "duplicated_legend_or_caption",
+      "unapproved_derived_claim"
+    ]
+  }
+}

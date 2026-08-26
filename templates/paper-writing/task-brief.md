@@ -3,6 +3,7 @@
 > 以下问题是最低责任，不是字段白名单。任何会改变事实、答题、全文关系、文风或回滚范围的新发现都应继续报告。
 
 - 阶段、角色、Agent 句柄：{{PHASE_ROLE_AGENT}}
+- mcm profile：`auto`；若覆盖则写 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 问题/全文单元与唯一目标：{{UNIT_AND_GOAL}}
 - 允许读取：{{ALLOWED_INPUTS}}
 - 禁止上下文：{{FORBIDDEN_CONTEXT}}

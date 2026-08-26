@@ -1,0 +1,4 @@
+interface:
+  display_name: "mcm.skill"
+  short_description: "Model, validate, write, and judge-review contest solutions"
+  default_prompt: "Use $mcm to solve or review this modeling-contest task from problem semantics through judge-facing evidence."

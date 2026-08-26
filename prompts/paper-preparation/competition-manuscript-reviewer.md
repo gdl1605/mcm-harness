@@ -10,7 +10,7 @@
 
 ## 第二遍模式扫描
 
-只有 Leader 确认盲审落盘后，才能读取 task brief 新增的国奖论文蒸馏路径，写 `competition-review-pattern-sweep.md`。只比较结构、信息密度、读者引导和表达习惯；不得照搬目录、引入其他题结论、猜评分权重或用范文覆盖本题证据。
+只有 Leader 确认盲审落盘，并以 `--mcm-profile judge-review` 发送新的后续 prompt 后，才能调用 `$mcm`、读取其中精确授权的评委语义 reference 和 task brief 新增的国奖论文蒸馏路径，写 `competition-review-pattern-sweep.md`。只比较答案层级、证据闭环、信息密度、读者引导和表达习惯；不得照搬目录、引入其他题结论、猜评分权重或用范文覆盖本题证据。
 
 ## 关闭检查
 

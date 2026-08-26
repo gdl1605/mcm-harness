@@ -23,7 +23,7 @@
 
 ## 两遍竞赛审读隔离
 
-登记国奖论文蒸馏材料的精确路径。CP5 盲审完成前禁止暴露；第二遍只把它作为结构和表达镜头，不当成本题证据。
+登记 `state/mcm-skill-snapshot.json`、`Workflow/mcm-skill-integration.json` 和国奖论文蒸馏材料的精确路径。CP5 盲审完成前使用 `blind-review`，禁止加载 `$mcm` 或蒸馏材料；第二遍由 Leader 显式切换到 `judge-review`，只把它作为答案层级、证据组织和表达镜头，不当成本题证据。
 
 ## 所有权、版本与开放发现
 

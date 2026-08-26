@@ -105,9 +105,9 @@ Zotero 是可选只读来源，不是依赖。向 Zotero 导入、保存或修�
 
 **实现状态：FR0–FR4 已实现。** 设计见 [formal-figure-rendering.md](formal-figure-rendering.md)，配置见 `formal-figure-team.json`，角色 prompt 位于 `prompts/formal-figures/`，开放模板位于 `templates/formal-figures/`。
 
-模块只有两类 subagent：每问/共享单元一个 Question Visual Producer，负责图量覆盖、chart contract、pilot、绘图与回应；默认一个 fresh-context Figure Portfolio Reviewer，统一审数据准确性、图型、审美和真实版面。所有新 Agent 必须显式请求 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，默认 Luna 禁止且不得静默降级。
+模块只有两类 subagent：每问/共享单元一个 Question Visual Producer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`/Python，使用用户选择的 `cassatt2_quiet_journal_v1` 完成 v1→v2 第一轮视觉迭代；默认一个 fresh-context Figure Portfolio Reviewer 审 v2，原 Producer 再完成 v2→final 第二轮。审查同时覆盖数据准确性、视觉层级、不好看/默认感、Cassatt2 漂移、重复图例/caption、重叠、裁切、压缩和真实版面。C 是视觉语言，不把所有图强制为 2×2。所有新 Agent 必须显式请求 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，默认 Luna、skill/profile 缺失和静默降级均禁止。
 
-FR0 冻结 F4 数据与调度记录，FR1 逐问并行渲染，FR2/FR2R 独立审查和原 Producer 修订，FR3 在 `full-paper-v2.md` 的实际宽度关闭原问题，FR4 交付 manifest 与 `figure-rendering-handoff.md`。该模块可与 CP4–PW4 并行，但必须在 FD0 前完成。
+FR0 冻结 F4 数据并校验两个 skill lock 与 Cassatt2 profile，FR1 逐问并行生成 v1、看图形成 v2，FR2/FR2R 独立审查和第二轮 final 修订，FR3 在 A4/官方页面的实际嵌入预览中关闭原问题，FR4 交付带物理尺寸/最小可读宽度的 manifest 与 `figure-rendering-handoff.md`。该模块可与 CP4–PW4 并行，但必须在 FD0 前完成。
 
 ### 3.5 章节材料与论文框架准备
 
@@ -138,7 +138,7 @@ FR0 冻结 F4 数据与调度记录，FR1 逐问并行渲染，FR2/FR2R 独立�
 
 **实现状态：FD0–FD7 已实现。** 设计见 [final-delivery.md](final-delivery.md)，配置见 `final-delivery-team.json`，角色 prompt 位于 `prompts/final-delivery/`，开放模板位于 `templates/final-delivery/`。
 
-该模块消费 `formal-paper-handoff.md`、`figure-rendering-handoff.md`、figure manifest、引用状态、官方要求、授权结果数据和实际运行脚本，生成 PDF/可编辑候选稿以及含结果数据、完整运行脚本源码的支撑材料。候选快照冻结后，五个独立 Reviewer 分别审排版合规、是否扣题、AI/工程风/口水话、论文—图表—结果—代码—引用证据一致性，以及从题意到交付的全链路一致性。第五路使用 fresh context，额外读取冻结的各阶段 handoff。
+该模块消费 `formal-paper-handoff.md`、`figure-rendering-handoff.md`、figure manifest、引用状态、官方要求、授权处理后数据、结果数据和完整原始运行脚本，在参考文献后追加“支撑材料”结果/代码展示，并生成 PDF/可编辑候选稿及独立 `supporting-materials.zip`。ZIP 必须包含处理后数据、结果和完整原始脚本；论文代码过多时可只展示若干映射到 ZIP 完整文件的原始片段。候选快照冻结后，五个独立 Reviewer 分别审排版合规、是否扣题、AI/工程风/口水话、论文—图表—数据—结果—代码—引用证据一致性，以及从题意到交付的全链路一致性。第五路使用 fresh context，额外读取冻结的各阶段 handoff。
 
 FD4 终审后不再由 Agent 修改候选稿。Leader 只保留五份原始 review，建立人工问题索引、微调指南和提交清单，最终状态为 `AWAITING_HUMAN_FINALIZATION`。FD 不重新绘图，只消费 FR4 manifest；实际投稿不由该模块完成。
 

@@ -12,6 +12,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MCM_INTEGRATION_PATH = PROJECT_ROOT / "Workflow" / "mcm-skill-integration.json"
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -27,6 +31,39 @@ def sha256_file(path: Path) -> str:
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def mcm_skill_snapshot(created_at: str) -> dict[str, object]:
+    """Record the embedded semantic instruction version without copying its contents."""
+
+    try:
+        config = json.loads(MCM_INTEGRATION_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read embedded mcm integration config: {exc}") from exc
+    skill = config.get("skill")
+    snapshot_files = config.get("snapshot_files")
+    if not isinstance(skill, dict) or not isinstance(snapshot_files, list):
+        raise ValueError("mcm integration config requires skill and snapshot_files")
+    if not all(isinstance(relative, str) for relative in snapshot_files):
+        raise ValueError("mcm snapshot_files must contain only strings")
+    file_hashes: dict[str, str] = {}
+    for relative in snapshot_files:
+        path = PROJECT_ROOT / relative
+        if not path.is_file():
+            raise ValueError(f"embedded mcm snapshot file is missing: {relative}")
+        file_hashes[relative] = sha256_file(path)
+    return {
+        "metadata_only": True,
+        "schema_version": "1.0.0",
+        "skill_name": skill.get("name"),
+        "skill_invocation": skill.get("invocation"),
+        "skill_entrypoint": skill.get("entrypoint"),
+        "integration_config": str(MCM_INTEGRATION_PATH.relative_to(PROJECT_ROOT)),
+        "integration_config_sha256": sha256_file(MCM_INTEGRATION_PATH),
+        "recorded_at": created_at,
+        "file_sha256": file_hashes,
+        "semantic_quality_checked": False,
+    }
 
 
 def source_record(path: Path, index: int) -> dict[str, object]:
@@ -65,6 +102,16 @@ def main() -> int:
             print(f"error: --source must be an existing file: {source}", file=sys.stderr)
             return 2
         sources.append(source)
+
+    token = uuid.uuid4().hex[:12].upper()
+    run_id = f"RUN-{token}"
+    snapshot_id = f"SNAPSHOT-{token}"
+    now = utc_now()
+    try:
+        skill_snapshot = mcm_skill_snapshot(now)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
 
     directories = [
         "inputs", "state", "briefs", "submissions/W1", "submissions/W2",
@@ -115,22 +162,20 @@ def main() -> int:
         "formal-figures/briefs", "formal-figures/scope",
         "formal-figures/style", "formal-figures/questions",
         "formal-figures/shared", "formal-figures/previews",
+        "formal-figures/previews/v1", "formal-figures/previews/v2",
+        "formal-figures/previews/final",
         "formal-figures/change-requests",
         # Final delivery creates only ownership roots.  Candidate files,
         # semantic reports and human handoff are created when FD0 explicitly
         # starts; no successful package is implied by initialization.
         "final-delivery/briefs", "final-delivery/scope",
-        "final-delivery/source", "final-delivery/supporting-materials/results",
+        "final-delivery/source", "final-delivery/supporting-materials/processed-data",
+        "final-delivery/supporting-materials/results", "final-delivery/supporting-materials/source-code",
         "final-delivery/candidate", "final-delivery/reviews",
         "final-delivery/human-review",
     ]
     for relative in directories:
         (run_dir / relative).mkdir(parents=True, exist_ok=True)
-
-    token = uuid.uuid4().hex[:12].upper()
-    run_id = f"RUN-{token}"
-    snapshot_id = f"SNAPSHOT-{token}"
-    now = utc_now()
 
     manifest = {
         "metadata_only": True,
@@ -143,6 +188,8 @@ def main() -> int:
     }
     write_json(run_dir / "inputs/source-manifest.json", manifest)
 
+    write_json(run_dir / "state/mcm-skill-snapshot.json", skill_snapshot)
+
     state = {
         "metadata_only": True,
         "schema_version": "0.4.0",
@@ -150,6 +197,7 @@ def main() -> int:
         "title": args.title,
         "phase": "SOURCE_FREEZE",
         "source_snapshot_id": snapshot_id,
+        "mcm_skill_snapshot": "state/mcm-skill-snapshot.json",
         "active_tasks": [],
         "report_paths": [],
         "created_at": now,
@@ -162,7 +210,9 @@ def main() -> int:
             "after figure-prep/figure-preparation-handoff.md and paper preparation stops after "
             "paper-prep/paper-framework-handoff.md. Formal Markdown writing stops after "
             "paper-writing/formal-paper-handoff.md. Formal figure rendering may start after F4, uses "
-            "explicit gpt-5.6-sol high-reasoning subagents, and stops after "
+            "explicit gpt-5.6-sol high-reasoning subagents plus $visualize-data -> $ssci-plots -> $nature-figure "
+            "with backend=python and cassatt2_quiet_journal_v1, "
+            "requires v1-to-v2 and v2-to-final visual iterations, and stops after "
             "formal-figures/figure-rendering-handoff.md. When FD0 is explicitly started with that handoff, "
             "verified literature/references handoff, official rules, final result data and executed scripts, final delivery stops "
             "after final-delivery/final-delivery-handoff.md with status AWAITING_HUMAN_FINALIZATION. "
@@ -176,6 +226,7 @@ def main() -> int:
     print(f"run_id: {run_id}")
     print(f"source_snapshot_id: {snapshot_id}")
     print(f"registered_sources: {len(sources)}")
+    print("embedded_mcm_skill: snapshotted")
     print("next: the primary Agent follows AGENTS.md and starts W1 with native subagents")
     return 0
 

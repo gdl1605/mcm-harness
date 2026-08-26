@@ -10,18 +10,20 @@
 - `formal-figures/figure-rendering-handoff.md`、`figure-manifest.md` 及其授权的正式图片；
 - 验证授权的结果、公式、单位、精度、限制和 claim；
 - `literature/citation-preparation/references-handoff.md`、claim-to-citation map 与 `literature/references.bib`；
-- 生成最终结果的实际数据文件、运行脚本和版本证据；
+- 生成最终结果的处理后数据、结果文件、原始运行脚本和版本证据；
 - 官方模板、页数、匿名、答卷、附件和文件命名要求。
 
-目标是形成可供人最终微调的论文候选稿、支撑材料、五份独立终审报告和人工问题索引。本模块不自动投稿，不宣称语义“通过”，也不在终审后自动修正文稿。
+目标是形成可供人最终微调的论文候选稿、独立 `supporting-materials.zip`、正文参考文献之后的“支撑材料”展示章节、五份独立终审报告和人工问题索引。本模块不自动投稿，不宣称语义“通过”，也不在终审后自动修正文稿。
 
 停止于 `final-delivery/final-delivery-handoff.md`，状态必须写为 `AWAITING_HUMAN_FINALIZATION`。人修改数字、公式、单位、条件或核心 claim 时，应返回最早受影响的验证/建模/数据阶段；仅修改措辞、版面和合规信息时由人自行确认。
+
+最终交付不重新写论文。`build_prompt.py` 只给语义终审角色注入 `$mcm`：Answer Relevance 使用 `judge-review`，Prose & Engineering Style 使用 `prose-revision`，Delivery Evidence 与 End-to-End Consistency 使用 `validation`；Supporting Material Curator、Typesetter 与 Layout Auditor 默认不加载 mcm。Skill 不得越过冻结或触发 Agent 自动修稿。
 
 ## 2. Team 与所有权
 
 - **Final Delivery Leader**：执行 FD0，派工，冻结候选快照，保存原始 review，写问题索引、人工指南和最终 handoff；不排版、不整理支撑材料、不冒充独立 Reviewer。
-- **Supporting Material Curator**：新 Agent；只写 `supporting-materials/`。整理授权结果数据，并把实际运行脚本完整粘贴到 `source-code.md`。不能从目录里自行挑“看起来最好”的结果或脚本。
-- **Submission Typesetter**：新 Agent；只写 `source/`、`candidate/` 和冻结前的排版 memo。只可修改版式、资源绑定和格式转换，不得改数学事实或润色正文。
+- **Supporting Material Curator**：新 Agent；只写 `supporting-materials/`。复制授权的处理后数据、最终结果和完整原始运行脚本，并准备供正文末尾展示的结果与代码；不能从目录里自行挑“看起来最好”的数据、结果或脚本。
+- **Submission Typesetter**：新 Agent；只写 `source/`、`candidate/` 和冻结前的排版 memo。把“支撑材料”章节置于参考文献之后，并把完整材料打成独立 ZIP；只可修改版式、资源绑定和格式转换，不得改数学事实或润色正文。
 - **Layout & Compliance Auditor**：新 Agent；只写排版与官方规则 review。
 - **Answer Relevance Reviewer**：新 Agent；只检查是否扣题、各问回答是否醒目、摘要正文结论是否闭合。
 - **Prose & Engineering Style Auditor**：新 Agent；只定位 AI 套话、工程报告风、口水话、无必要比喻和机械句式；不给 AI 分数。
@@ -35,28 +37,32 @@
 Leader 写 `scope/frozen-inputs.md`，列出精确路径、版本、哈希、用途和禁止旧候选。至少冻结：
 
 - 正文 Markdown 与 formal-paper handoff；
-- figure-rendering handoff、manifest、正式图片文件、Figure/Table ID、caption 和来源版本；
+- figure-rendering handoff、manifest、正式图片文件、Figure/Table ID、caption、来源版本，以及每图 FR3 批准宽度、最小可读宽度、长宽比和真实版面 preview；
 - 结果数据、公式、单位、精度、限制和 claim；
 - route-evidence-handoff、references handoff、claim-to-citation map、references.bib、已有引用核实状态与 citation-needed；
 - 官方模板、页数、匿名、答卷和附件规则；
-- 最终运行脚本、运行记录、输入和结果版本；
+- 最终处理后数据、结果文件、原始运行脚本、运行记录、输入和结果版本；
 - `problem-baseline`、候选模型汇报、真实人工模型决定、`route-handoff`、数据/模型/验证 handoff、claim map、图表/论文框架/正式写作 handoff 的精确版本，供第五路全链路反查；
-- 输出格式和支撑材料是正文后附还是独立附件。
+- 输出格式、正文末尾“支撑材料”展示范围和独立 ZIP 文件名。正文展示与 ZIP 是两个同时必需的交付面，不能二选一。
 
-缺少 figure-rendering handoff/manifest、关键引用、官方规则或最终脚本时可以建立清单，但不得把候选包标为完整。FD0 只冻结，不搜索新模型、不重开论文润色，也不从散乱 formal-figures 路径挑图。
+缺少 figure-rendering handoff/manifest、FR3 真实版面 preview、关键引用、官方规则或最终脚本时可以建立清单，但不得把候选包标为完整。FD0 只冻结，不搜索新模型、不重开论文润色，也不从散乱 formal-figures 路径挑图。
 
 ## 4. FD1：支撑材料整理
 
 创建新的 Supporting Material Curator。它只使用 FD0 白名单，写：
 
+- `supporting-materials/processed-data/`：生成最终结果所实际消费、允许提交的处理后数据文件；
 - `supporting-materials/results/`：论文实际使用的最终结果数据及必要机器可读文件；
+- `supporting-materials/source-code/`：实际生成最终结果的原始预处理、建模、汇总和必要验证脚本文件，保持文件内容不变；
+- `README.md`：ZIP 目录说明、最小复现入口和材料边界；
+- `processed-data-manifest.md`：处理后数据的来源、版本、哈希、粒度、用途及其对应脚本；
 - `result-data-manifest.md`：结果 ID、正文/图表/claim、单位、精度、来源 run 和文件；
 - `source-code-manifest.md`：脚本用途、对应问题/结果、原路径、版本、哈希和是否实际执行；
 - `execution-order.md`：输入、运行顺序、入口命令、依赖和输出关系；
-- `source-code.md`：按真实执行顺序完整粘贴运行脚本源代码，不能只给路径或仓库链接；
-- `supporting-materials.md`：供排版的统一支撑材料源。
+- `source-code.md`：供论文末尾展示的代码源。代码量可控时展示完整代码；代码过多时展示若干能说明关键处理、建模和结果生成链的原始片段，并逐段指向 ZIP 中的完整脚本、脚本 ID、版本/哈希和行号范围；
+- `supporting-materials.md`：供排版的统一展示源，标题必须为“支撑材料”，至少包含结果展示和代码展示。
 
-只收入实际生成最终授权结果的预处理、模型、汇总和必要验证脚本。不收入废弃候选、debug 临时脚本、缓存、第三方库源码或密钥。发现秘密、私人路径、许可证问题、脚本与最终 run 不一致时原样报告，不静默改写；是否脱敏交给人决定。
+ZIP 只收入实际生成最终授权结果所需的处理后数据、结果和原始脚本。不收入废弃候选、debug 临时脚本、缓存、第三方库源码或密钥。原始脚本必须以文件形式完整进入 `source-code/`；不得用 `source-code.md` 的片段代替。发现秘密、私人路径、许可证问题、脚本与最终 run 不一致时原样报告，不静默改写；是否脱敏交给人决定。
 
 结果数据必须保留精确值、单位、粒度、时间范围、样本量、缺失/可行性状态和来源。篇幅过大时，Markdown 展示必要表格，同时保留完整机器可读文件；不得只展示四舍五入后的论文数字。
 
@@ -64,15 +70,17 @@ Leader 写 `scope/frozen-inputs.md`，列出精确路径、版本、哈希、用
 
 Submission Typesetter 读取冻结正文、正式图、引用和支撑材料，写：
 
-- `source/submission-source.md` 与 `source/supporting-materials.md`；
+- `source/supporting-materials.md`：从 FD1 展示源生成的“支撑材料”章节；
+- `source/submission-source.md`：完整论文源，必须在参考文献结束后追加标题恰为“支撑材料”的章节，并展示结果和代码；代码过多时按 FD1 选择的代表性原始片段展示，不省略 ZIP 中的完整脚本文件；
 - `candidate/paper.pdf`；
 - 官方要求的可编辑格式，如 `paper.docx` 或 LaTeX 源；
-- `candidate/supporting-materials.pdf`，或官方要求的等价独立附件；
+- `candidate/supporting-materials.zip`：ZIP 根目录必须含 `README.md`、三个 manifest、`execution-order.md`，以及非空的 `processed-data/`、`results/`、`source-code/`；
+- 仅在官方另有要求时额外生成 `candidate/supporting-materials.pdf`，它不能替代 ZIP；
 - `preflight-report.md` 与 `typesetting-memo.md`。
 
-冻结前允许修复纯机械问题：字体、字号、页边距、标题层级、分页、公式渲染、图表尺寸、编号、交叉引用、参考文献样式、乱码、截断和资源缺失。不得为了页数删除内容、改写句子、改变数字/公式/claim，或把未完成图片伪装为正式图。超页、缺图、缺引用等需要语义取舍的问题留给终审和人。
+冻结前允许修复纯机械问题：字体、字号、页边距、标题层级、分页、公式渲染、编号、交叉引用、参考文献样式、乱码、截断和资源缺失。图表只可按 manifest 的批准宽度、最小可读宽度和长宽比装配，不得用非等比拉伸、强行压缩或低清重采样换页数。不得删除内容、改写句子、改变数字/公式/claim，或把未完成图片伪装为正式图。超页、缺图、缺引用等需要语义取舍的问题留给终审和人。
 
-机械预检完成后，Leader 写 `scope/candidate-snapshot.md`，列出所有候选文件、来源、哈希和冻结时间。从该时点起，`source/`、`candidate/`、`supporting-materials/` 和上游目录全部只读。
+FD3 必须机械确认 ZIP 可打开、无路径穿越、三个必需目录各有非空文件，并确认论文可见顺序为正文、参考文献、“支撑材料”。同时逐页渲染候选 PDF，逐图记录 `actual_embedded_width_mm`、实际长宽比与 FR3 preview 对照；出现低于最小可读宽度、长宽比漂移、重叠、裁切、压缩、失真或不可读时，不得冻结候选，须返回 FR3 重新做真实版面关闭。机械预检完成且图表条件未失效后，Leader 才写 `scope/candidate-snapshot.md`，列出论文、ZIP、ZIP 内容清单、来源、哈希和冻结时间。从该时点起，`source/`、`candidate/`、`supporting-materials/` 和上游目录全部只读。
 
 ## 6. FD4：五路独立终审
 
@@ -80,7 +88,7 @@ Submission Typesetter 读取冻结正文、正式图、引用和支撑材料，�
 
 ### 6.1 排版与规则审查
 
-`Layout & Compliance Auditor` 写 `reviews/layout-and-compliance-review.md`，检查页数、模板、匿名、字体/页边距、公式/图表/引用编号、清晰度、分页、答卷、附件、文件名和提交清单。
+`Layout & Compliance Auditor` 写 `reviews/layout-and-compliance-review.md`，检查页数、模板、匿名、字体/页边距、公式/图表/引用编号、清晰度、分页、答卷、附件、文件名和提交清单；同时核对“支撑材料”是否位于参考文献之后、结果与代码是否可见，以及 ZIP 是否作为独立提交文件存在。
 
 ### 6.2 扣题与内容审查
 
@@ -92,7 +100,7 @@ Submission Typesetter 读取冻结正文、正式图、引用和支撑材料，�
 
 ### 6.4 交付证据审查
 
-`Delivery Evidence Auditor` 写 `reviews/delivery-evidence-review.md`，检查正文、摘要、结论、图表、结果数据、源代码、运行顺序和引用是否使用同一授权版本；关键脚本是否遗漏；是否混入旧 run、旧参数或废弃候选；支撑材料能否说明结果从哪里来。
+`Delivery Evidence Auditor` 写 `reviews/delivery-evidence-review.md`，检查正文、摘要、结论、图表、处理后数据、结果数据、原始源代码、运行顺序和引用是否使用同一授权版本；ZIP 三类必需内容是否完整；正文末尾展示的结果与代码片段是否能映射到 ZIP 完整文件；关键脚本是否遗漏；是否混入旧 run、旧参数或废弃候选；支撑材料能否说明结果从哪里来。
 
 ### 6.5 全链路一致性审查
 
@@ -130,13 +138,17 @@ final-delivery/
 ├── scope/{frozen-inputs.md,candidate-snapshot.md}
 ├── source/{submission-source.md,supporting-materials.md}
 ├── supporting-materials/
+│   ├── processed-data/
 │   ├── results/
+│   ├── source-code/
+│   ├── README.md
+│   ├── processed-data-manifest.md
 │   ├── result-data-manifest.md
 │   ├── source-code-manifest.md
 │   ├── execution-order.md
 │   ├── source-code.md
 │   └── supporting-materials.md
-├── candidate/{paper.pdf,paper.docx-or-tex,supporting-materials.pdf}
+├── candidate/{paper.pdf,paper.docx-or-tex,supporting-materials.zip[,supporting-materials.pdf]}
 ├── preflight-report.md
 ├── typesetting-memo.md
 ├── reviews/

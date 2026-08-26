@@ -88,8 +88,10 @@
     {"id": "CP6", "dispatch": "reuse_framework_integrator_as_unique_handoff_owner", "handoff": "paper-prep/paper-framework-handoff.md"}
   ],
   "context_isolation": {
-    "competition_blind_forbidden": ["code", "engineering_logs", "leader_defense", "evidence_reviews", "award_paper_distillation"],
+    "competition_blind_forbidden": ["code", "engineering_logs", "leader_defense", "evidence_reviews", "award_paper_distillation", "embedded_mcm_skill"],
     "award_pattern_sweep_available_only_after": "competition-review-blind.md is non-empty and frozen",
+    "blind_mcm_profile": "blind-review",
+    "second_pass_mcm_profile": "judge-review",
     "award_patterns_are_not_evidence": true
   },
   "branch_policy": {

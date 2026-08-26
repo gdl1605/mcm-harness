@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-formal-figure-rendering",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "language": "zh-CN",
   "design_document": "Workflow/formal-figure-rendering.md",
   "execution": {
@@ -18,6 +18,37 @@
       "must_be_explicit_on_every_new_spawn": true,
       "silent_fallback_forbidden": true,
       "on_unavailable": "stop_and_report_to_user"
+    },
+    "required_visual_skill_chain": [
+      {
+        "name": "visualize-data",
+        "explicit_invocation": "$visualize-data",
+        "responsibility": "chart_contract_information_hierarchy_and_palette_policy",
+        "must_be_discoverable": true
+      },
+      {
+        "name": "ssci-plots",
+        "explicit_invocation": "$ssci-plots",
+        "responsibility": "cassatt2_style_system_chart_family_and_multi_panel_implementation",
+        "lock_file": "Workflow/ssci-plots-skill.lock.json",
+        "project_local_path": ".agents/skills/ssci-plots/SKILL.md"
+      },
+      {
+        "name": "nature-figure",
+        "explicit_invocation": "$nature-figure",
+        "responsibility": "python_render_export_and_final_context_qa",
+        "lock_file": "Workflow/nature-figure-skill.lock.json",
+        "project_local_path": ".agents/skills/nature-figure/SKILL.md"
+      }
+    ],
+    "selected_visual_profile": {
+      "profile_id": "cassatt2_quiet_journal_v1",
+      "file": "Workflow/formal-figure-style-profile.cassatt2.json",
+      "palette": "metbrewer_cassatt2",
+      "backend": "python",
+      "must_be_explicit_in_every_producer_and_reviewer_brief": true,
+      "silent_fallback_forbidden": true,
+      "on_missing_or_hash_mismatch": "stop_and_report_to_user"
     },
     "worker_concurrency_policy": "one producer per question or genuine shared unit; one portfolio reviewer by default; only isolated writes and platform capacity permit parallelism"
   },
@@ -45,7 +76,8 @@
       "promote_diagnostic_screenshot_as_formal_figure",
       "one_agent_per_figure",
       "default_luna_subagent",
-      "silent_model_fallback"
+      "silent_model_fallback",
+      "silent_visual_skill_or_profile_fallback"
     ]
   },
   "roles": {
@@ -54,6 +86,8 @@
       "new_agent_required_per_question_or_shared_unit": true,
       "required_runtime": "execution.required_subagent_runtime",
       "reuse_for": "FR2R response and revision",
+      "required_skill_chain": "execution.required_visual_skill_chain",
+      "required_visual_profile": "execution.selected_visual_profile",
       "writes": [
         "formal-figures/questions/qN/**",
         "formal-figures/shared/UNIT-ID/** according to brief",
@@ -66,6 +100,8 @@
       "new_agent_required": true,
       "fresh_context_required": true,
       "required_runtime": "execution.required_subagent_runtime",
+      "required_skill_chain": "execution.required_visual_skill_chain",
+      "required_visual_profile": "execution.selected_visual_profile",
       "reuse_for": "FR3 original-issue closure",
       "review_only": true,
       "writes": [
@@ -77,22 +113,25 @@
   "ownership": {
     "scope_dispatch_log_coverage_manifest_and_handoff": "leader_only",
     "question_or_shared_figure_bundle": "originating_question_visual_producer",
-    "shared_style": "one_designated_question_visual_producer_before_parallel_full_rendering",
+    "shared_style": "one_designated_question_visual_producer_after_all_v1_and_before_v2",
     "portfolio_review_and_closure": "one_fresh_figure_portfolio_reviewer_by_default",
     "upstream_change_request_decision": "leader_only"
   },
   "phases": [
-    {"id": "FR0", "dispatch": "leader_only_freeze_and_explicit_sol_high_setup", "handoff": "formal-figures/scope/frozen-inputs.md and dispatch-log.json"},
-    {"id": "FR1", "dispatch": "one_new_sol_high_visual_producer_per_question_or_shared_unit", "parallel": true, "handoff": "visual plans, contracts, pilots and v1 bundles"},
-    {"id": "FR2", "dispatch": "one_new_fresh_sol_high_portfolio_reviewer", "handoff": "formal-figures/figure-review.md"},
-    {"id": "FR2R", "dispatch": "reuse_originating_visual_producers", "handoff": "responses and final figure bundles"},
+    {"id": "FR0", "dispatch": "leader_only_freeze_and_explicit_sol_high_skill_chain_and_cassatt2_profile_setup", "handoff": "formal-figures/scope/frozen-inputs.md and dispatch-log.json"},
+    {"id": "FR1", "dispatch": "one_new_sol_high_visual_producer_per_question_or_shared_unit", "parallel": true, "handoff": "visualize-data contracts, ssci-plots Cassatt2 v1, round-1 visual diagnosis and v2 bundles"},
+    {"id": "FR2", "dispatch": "one_new_fresh_sol_high_portfolio_reviewer", "handoff": "v2 portfolio review in formal-figures/figure-review.md"},
+    {"id": "FR2R", "dispatch": "reuse_originating_visual_producers", "handoff": "round-2 iteration logs, responses and final figure bundles"},
     {"id": "FR3", "dispatch": "reuse_original_portfolio_reviewer_for_closure", "handoff": "figure-review-closure.md"},
     {"id": "FR4", "dispatch": "leader_only", "handoff": "figure manifest, placement/caption handoff and figure-rendering-handoff.md"}
   ],
   "iteration_policy": {
-    "default_concentrated_revision_rounds": 1,
-    "second_round_only_for": ["numeric_or_scale_error", "critical_unreadability", "broken_export"],
-    "aesthetic_preference_after_one_round": "leader_or_human_decision",
+    "required_visual_iterations": 2,
+    "round_1": "producer_inspects_full-data_v1_at_target_width_then_generates_v2",
+    "round_2": "fresh_portfolio_reviewer_inspects_v2_then_originating_producer_generates_final",
+    "required_issue_classes": ["generic_or_unattractive", "weak_hierarchy", "overlap", "clipping", "compression", "distortion", "unreadable_at_target_width", "color_or_spacing_failure", "cassatt2_palette_drift", "duplicated_legend_or_caption", "unapproved_derived_claim"],
+    "third_full_redesign_round_forbidden": true,
+    "targeted_rerender_inside_round_2_only_for": ["numeric_or_scale_error", "critical_unreadability", "broken_export"],
     "reviewer_may_edit_figures": false
   },
   "final_phase": "FORMAL_FIGURE_RENDERING_HANDOFF"

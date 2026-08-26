@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from zipfile import ZipFile
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -1113,6 +1114,7 @@ class WorkflowToolTests(unittest.TestCase):
             "chart-contract.md",
             "data-ref.md",
             "render-memo.md",
+            "iteration-log.md",
             "figure-review.md",
             "producer-response.md",
             "figure-review-closure.md",
@@ -1136,6 +1138,32 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertEqual(runtime["fork_turns"], "none")
         self.assertTrue(runtime["must_be_explicit_on_every_new_spawn"])
         self.assertTrue(runtime["silent_fallback_forbidden"])
+        visual_chain = team["execution"]["required_visual_skill_chain"]
+        self.assertEqual(
+            [item["name"] for item in visual_chain],
+            ["visualize-data", "ssci-plots", "nature-figure"],
+        )
+        self.assertEqual(
+            [item["explicit_invocation"] for item in visual_chain],
+            ["$visualize-data", "$ssci-plots", "$nature-figure"],
+        )
+        profile = team["execution"]["selected_visual_profile"]
+        self.assertEqual(profile["profile_id"], "cassatt2_quiet_journal_v1")
+        self.assertEqual(profile["palette"], "metbrewer_cassatt2")
+        self.assertEqual(profile["backend"], "python")
+        self.assertTrue((PROJECT_ROOT / profile["file"]).is_file())
+        profile_doc = json.loads((PROJECT_ROOT / profile["file"]).read_text(encoding="utf-8"))
+        self.assertEqual(profile_doc["selected_direction"], "C")
+        self.assertEqual(profile_doc["palette"]["name"], "metbrewer_cassatt2")
+        self.assertTrue(profile_doc["layout_policy"]["quiet_2x2_never_forced"])
+        self.assertTrue(profile_doc["palette"]["hardcoded_hex_forbidden"])
+        ssci_lock = json.loads(
+            (PROJECT_ROOT / "Workflow/ssci-plots-skill.lock.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(ssci_lock["skill"], "ssci-plots")
+        self.assertEqual(ssci_lock["license"], "MIT")
+        self.assertEqual(ssci_lock["required_invocation"], "$ssci-plots")
+        self.assertEqual(team["iteration_policy"]["required_visual_iterations"], 2)
         self.assertEqual(
             {"question_visual_producer", "figure_portfolio_reviewer"},
             set(team["roles"]),
@@ -1159,6 +1187,9 @@ class WorkflowToolTests(unittest.TestCase):
                 "formal-figures/questions",
                 "formal-figures/shared",
                 "formal-figures/previews",
+                "formal-figures/previews/v1",
+                "formal-figures/previews/v2",
+                "formal-figures/previews/final",
                 "formal-figures/change-requests",
             ):
                 self.assertTrue((run_dir / relative).is_dir(), relative)
@@ -1172,12 +1203,30 @@ class WorkflowToolTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
-            for marker in ("gpt-5.6-sol", "reasoning_effort: high", "fork_turns: none", "Luna", "静默降级"):
+            for marker in (
+                "gpt-5.6-sol",
+                "reasoning_effort: high",
+                "fork_turns: none",
+                "$visualize-data",
+                "$ssci-plots",
+                "$nature-figure",
+                "backend=python",
+                "cassatt2_quiet_journal_v1",
+                "metbrewer_cassatt2",
+                "v1",
+                "v2",
+                "final",
+                "Luna",
+                "静默降级",
+            ):
                 self.assertIn(marker, leader.stdout)
 
             brief = run_dir / "formal-figures/briefs/FR1-q1.md"
             brief.write_text(
-                "# FR1\n\nmodel=gpt-5.6-sol; reasoning_effort=high; fork_turns=none。\n",
+                "# FR1\n\nmodel=gpt-5.6-sol; reasoning_effort=high; fork_turns=none; "
+                "$visualize-data; $ssci-plots; $nature-figure; backend=python; "
+                "visual_profile=cassatt2_quiet_journal_v1; palette=metbrewer_cassatt2; "
+                "Workflow/ssci-plots-skill.lock.json; Workflow/nature-figure-skill.lock.json。\n",
                 encoding="utf-8",
             )
             producer = subprocess.run(
@@ -1196,6 +1245,12 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertEqual(producer.returncode, 0, producer.stderr)
             self.assertIn("Question Visual Producer", producer.stdout)
             self.assertIn("默认 Luna 不符合", producer.stdout)
+            self.assertIn("$visualize-data", producer.stdout)
+            self.assertIn("$ssci-plots", producer.stdout)
+            self.assertIn("$nature-figure", producer.stdout)
+            self.assertIn("metbrewer_cassatt2", producer.stdout)
+            self.assertIn("Round 1", producer.stdout)
+            self.assertIn("Round 2", producer.stdout)
 
             reviewer = subprocess.run(
                 [
@@ -1214,6 +1269,10 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertIn("Figure Portfolio Reviewer", reviewer.stdout)
             for marker in ("准确性", "信息设计", "视觉质量", "正文环境"):
                 self.assertIn(marker, reviewer.stdout)
+            self.assertIn("$nature-figure", reviewer.stdout)
+            self.assertIn("$ssci-plots", reviewer.stdout)
+            self.assertIn("cassatt2_quiet_journal_v1", reviewer.stdout)
+            self.assertIn("v2", reviewer.stdout)
 
     def test_formal_figure_stage_checks_requested_sol_high_and_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -1272,21 +1331,29 @@ class WorkflowToolTests(unittest.TestCase):
                 "formal-figures/questions/q1/FIG-Q1-01/render.py",
                 "formal-figures/questions/q1/FIG-Q1-01/render-config.md",
                 "formal-figures/questions/q1/FIG-Q1-01/render-memo.md",
+                "formal-figures/questions/q1/FIG-Q1-01/iteration-log.md",
                 "formal-figures/questions/q1/FIG-Q1-01/response.md",
                 "formal-figures/questions/q1/FIG-Q1-01/v1/figure.png",
                 "formal-figures/questions/q1/FIG-Q1-01/v1/figure.pdf",
                 "formal-figures/questions/q1/FIG-Q1-01/v1/figure.svg",
+                "formal-figures/questions/q1/FIG-Q1-01/v2/figure.png",
+                "formal-figures/questions/q1/FIG-Q1-01/v2/figure.pdf",
+                "formal-figures/questions/q1/FIG-Q1-01/v2/figure.svg",
                 "formal-figures/questions/q1/FIG-Q1-01/final/figure.png",
                 "formal-figures/questions/q1/FIG-Q1-01/final/figure.pdf",
                 "formal-figures/questions/q1/FIG-Q1-01/final/figure.svg",
                 "formal-figures/previews/contact-sheet.pdf",
+                "formal-figures/previews/in-paper-preview.pdf",
             )
             for relative in required_files:
                 path = run_dir / relative
                 path.parent.mkdir(parents=True, exist_ok=True)
                 if relative.startswith("formal-figures/briefs/"):
                     path.write_text(
-                        "gpt-5.6-sol high fork_turns=none\n",
+                        "gpt-5.6-sol high fork_turns=none $visualize-data $ssci-plots "
+                        "$nature-figure backend=python cassatt2_quiet_journal_v1 "
+                        "metbrewer_cassatt2 Workflow/ssci-plots-skill.lock.json "
+                        "Workflow/nature-figure-skill.lock.json\n",
                         encoding="utf-8",
                     )
                 else:
@@ -1304,6 +1371,11 @@ class WorkflowToolTests(unittest.TestCase):
                         "requested_model": "gpt-5.6-sol",
                         "requested_reasoning_effort": "high",
                         "fork_turns": "none",
+                        "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
+                        "skill_invocations": ["$visualize-data", "$ssci-plots", "$nature-figure"],
+                        "backend": "python",
+                        "visual_profile": "cassatt2_quiet_journal_v1",
+                        "palette": "metbrewer_cassatt2",
                     },
                     {
                         "phase": "FR2",
@@ -1314,6 +1386,11 @@ class WorkflowToolTests(unittest.TestCase):
                         "requested_model": "gpt-5.6-sol",
                         "requested_reasoning_effort": "high",
                         "fork_turns": "none",
+                        "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
+                        "skill_invocations": ["$visualize-data", "$ssci-plots", "$nature-figure"],
+                        "backend": "python",
+                        "visual_profile": "cassatt2_quiet_journal_v1",
+                        "palette": "metbrewer_cassatt2",
                     },
                 ],
             }
@@ -1358,11 +1435,66 @@ class WorkflowToolTests(unittest.TestCase):
                 rejected_report["errors"],
             )
 
+            dispatch["tasks"][0]["requested_model"] = "gpt-5.6-sol"
+            dispatch["tasks"][0]["skill_invocations"] = [
+                "$visualize-data",
+                "$sci-plot",
+                "$nature-figure",
+            ]
+            dispatch_path.write_text(json.dumps(dispatch), encoding="utf-8")
+            wrong_skill = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "formal-figures",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(wrong_skill.returncode, 1)
+            wrong_skill_report = json.loads(wrong_skill.stdout)
+            self.assertTrue(
+                any("skill_invocations=" in error for error in wrong_skill_report["errors"]),
+                wrong_skill_report["errors"],
+            )
+
+            dispatch["tasks"][0]["skill_invocations"] = [
+                "$visualize-data",
+                "$ssci-plots",
+                "$nature-figure",
+            ]
+            dispatch["tasks"][0]["visual_profile"] = "generic_blue_grid"
+            dispatch_path.write_text(json.dumps(dispatch), encoding="utf-8")
+            wrong_profile = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "formal-figures",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(wrong_profile.returncode, 1)
+            wrong_profile_report = json.loads(wrong_profile.stdout)
+            self.assertTrue(
+                any("visual_profile='cassatt2_quiet_journal_v1'" in error for error in wrong_profile_report["errors"]),
+                wrong_profile_report["errors"],
+            )
+
     def test_final_delivery_workspace_prompts_templates_and_team(self) -> None:
         template_root = PROJECT_ROOT / "templates/final-delivery"
         expected_templates = {
             "task-brief.md",
             "frozen-inputs.md",
+            "processed-data-manifest.md",
             "result-data-manifest.md",
             "source-code-manifest.md",
             "execution-order.md",
@@ -1391,6 +1523,14 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertEqual(team["scope"]["terminal_status"], "AWAITING_HUMAN_FINALIZATION")
         self.assertTrue(team["execution"]["post_review_agent_revision_forbidden"])
         self.assertTrue(team["branch_policy"]["no_agent_edits_after_fd4_starts"])
+        self.assertTrue(team["roles"]["supporting_material_curator"]["processed_data_must_be_copied"])
+        self.assertTrue(team["roles"]["supporting_material_curator"]["original_source_files_must_be_copied"])
+        self.assertTrue(team["roles"]["submission_typesetter"]["paper_appendix_must_follow_references"])
+        self.assertTrue(team["roles"]["submission_typesetter"]["supporting_materials_zip_required"])
+        figure_contract = team["roles"]["submission_typesetter"]["figure_layout_contract"]
+        self.assertTrue(figure_contract["preserve_manifest_approved_width_and_aspect_ratio"])
+        self.assertTrue(figure_contract["actual_embedded_width_mm_required_in_preflight"])
+        self.assertEqual(figure_contract["visual_failure_returns_to"], "FR3_before_candidate_freeze")
         self.assertNotIn("response", " ".join(team["roles"]))
         for role in team["roles"].values():
             self.assertTrue((PROJECT_ROOT / role["prompt"]).is_file(), role["prompt"])
@@ -1421,7 +1561,9 @@ class WorkflowToolTests(unittest.TestCase):
                 "final-delivery/briefs",
                 "final-delivery/scope",
                 "final-delivery/source",
+                "final-delivery/supporting-materials/processed-data",
                 "final-delivery/supporting-materials/results",
+                "final-delivery/supporting-materials/source-code",
                 "final-delivery/candidate",
                 "final-delivery/reviews",
                 "final-delivery/human-review",
@@ -1455,7 +1597,8 @@ class WorkflowToolTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(curator.returncode, 0, curator.stderr)
-            self.assertIn("完整粘贴", curator.stdout)
+            self.assertIn("完整原始脚本", curator.stdout)
+            self.assertIn("代码片段", curator.stdout)
             self.assertIn("最终排版与终审 Worker Base Prompt", curator.stdout)
 
             prose = subprocess.run(
@@ -1552,15 +1695,18 @@ class WorkflowToolTests(unittest.TestCase):
                 "final-delivery/scope/candidate-snapshot.md",
                 "final-delivery/source/submission-source.md",
                 "final-delivery/source/supporting-materials.md",
+                "final-delivery/supporting-materials/README.md",
+                "final-delivery/supporting-materials/processed-data-manifest.md",
                 "final-delivery/supporting-materials/result-data-manifest.md",
                 "final-delivery/supporting-materials/source-code-manifest.md",
                 "final-delivery/supporting-materials/execution-order.md",
                 "final-delivery/supporting-materials/source-code.md",
                 "final-delivery/supporting-materials/supporting-materials.md",
+                "final-delivery/supporting-materials/processed-data/processed.csv",
                 "final-delivery/supporting-materials/results/final-results.csv",
+                "final-delivery/supporting-materials/source-code/model.py",
                 "final-delivery/candidate/paper.pdf",
                 "final-delivery/candidate/paper.docx",
-                "final-delivery/candidate/supporting-materials.pdf",
                 "final-delivery/preflight-report.md",
                 "final-delivery/typesetting-memo.md",
                 "final-delivery/reviews/layout-and-compliance-review.md",
@@ -1576,7 +1722,27 @@ class WorkflowToolTests(unittest.TestCase):
             for relative in required_files:
                 path = run_dir / relative
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+                if relative == "final-delivery/preflight-report.md":
+                    path.write_text(
+                        "actual_embedded_width_mm aspect_ratio in-paper-preview FR3\n",
+                        encoding="utf-8",
+                    )
+                else:
+                    path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+
+            archive_path = run_dir / "final-delivery/candidate/supporting-materials.zip"
+            with ZipFile(archive_path, "w") as archive:
+                for relative in (
+                    "README.md",
+                    "processed-data-manifest.md",
+                    "result-data-manifest.md",
+                    "source-code-manifest.md",
+                    "execution-order.md",
+                    "processed-data/processed.csv",
+                    "results/final-results.csv",
+                    "source-code/model.py",
+                ):
+                    archive.writestr(relative, "opaque mechanical fixture\n")
 
             checked = subprocess.run(
                 [
@@ -1598,6 +1764,76 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertFalse(report["ai_prose_quality_checked"])
             self.assertFalse(report["delivery_evidence_semantics_checked"])
             self.assertFalse(report["end_to_end_consistency_semantics_checked"])
+
+            preflight_path = run_dir / "final-delivery/preflight-report.md"
+            preflight_path.write_text("opaque mechanical fixture\n", encoding="utf-8")
+            missing_figure_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "final-delivery",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(missing_figure_gate.returncode, 1)
+            missing_figure_report = json.loads(missing_figure_gate.stdout)
+            self.assertTrue(
+                any("actual_embedded_width_mm" in error for error in missing_figure_report["errors"]),
+                missing_figure_report["errors"],
+            )
+            preflight_path.write_text(
+                "actual_embedded_width_mm aspect_ratio in-paper-preview FR3\n",
+                encoding="utf-8",
+            )
+
+            with ZipFile(archive_path, "w") as archive:
+                for relative in (
+                    "README.md",
+                    "processed-data-manifest.md",
+                    "result-data-manifest.md",
+                    "source-code-manifest.md",
+                    "execution-order.md",
+                    "results/final-results.csv",
+                    "source-code/model.py",
+                ):
+                    archive.writestr(relative, "opaque mechanical fixture\n")
+            incomplete_archive = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "final-delivery",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(incomplete_archive.returncode, 1)
+            incomplete_report = json.loads(incomplete_archive.stdout)
+            self.assertTrue(
+                any("processed-data/" in error for error in incomplete_report["errors"]),
+                incomplete_report["errors"],
+            )
+
+            with ZipFile(archive_path, "w") as archive:
+                for relative in (
+                    "README.md",
+                    "processed-data-manifest.md",
+                    "result-data-manifest.md",
+                    "source-code-manifest.md",
+                    "execution-order.md",
+                    "processed-data/processed.csv",
+                    "results/final-results.csv",
+                    "source-code/model.py",
+                ):
+                    archive.writestr(relative, "opaque mechanical fixture\n")
 
             forbidden = run_dir / "final-delivery/responses/automatic-rewrite.md"
             forbidden.parent.mkdir(parents=True, exist_ok=True)
@@ -1652,6 +1888,124 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertIn("原 subagent", agents)
         self.assertIn("W3R", agents)
         self.assertIn("W5C", agents)
+
+    def test_embedded_mcm_skill_routing_and_snapshot(self) -> None:
+        integration_path = PROJECT_ROOT / "Workflow/mcm-skill-integration.json"
+        integration = json.loads(integration_path.read_text(encoding="utf-8"))
+        self.assertTrue(integration["skill"]["embedded"])
+        self.assertFalse(integration["skill"]["external_install_required"])
+        self.assertEqual(integration["skill"]["invocation"], "$mcm")
+        for relative in integration["snapshot_files"]:
+            self.assertTrue((PROJECT_ROOT / relative).is_file(), relative)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_dir = root / "run"
+            initialized = subprocess.run(
+                [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(initialized.returncode, 0, initialized.stderr)
+            snapshot_path = run_dir / "state/mcm-skill-snapshot.json"
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            self.assertEqual(snapshot["skill_name"], "mcm")
+            self.assertEqual(snapshot["skill_invocation"], "$mcm")
+            self.assertFalse(snapshot["semantic_quality_checked"])
+
+            checked = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "check_workspace.py"),
+                    str(run_dir),
+                    "--stage",
+                    "init",
+                    "--json",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+            report = json.loads(checked.stdout)
+            self.assertTrue(report["embedded_mcm_skill_files_checked"])
+            self.assertFalse(report["embedded_mcm_skill_drift_detected"])
+            self.assertFalse(report["mcm_semantic_behavior_checked"])
+
+            brief = root / "brief.md"
+            brief.write_text("# Task\n\n审查或写作。\n", encoding="utf-8")
+
+            writer = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--paper-writing-role",
+                    "question_manuscript_writer",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(writer.returncode, 0, writer.stderr)
+            self.assertIn("`submission-draft`", writer.stdout)
+            self.assertIn("references/award-reader-model.md", writer.stdout)
+            self.assertNotIn("references/distill/source-notes/2025", writer.stdout)
+
+            blind = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--paper-prep-role",
+                    "competition_manuscript_reviewer",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(blind.returncode, 0, blind.stderr)
+            self.assertIn("`blind-review`", blind.stdout)
+            self.assertIn("禁止调用 `$mcm`", blind.stdout)
+            self.assertNotIn("references/award-reader-model.md", blind.stdout)
+
+            judge = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--paper-prep-role",
+                    "competition_manuscript_reviewer",
+                    "--mcm-profile",
+                    "judge-review",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(judge.returncode, 0, judge.stderr)
+            self.assertIn("`judge-review`", judge.stdout)
+            self.assertIn("references/judge-review-playbook.md", judge.stdout)
+
+            typesetter = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "build_prompt.py"),
+                    "--final-delivery-role",
+                    "submission_typesetter",
+                    "--task-brief",
+                    str(brief),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(typesetter.returncode, 0, typesetter.stderr)
+            self.assertNotIn("# 内置 mcm Skill 运行协议", typesetter.stdout)
 
     def test_leader_router_and_workflow_list_every_role_prompt(self) -> None:
         workflow = (PROJECT_ROOT / "Workflow/README.md").read_text(encoding="utf-8")

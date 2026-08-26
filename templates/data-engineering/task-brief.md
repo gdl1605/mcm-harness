@@ -9,6 +9,7 @@
 - 数据版本：{{DATA_VERSION_OR_PENDING}}
 - Wave：{{WAVE}}
 - Role：{{ROLE}}
+- mcm profile：`auto`；若覆盖则写 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 唯一输出路径：{{OUTPUT_PATH}}
 - 允许读取的原始材料：{{ALLOWED_SOURCES}}
 - 允许读取的既有报告：{{ALLOWED_REPORTS}}
@@ -50,4 +51,3 @@
 {{STOP_CONDITION}}
 
 本角色不得越权执行：{{FORBIDDEN_ACTIONS}}
-

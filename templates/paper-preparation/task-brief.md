@@ -5,6 +5,7 @@
 ## 身份与目标
 
 - 阶段/角色/Agent 句柄：{{PHASE_ROLE_AGENT}}
+- mcm profile：`auto`；CP5 第一遍必须为 `blind-review`，第二遍必须显式覆盖为 `judge-review`：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 问题或全篇单元：{{UNIT}}
 - 唯一目标与停止条件：{{GOAL_AND_STOP}}
 - 父 run、冻结版本和当前材料版本：{{PARENT_AND_VERSION}}
