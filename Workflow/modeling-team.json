@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-modeling-construction",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "language": "zh-CN",
   "design_document": "Workflow/modeling-construction.md",
   "implementation_plan": "Workflow/modeling-implementation-plan.md",
@@ -106,6 +106,7 @@
       "new_agent_required_at_M3": true,
       "single_owner_per_question": true,
       "reuse_for_M4": true,
+      "maintains_authoritative_method_note_with_each_semantic_model_change": true,
       "writes": [
         "modeling/src/",
         "modeling/configs/",
@@ -197,7 +198,8 @@
         "modeling/runs/run-id/run-intent.md",
         "modeling/runs/run-id/iteration-memo.md",
         "modeling/results/candidate-tables/",
-        "modeling/results/interfaces/"
+        "modeling/results/interfaces/",
+        "modeling/paper-notes/qN-model-method-note.md"
       ]
     },
     {
@@ -215,7 +217,8 @@
       "roles": [
         "leader"
       ],
-      "visibility": "all_modeling_reports_runs_versions_and_interfaces",
+      "visibility": "all_modeling_reports_runs_versions_interfaces_and_method_note_versions",
+      "requires_authoritative_method_note_mapping": "one exact current candidate note per question linked to build contract code config results interface and known semantic gaps",
       "handoff": "modeling/model-handoff.md"
     }
   ],
@@ -261,7 +264,7 @@
         "model_builder"
       ],
       "visibility": "approved_adjustment_card_and_owned_artifacts",
-      "handoff": "new_versioned_run_and_builder_owned_artifacts"
+      "handoff": "new_versioned_run_builder_owned_artifacts_and_synchronized_method_note_when_semantics_change"
     }
   ],
   "ownership": {
@@ -269,6 +272,7 @@
     "M1_reports": "one_role_one_report_append_only",
     "M2_build_contract": "leader_only",
     "question_code_configs_runs": "original_model_builder_single_owner",
+    "question_method_note": "original_model_builder_single_owner_M6_only_identifies_authoritative_version",
     "shared_modeling_kernel": "one_leader_designated_owner",
     "M4_diagnosis": "new_diagnostician_report_only",
     "M4_response_and_revision": "original_model_builder_only_after_leader_authorization",

@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-independent-model-validation",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "language": "zh-CN",
   "design_document": "Workflow/model-validation.md",
   "execution": {
@@ -15,7 +15,7 @@
       "V1_mathematical_implementation_audit",
       "V1_experimental_evidence_audit",
       "V1_reproducibility_interface_audit",
-      "V6_integrated_answer_audit_when_strongly_coupled",
+      "V6_evidence_first_answer_reconstruction_for_multiquestion_runs",
       "fresh_recheck_after_reserved_evidence_is_consumed"
     ],
     "reuse_original_agent_for": [
@@ -105,8 +105,9 @@
     },
     "integrated_answer_auditor": {
       "prompt": "prompts/validation/integrated-answer-auditor.md",
-      "new_agent_required_when": "strong_interquestion_dependency_or_material_error_propagation",
+      "new_agent_required_when": "every_multiquestion_run; deep_interface_analysis_only_when_strongly_coupled",
       "writes": [
+        "validation/interfaces/answer-reconstruction.md",
         "validation/interfaces/cross-question-validation.md"
       ]
     },
@@ -148,9 +149,10 @@
     },
     {
       "id": "V6",
-      "dispatch": "conditional_new_integrated_auditor_then_leader",
+      "dispatch": "new_integrated_auditor_two_pass_for_multiquestion_run_then_leader",
       "roles": ["integrated_answer_auditor", "leader"],
       "handoff": [
+        "validation/interfaces/answer-reconstruction.md",
         "validation/interfaces/cross-question-validation.md",
         "validation/claims/claim-evidence-map.md",
         "validation/validation-handoff.md"

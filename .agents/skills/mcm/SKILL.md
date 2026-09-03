@@ -155,13 +155,15 @@ Do not add robustness sections that perturb irrelevant parameters. If validation
 
 Before prose polishing, each question needs a clear answer object:
 
-- relation question: effect/direction table plus the sentence answering the prompt;
+- relation question: effect/direction evidence and a readable explanation of what it means for the prompt;
 - ranking question: ranked list and selection rule;
 - forecast question: required forecast table with uncertainty or error context;
 - optimization question: executable plan table, not only an objective value;
 - grouping/timing question: boundaries, recommended timing, and switching/retest conditions;
 - classification question: rule or threshold, validation evidence, and final labels;
 - open recommendation: prioritized actions with triggers, benefits, and risks.
+
+These are semantic outcomes, not mandatory fields or sentence forms. A complex or conditional answer may need a short paragraph; do not force every question into a one-sentence conclusion, identical subsection order, or repeated closing formula.
 
 Keep units, sample scope, scenario definitions, and naming consistent across code, tables, figures, abstract, and conclusions.
 
@@ -185,7 +187,7 @@ Do not draft polished prose over unresolved evidence.
 Use when the main answers and evidence are stable.
 
 - Design the first-page answer map with references/award-reader-model.md.
-- Build each question around task judgment, necessary structure, method role, evidence, main answer, and conditions.
+- Ensure each question lets the reader recover task judgment, necessary structure, method role, evidence, main answer, and conditions; choose their order from the question’s actual reasoning rather than a shared paragraph skeleton.
 - Use references/distill/writing-playbook.md for narrative and evidence placement.
 - Use assets/paper-template/abstract-stress-test.md to test the abstract without prescribing its wording.
 - Use references/competition-revision-lenses.md for Chinese semantic revision.
@@ -206,6 +208,10 @@ Use when an existing paper needs evaluation or revision advice.
 
 Do not assign mechanical scores unless the user explicitly asks for a rubric. Do not treat resemblance to one award paper as proof of quality.
 
+Before paper material or formal prose is accepted, use `references/method-self-containment.md` for a no-code reconstruction. An independent reader should be able to explain how this problem's objects and data enter the model, what relation/objective/constraints matter, how estimation or solving produces an output, and how that output becomes the answer. Match detail to semantic risk; never use formula count, pseudocode length, citations, or algorithm tutorials as proxies for self-containment.
+
+Use `references/contribution-evidence.md` before calling anything a contribution or innovation. A supported contest contribution connects a real problem difficulty, a defensible reference route, discriminating evidence, and an answer-level gain. Gain may be validity, feasibility, executability, stability, or decision change rather than a higher metric. Do not require one contribution per question; downgrade necessary but unproven choices and remove methods that never enter the answer.
+
 ## Judge-facing semantic principles
 
 Use references/award-reader-model.md when any of these judgments matter:
@@ -223,7 +229,7 @@ Use references/award-reader-model.md when any of these judgments matter:
 Before delivery ask:
 
 - Does every model match a task and data structure?
-- Does every question end in the answer shape the prompt requires?
+- Does every question yield the answer shape the prompt requires, even if its answer appears in a task-appropriate place rather than a fixed ending?
 - Can every main conclusion be traced to evidence?
 - Are repeated observations, proxy labels, threshold times, and leakage handled?
 - Could the chosen validation actually overturn or qualify the answer?
@@ -243,6 +249,8 @@ Repair in this order: missing answer, invalid model–data link, unsupported con
 | Task typing | references/problem-typing.md |
 | Data inspection | references/data-inspection.md |
 | Model choice | references/model-selection.md |
+| Method self-containment and no-code reconstruction | references/method-self-containment.md |
+| Contest contribution and decisive evidence | references/contribution-evidence.md |
 | Implementation structure | references/code-templates.md |
 | Validation | references/validation.md |
 | Plot choice | references/plotting.md |

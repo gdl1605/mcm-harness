@@ -10,6 +10,7 @@
 - mcm profile：`auto`；若覆盖则写 profile 与原因：{{MCM_PROFILE_OR_OVERRIDE_REASON}}
 - 当前 build contract / 分支 / 父运行：{{CONTRACT_BRANCH_PARENT_RUN}}
 - 当前数据、代码与接口版本：{{DATA_CODE_INTERFACE_VERSIONS}}
+- 当前方法说明版本、权威状态与本轮同步责任：{{METHOD_NOTE_VERSION_AND_SYNC}}
 - 候选模型汇报与真实人工决定：{{MODEL_CANDIDATE_BRIEFING_AND_HUMAN_DECISION}}
 
 ## 输入与隔离
@@ -58,4 +59,4 @@
 
 ## 开放发现
 
-报告任务未预见、但会改变题意、路线、数据、模型结构、评价口径、题间接口、失效传播或后续验证的内容。不要只返回 JSON、勾选表或 ID 列表。
+报告任务未预见、但会改变题意、路线、数据、模型结构、评价口径、题间接口、方法说明语义、失效传播或后续验证的内容。模型实际语义发生变化时，原 builder 必须在同一轮更新其方法说明并保留旧版；不能等论文阶段从代码反推。不要只返回 JSON、勾选表或 ID 列表。

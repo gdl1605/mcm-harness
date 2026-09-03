@@ -30,6 +30,7 @@
       "purpose": "让模型处理本题的真实困难，并把输出连接到题目要求的答案形状。",
       "references": [
         "references/model-selection.md",
+        "references/method-self-containment.md",
         "references/contest-answer-shapes.md"
       ]
     },
@@ -38,6 +39,7 @@
       "purpose": "审查模型、证据和答案之间的断点，并验证真正可能改变结论的因素。",
       "references": [
         "references/validation.md",
+        "references/method-self-containment.md",
         "references/contest-answer-shapes.md"
       ]
     },
@@ -54,6 +56,8 @@
       "purpose": "把已授权事实组织成主答案、关键证据、题间接口与正文/附录取舍。",
       "references": [
         "references/paper-writing.md",
+        "references/method-self-containment.md",
+        "references/contribution-evidence.md",
         "references/contest-answer-shapes.md",
         "assets/paper-template/paper-design-lenses.md"
       ]
@@ -63,10 +67,22 @@
       "purpose": "把稳定证据写成评委可快速理解、核验和比较的正式竞赛论文。",
       "references": [
         "references/paper-writing.md",
+        "references/method-self-containment.md",
+        "references/contribution-evidence.md",
         "references/award-reader-model.md",
         "references/distill/writing-playbook.md",
         "assets/paper-template/abstract-stress-test.md",
         "references/competition-revision-lenses.md"
+      ]
+    },
+    "front-page-review": {
+      "mode": "front-page-review",
+      "purpose": "在正文隐藏时重建标题、摘要、关键词和首页文字实际传达的答案、证据口径、贡献与条件。",
+      "references": [
+        "references/award-reader-model.md",
+        "assets/paper-template/abstract-stress-test.md",
+        "references/contribution-evidence.md",
+        "references/contest-answer-shapes.md"
       ]
     },
     "judge-review": {
@@ -74,6 +90,8 @@
       "purpose": "沿评委阅读路径发现主答案缺失、模型错配、证据断裂和限制放置错误。",
       "references": [
         "references/judge-review-playbook.md",
+        "references/method-self-containment.md",
+        "references/contribution-evidence.md",
         "references/award-reader-model.md",
         "references/contest-answer-shapes.md"
       ]
@@ -121,7 +139,7 @@
     "paper_prep_leader": {"profile": "paper-material"},
     "paper_prep_role": {"default": "paper-material", "overrides": {"chapter-evidence-auditor": "validation", "competition-manuscript-reviewer": "blind-review"}},
     "paper_writing_leader": {"profile": "submission-draft"},
-    "paper_writing_role": {"default": "submission-draft", "overrides": {"full-paper-fact-auditor": "validation", "competition-expression-reviewer": "judge-review", "full-paper-coherence-reviewer": "judge-review", "ai-prose-auditor": "prose-revision"}},
+    "paper_writing_role": {"default": "submission-draft", "overrides": {"full-paper-fact-auditor": "validation", "competition-expression-reviewer": "front-page-review", "full-paper-coherence-reviewer": "judge-review", "ai-prose-auditor": "prose-revision"}},
     "final_delivery_leader": {"profile": "judge-review"},
     "final_delivery_role": {"default": null, "overrides": {"answer-relevance-reviewer": "judge-review", "prose-engineering-style-auditor": "prose-revision", "delivery-evidence-auditor": "validation", "end-to-end-consistency-auditor": "validation"}},
     "literature_leader": {"profile": null},
@@ -134,6 +152,8 @@
     ".agents/skills/mcm/references/problem-typing.md",
     ".agents/skills/mcm/references/data-inspection.md",
     ".agents/skills/mcm/references/model-selection.md",
+    ".agents/skills/mcm/references/method-self-containment.md",
+    ".agents/skills/mcm/references/contribution-evidence.md",
     ".agents/skills/mcm/references/validation.md",
     ".agents/skills/mcm/references/plotting.md",
     ".agents/skills/mcm/references/paper-writing.md",

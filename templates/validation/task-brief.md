@@ -20,6 +20,8 @@ mcm profile 默认为 `auto`；若覆盖，记录 profile 与原因：{{MCM_PROF
 
 给出唯一主 Markdown 路径。默认没有额外写权；V3 需要时明确授权唯一 `validation/probes/PROBE-ID/`。
 
+V6 第一遍只授权题面、官方交付、V5 主张处置、结果与条件/限制，唯一输出为 `validation/interfaces/answer-reconstruction.md`；它落盘后，第二遍复用同一 Agent，才新增模型交接、作者预期输出和必要题间接口，输出 `cross-question-validation.md`。两遍都写开放自然语言，不要求统一问题标题或状态表。
+
 ## A/B/C/D 最低问题
 
 根据当前角色写出至少四个责任问题，要求连接事实、解释、影响、反例和区分动作。

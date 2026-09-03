@@ -13,7 +13,7 @@ Leader 负责：
 - 为每个 subagent 创建开放 task brief，明确允许/禁止上下文和唯一输出路径；
 - 创建新视角 Agent，复用需要保持原判断连续性的 Agent；
 - 保存原始 memo 和 subagent 句柄；
-- W/D/M/V 与前半程同步波等待本波全部任务返回、失败或取消后再综合；图表、论文准备、正式绘图和 PW2 按独立问题推进，PW5 三个 Reviewer 同波等齐后由 Leader 综合；FD4 五个终审 Reviewer 同快照并行且等齐后只建立人工问题索引；
+- W/D/M/V 与前半程同步波等待本波全部任务返回、失败或取消后再综合；图表、论文准备、正式绘图和 PW2 按独立问题推进；PW5A 首页重建可与 Coherence/AI 全文审查并行，但 Competition 全文审查必须等待其首页 memo，全部 review 等齐后 Leader 才综合；FD4 五个终审 Reviewer 同快照并行且等齐后只建立人工问题索引；
 - 保留共同认识、实质分歧、少数意见和框架外发现；
 - 管理版本、题间接口、局部回滚和模块交接；
 - 在当前模块停止边界结束，不擅自进入尚未实现的模块。
@@ -72,13 +72,13 @@ W0 来源封箱
 → V1 数学实现/实验证据/复现接口三视角审查
 → V2 验证议程
 → V3–V5 定向 probe、原 owner 回应、主张裁决与局部回滚
-→ V6 整体题链审查与验证交接
+→ V6 证据优先答案重建、必要题链审查与验证交接
 ⇉（若任务包含后续交付）F0 图表输入冻结 / CP0 论文输入冻结
 → CP1 最小章节地图，立即供给图表 F3
-⇉ F1 逐问诊断与数据整理 / CP2 逐问章节材料 / REF4 引用缺口地图
+⇉ F1 逐问诊断与数据整理 / CP2 逐问章节材料 / CP3A 无代码方法重建 / REF4 引用缺口地图
 → REF5 定向引用检索与 REF6 独立引用审查
 → F2/F2R 图表证据复核与回应
-→ CP3/CP3R 章节证据复核与回应
+→ CP3B/CP3R 材料对照复核与回应
 → F3/F4 图表整合与交接
 ⇉ FR0/FR1 sol-high 正式图冻结与逐问渲染（与 CP4–PW4 并行）
 → FR2 全篇图包独立审查与 FR2R 原 Producer 修订
@@ -90,9 +90,10 @@ W0 来源封箱
 ⇉ PW2 每问正式章节
 → PW3 Leader 全文组装 v1
 → PW4/PW4R 事实审查与修订
-⇉ FR3 正式图真实版面关闭检查 / PW5 竞赛表达、全文连贯、AI 文风三路独立审查
+⇉ FR3 正式图真实版面关闭检查 / PW5A 首页独立重建、全文连贯、AI 文风审查
+→ PW5B 同一 Competition Reviewer 对照首页与冻结全文
 → PW5R Leader 统一修订
-→ PW6 四角色关闭检查与事实回归
+→ PW6 四角色关闭检查、事实回归与条件式 fresh 首页复核
 → PW7 正式论文 Markdown 交接
 → FR4 正式图 manifest 与 rendering handoff
 → FD0 最终交付输入冻结
@@ -115,6 +116,7 @@ W0 来源封箱
 - 不允许把 Skill reference 转成字段命中、评分表或固定论文骨架。机械 checker 只核对路径、版本和哈希。
 - `init_run.py` 将当前集成配置和关键 Skill 文件哈希记录到 `state/mcm-skill-snapshot.json`；运行中出现漂移时先记录并决定是否重启/重冻结，不静默混用版本。
 - CP5 Competition Manuscript Reviewer 的第一遍使用默认 `blind-review`，盲审落盘前禁止加载 `$mcm`；第二遍必须由 Leader 以 `--mcm-profile judge-review` 重新构建 prompt。其他 Agent 不得自行绕过盲审隔离。
+- PW5 Competition Expression Reviewer 第一遍使用默认 `front-page-review`，只读原题/官方要求和 Leader 从冻结 v2 原样截取的 front matter；`first-page-reconstruction.md` 落盘前禁止读取完整正文。第二遍和原问题关闭必须由 Leader 显式使用 `--mcm-profile judge-review`。高影响首页实质修订后才可条件创建一个 fresh 同角色实例，只读 v3 front matter。
 
 ## 3. 阶段文件路由
 
@@ -178,12 +180,12 @@ Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存�
 | M0 问题编排 | 候选汇报、真实人工决定、三份上游交接与相关原始 memo | 无；Leader 执行；缺 H1 时停止 | `templates/modeling/question-map.md` → `modeling/question-map.md` |
 | M1 三视角分析 | question map、冻结交接、隔离 brief | `prompts/modeling/mathematical-specification-architect.md`、`prompts/modeling/computational-path-planner.md`、`prompts/modeling/structural-challenger.md` | `templates/modeling/formulation.md`、`templates/modeling/computation-plan.md`、`templates/modeling/structural-challenge.md` |
 | M2 构建合同 | M1 三份原始报告 | 无；Leader 综合 | `templates/modeling/build-contract.md` → `modeling/specs/qN-build-contract.md` |
-| M3 baseline 贯通 | 当前 build contract 与允许数据 | `prompts/modeling/model-builder.md` | `templates/modeling/run-intent.md`、`templates/modeling/iteration-memo.md`、`templates/modeling/candidate-result-index.md`、`templates/modeling/model-method-note.md` |
+| M3 baseline 贯通 | 当前 build contract 与允许数据 | `prompts/modeling/model-builder.md`；原 builder 随实质模型变化同步方法说明 | `templates/modeling/run-intent.md`、`templates/modeling/iteration-memo.md`、`templates/modeling/candidate-result-index.md`、开放 `templates/modeling/model-method-note.md` |
 | M4B 高影响诊断 | 中性触发 brief、run intent、代码、原始日志/结果与 baseline | `prompts/modeling/build-result-diagnostician.md`；新 subagent | `templates/modeling/result-diagnosis.md` → `modeling/diagnostics/` |
 | M4C 原实现者回应 | diagnosis 已落盘后与原实现 | `prompts/modeling/model-builder-response.md`；复用原 builder | `templates/modeling/builder-response.md` → `modeling/adjustments/` |
 | M4D/M4E 裁决与重跑 | 原始证据、diagnosis、response | Leader 写 `templates/modeling/adjustment-card.md`；复用原 builder 按卡修订 | 新版本代码、配置、run 与结果；L3 用 `templates/modeling/upstream-change-request.md` |
 | M5 跨问接口 | 相关问题合同、run 与接口 | `prompts/modeling/interface-handoff.md`；复用相关原 builder | `templates/modeling/interface-handoff.md` → `modeling/results/interfaces/` |
-| M6 模型交接 | 全部建模原始产物与版本 | 无；Leader 综合 | `templates/modeling/model-handoff.md` → `modeling/model-handoff.md` |
+| M6 模型交接 | 全部建模原始产物、方法说明与版本 | 无；Leader 综合并逐问指定当前权威候选方法说明，不代写 | `templates/modeling/model-handoff.md` → `modeling/model-handoff.md` |
 
 建模阶段不得加载数据工程角色 prompt 继续清洗，也不得进入正式验证。结果诊断者只做构建根因分析，不是后续独立验证者。
 
@@ -198,7 +200,7 @@ Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存�
 | V3 定向 probe | docket、冻结对象与授权保留信息 | 复用提出者的对应 V1 prompt | `templates/validation/probe-intent.md`、`templates/validation/probe-report.md` → `validation/probes/PROBE-ID/` |
 | V4 原 owner 回应 | probe report 与原实现/运行 | `prompts/validation/original-owner-response.md`；复用原 model/data builder | `templates/validation/original-owner-response.md` → `validation/responses/` |
 | V5 主张裁决/回滚 | review、probe、response、exposure ledger 与原始证据 | 无；Leader 执行 | `templates/validation/claim-disposition.md`；需回滚用 `templates/validation/upstream-change-request.md` |
-| V6 整体题链与交接 | 逐问裁决、接口、暴露账本与官方交付 | 强依赖时用 `prompts/validation/integrated-answer-auditor.md` | `templates/validation/cross-question-validation.md`、`templates/validation/claim-evidence-map.md`、`templates/validation/validation-handoff.md` |
+| V6 答案重建、整体题链与交接 | 逐问裁决、授权结果、条件/限制与官方交付 | 多问题任务创建 `prompts/validation/integrated-answer-auditor.md`；先证据优先重建，后复用同一 Agent 对照作者意图；强依赖时才深审题链 | `validation/interfaces/answer-reconstruction.md`、`templates/validation/cross-question-validation.md`、`templates/validation/claim-evidence-map.md`、`templates/validation/validation-handoff.md` |
 
 验证者只能在 `validation/` 中写报告和获批 probe，不能修改 `data/` 或 `modeling/`。需修正时必须返回最早上游责任阶段。
 
@@ -235,14 +237,15 @@ Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存�
 | 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
 |---|---|---|---|
 | 论文准备启动 | `Workflow/paper-preparation.md`、`Workflow/paper-preparation-team.json`、`prompts/paper-preparation/leader.md` | `prompts/paper-preparation/worker-base.md` | `templates/paper-preparation/task-brief.md` |
-| CP0 输入冻结 | 候选汇报、真实人工模型决定、validation handoff/claim map、route evidence、引用状态、官方要求、授权结果、工程文稿与图表状态 | 无；Leader 执行 | `templates/paper-preparation/frozen-inputs.md` → `paper-prep/scope/frozen-inputs.md` |
-| CP1 最小骨架 | CP0、题意基线和题间接口 | `prompts/paper-preparation/paper-structure-architect.md`；新 subagent | chapter-map-v0、narrative-spine、page-budget |
-| CP2 逐问材料 | CP0、chapter-map-v0 与本问授权证据 | `prompts/paper-preparation/question-chapter-curator.md`；每问新 subagent | `paper-prep/questions/qN/chapter-material-v1.md` |
-| CP3 证据审查 | 本问 v1、冻结证据与接口 | `prompts/paper-preparation/chapter-evidence-auditor.md`；新 subagent | `paper-prep/questions/qN/evidence-review.md` |
-| CP3R 原 Curator 回应 | v1、review 与授权证据 | `prompts/paper-preparation/chapter-curator-response.md`；复用原 Curator | evidence-response 与 chapter-material-v2 |
-| CP4 全文整合 | 全部逐问已审材料、图表交接和 CP1 | `prompts/paper-preparation/paper-framework-integrator.md`；新 subagent | chapter-map-v1、全局注册表、paper-framework-v1 |
-| CP5 双遍竞赛审读 | 第一遍只读题目/官方要求/框架/材料；第二遍才增加国奖蒸馏 | `prompts/paper-preparation/competition-manuscript-reviewer.md`；新 subagent，第二遍和关闭检查复用 | blind review、pattern sweep、closure |
-| CP5R 定向修订 | 两份 review、Owner 路由和新逐问版本 | `prompts/paper-preparation/paper-framework-response.md`；复用原 Integrator，事实问题复用原 Curator | framework-response、paper-framework-v2 |
+| CP0 输入冻结 | V6 答案重建/题链对照、候选汇报、真实人工模型决定、validation handoff/claim map、route evidence、授权结果、逐问权威方法说明、同口径 baseline/直观路线与验证后增量证据、引用/图表状态和官方要求 | 无；Leader 区分建模前预期与验证后事实，只授权已存在或诚实条件化的答案 | `templates/paper-preparation/frozen-inputs.md` → `paper-prep/scope/frozen-inputs.md` |
+| CP1 最小骨架 | CP0、题意基线和题间接口 | `prompts/paper-preparation/paper-structure-architect.md`；新 subagent，只登记候选论证作用，不宣布贡献 | chapter-map-v0、初步 narrative-spine、page-budget |
+| CP2 逐问材料 | CP0、chapter-map-v0、权威方法说明、baseline/结构诊断与本问授权证据；不见并行 reconstruction | `prompts/paper-preparation/question-chapter-curator.md`；每问新 subagent，只保留局部困难—证据—答案事实，不自封贡献 | `paper-prep/questions/qN/chapter-material-v1.md` |
+| CP3A 无代码方法重建 | 题面/官方交付、V6 答案重建、权威方法说明、授权结果/条件和必要接口；禁止代码、日志与 v1 | `prompts/paper-preparation/chapter-evidence-auditor.md`；每问新 subagent，可与 CP2 并行 | `paper-prep/questions/qN/method-reconstruction.md`；纯说明修复时同 Agent 可写一次 closure |
+| CP3B 材料对照审查 | 冻结 reconstruction/closure、本问 v1、claim map 与相同授权证据；仍禁止代码 | 复用原 CP3A Auditor | `paper-prep/questions/qN/evidence-review.md` |
+| CP3R 原 Curator 回应 | reconstruction/closure、v1、review 与授权证据 | `prompts/paper-preparation/chapter-curator-response.md`；复用原 Curator | evidence-response 与 chapter-material-v2 |
+| CP4 全文整合与贡献重建 | 全部逐问已审材料、验证后 baseline/结构证据、题间消费、图表交接和 CP1 | `prompts/paper-preparation/paper-framework-integrator.md`；新 subagent，不创造证据并保留 CP1 初稿 | chapter-map-v1、narrative-spine-v1、claim-to-section map、paper-framework-v1 |
+| CP5 双遍竞赛审读 | 第一遍读题目/官方要求、narrative-spine-v1、claim-to-section map、框架/材料，先审贡献证据；第二遍才增加国奖蒸馏比较表达 | `prompts/paper-preparation/competition-manuscript-reviewer.md`；新 subagent，第二遍和关闭检查复用 | blind review、pattern sweep、closure |
+| CP5R 定向修订 | 两份 review、Owner 路由和新逐问版本 | `prompts/paper-preparation/paper-framework-response.md`；已有证据联结由原 Integrator 重组，缺证据时降级或回 M/V | framework-response、paper-framework-v2；贡献边界改变时 narrative-spine-v2、claim-to-section-map-v2 |
 | CP6 框架交接 | v2、closure、全部来源与未决请求 | 复用原 Integrator | `templates/paper-preparation/paper-framework-handoff.md` → `paper-prep/paper-framework-handoff.md` |
 
 论文准备只交付可直接成文的段落级材料和框架。Evidence Auditor 与 Competition Reviewer 必须是不同新 Agent；国奖论文蒸馏只在 blind review 落盘后暴露。模块不得生成完整论文、正式图片、排版、审美报告或参考文献检索结果。
@@ -252,15 +255,16 @@ Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存�
 | 做到这个阶段 | Leader 必读 | 派发给 subagent 的 prompt | 主要模板或产物 |
 |---|---|---|---|
 | 正式写作启动 | `Workflow/paper-writing.md`、`Workflow/paper-writing-team.json`、`prompts/paper-writing/leader.md` | `prompts/paper-writing/worker-base.md` | `templates/paper-writing/task-brief.md` |
-| PW0 输入冻结 | paper framework、figure handoff、references handoff/references.bib、validation claim map、官方要求 | 无；Leader 执行 | `paper-writing/scope/frozen-inputs.md` |
-| PW1 写作计划 | PW0、章节地图、符号和表图计划 | 无；Leader 执行 | writing-plan、section-contracts、prose-boundary、figure-table-slots |
-| PW2 逐问正文 | 本问 contract、最终材料、授权证据和全局术语 | `prompts/paper-writing/question-manuscript-writer.md`；每问新 subagent | `sections/qN/section-v1.md` |
-| PW3 全文 v1 | 全部 section-v1 与公共章节材料 | 无；Leader 是唯一全文作者 | `manuscript/full-paper-v1.md` |
-| PW4 事实审查 | v1、validation/figure 来源 | `prompts/paper-writing/full-paper-fact-auditor.md`；新 subagent | `reviews/fact-consistency-review.md` |
+| PW0 输入冻结 | paper framework、经支持的贡献/已降级事项、figure handoff、references handoff/references.bib、validation claim map、官方要求 | 无；Leader 执行，Writer 不得重新生成贡献 | `paper-writing/scope/frozen-inputs.md` |
+| PW1 写作计划 | PW0、章节地图、贡献措辞边界、符号和表图计划 | 无；Leader 执行，不设每问贡献配额 | writing-plan、section-contracts、prose-boundary、figure-table-slots |
+| PW2 逐问正文 | 本问 contract、最终材料、授权贡献/必要方法定位、证据和全局术语 | `prompts/paper-writing/question-manuscript-writer.md`；每问新 subagent | `sections/qN/section-v1.md` |
+| PW3 全文 v1 | 全部 section-v1 与公共章节材料 | 无；Leader 是唯一全文作者，只表达 CP4/CP5 已支持贡献 | `manuscript/full-paper-v1.md` |
+| PW4 事实审查 | v1、contribution/claim map、validation/figure 来源 | `prompts/paper-writing/full-paper-fact-auditor.md`；新 subagent，贡献/创新/提升同样按事实审 | `reviews/fact-consistency-review.md` |
 | PW4R 事实修订 | 本问 review、v1 与来源 | `prompts/paper-writing/question-manuscript-response.md`；复用原 writer；Leader重组 | section response/v2、fact-response、full-paper-v2 |
-| PW5 三路审查 | 同一冻结 v2；peer review 和 Leader 辩护隐藏 | Competition/Coherence/AI 三个 prompt；三个新 subagent | 三份独立 review |
-| PW5R Leader 修订 | 三份 review 与 owner response | 无；Leader 综合 | language-review-response、full-paper-v3 |
-| PW6 关闭检查 | v3、原 review 与 response | 复用原四个 Reviewer，只关闭原问题 | `reviews/closure/` 四份 memo |
+| PW5A 首页重建与并行全文审查 | Competition 只读原题/官方要求/front-matter-v2，Coherence/AI 读同一冻结 v2；peer review 和 Leader 辩护隐藏 | `competition-expression-reviewer.md` 默认 `front-page-review`，另两个 prompt 正常新建 | first-page-reconstruction、coherence review、AI review |
+| PW5B 首页—正文及贡献密度比较 | 第一遍 memo 已冻结后，增加同一 `full-paper-v2.md` | 复用原 Competition Reviewer，显式 `judge-review`；审贡献证据与答案保持型删减 | competition-expression-review |
+| PW5R 定向修订与 Leader 组装 | reconstruction、三份完整 review 与 owner response | 正文漏答案或局部越权贡献时复用原 Question Writer；缺贡献证据则降级/删除或回 M/V | 条件性 section-expression-response/section-v3、language-review-response、full-paper-v3、front-matter-v3 |
+| PW6 关闭检查 | v3、原 review 与 response | 复用原四个 Reviewer；仅高影响首页实质修订时创建一个 fresh 同角色首页读者 | 四份 closure；条件性 first-page-reconstruction-closure |
 | PW7 正式交接 | v3、closures、未完成交付项 | 无；Leader 独写 | final-paper、formal-paper-handoff |
 
 Markdown 是唯一正文源。只有 Leader 可以写 `paper-writing/manuscript/` 和最终 handoff；Question Writer 只写本问 section，四个 Reviewer 永久只写修改单。不得创建 AI 检测分数、机械文风脚本、自动改写、Word/LaTeX、正式图片、引用检索或提交包。
@@ -303,7 +307,7 @@ Task brief 必须明确：
 - A/B/C/D 最低责任；
 - 路线任务还必须写明宽候选责任、禁止伪多样性、文献扩展时点和不得提前替用户收敛；
 - 建模任务还必须写明问题/共享构建单元、真实人工模型决定、授权候选边界、build contract、开发反馈、保留信息、父运行/分支、代码 owner、调整权限与预算；
-- 验证任务还必须写明冻结主张/模型/结果版本、已用开发反馈、可见/禁止保留信息、暴露对象、probe 写入根、原 owner 和复验预算；
+- 验证任务还必须写明冻结主张/模型/结果版本、已用开发反馈、可见/禁止保留信息、暴露对象、probe 写入根、原 owner 和复验预算；V6 第一遍只暴露题面、官方交付、主张处置、授权结果及条件/限制，第二遍必须等 `answer-reconstruction.md` 落盘后才向同一 Agent 增加作者意图和题间接口；
 - 图表任务还必须写明问题/共享结果单元、冻结结果和版本、诊断图与论文候选的边界、数据包导出写入根、review/response 路径、章节依赖、是否允许共享结果读取以及禁止修改的上游目录；
 - 正式绘图任务还必须记录显式 `gpt-5.6-sol + high + fork_turns=none` 请求、Figure ID、冻结数据包/claim、图量覆盖、style-owner 权限、pilot/final 边界、唯一写入根、真实版心和迭代预算；
 - 论文准备任务还必须写明问题/全篇单元、材料版本、验证授权范围、唯一 owner、正文/附录边界、图表状态、两遍竞赛审读的上下文隔离、国奖蒸馏暴露时点和禁止生成完整论文；
@@ -327,7 +331,7 @@ Task brief 必须明确：
 - 数据实现者修订：复用原 D3 数据管道实现者。
 - 每问首次模型实现和首次高影响诊断：创建新的 subagent。
 - 模型实现者回应、获批调整重跑和跨问接口交接：复用对应原 model builder。
-- V1 三视角审计和强题间依赖的 V6 整体审计：创建新 subagent。
+- V1 三视角审计创建新 subagent；多问题任务的 V6 答案重建创建一个新 subagent，第一遍 memo 落盘后复用同一 Agent 做作者意图/题链对照。
 - V3 获批 probe：复用提出该问题的 auditor；V4 证据回应：复用受影响的原 model/data builder。
 - builder 看到过某份保留证据后的最终复验：换新独立证据，需 fresh context 时创建新 auditor。
 - F1 每问或共享结果单元：创建一个新的 Question Figure Curator；不按候选图数量复制 owner。
@@ -337,20 +341,21 @@ Task brief 必须明确：
 - F0 和冻结清单由 Leader 写；F3 Integrator 独自写 `figure-plan.md` 与最终 handoff；F4 Leader 只核对条件、处理回滚和宣布汇合。
 - FR1 每问/真实共享单元创建一个显式 sol-high Question Visual Producer，不按 Figure ID 拆 Agent；指定一个 Producer 兼任 style owner。FR2 创建一个 fresh-context sol-high Portfolio Reviewer；FR2R 复用原 Producer，FR3 复用原 Reviewer；FR4 由 Leader 写 manifest 和 handoff。
 - CP1：创建新的 Paper Structure Architect；chapter-map-v0 落盘后立即提供给 F3。
-- CP2/CP3：每问创建一个新 Question Chapter Curator；每个 v1 完成立即创建新的 Chapter Evidence Auditor，不等待其他问题。
-- CP3R：复用产生 v1 的原 Curator，一次集中形成 response 和 v2。
+- CP2/CP3A：每问分别创建一个新 Question Chapter Curator 与一个新 Chapter Evidence Auditor；两者可并行，但 Auditor 第一遍不得看 v1 或代码。
+- CP3B/CP3R：v1 与 reconstruction/必要 closure 冻结后，复用原 Auditor 做对照；再复用产生 v1 的原 Curator，一次集中形成 response 和 v2。
 - CP4：创建新的 Paper Framework Integrator；CP5 创建新的 Competition Manuscript Reviewer。
 - CP5 第一遍完成并落盘 blind review 后，才向同一 Reviewer 暴露国奖论文蒸馏材料；关闭检查继续复用该 Reviewer。
 - CP5R/CP6：事实问题复用对应原 Curator；全篇结构修订与最终 handoff 复用原 Integrator。
-- PW2：每问创建一个新 Question Manuscript Writer，不按段落拆 Agent；PW4R 复用该问题原 writer。
+- PW2：每问创建一个新 Question Manuscript Writer，不按段落拆 Agent；PW4R 事实修订及 PW5R 已有答案的局部正文可见性修订复用该问题原 writer。
 - PW3/PW5R/PW7：由当前 Leader独写全文主稿、全局 response 和最终 handoff，不创建全文写作 subagent。
-- PW4：创建新 Full-Paper Fact Auditor；PW5 创建三个互相隔离的新 Competition/Coherence/AI Reviewer，三者审同一冻结 v2。
-- PW6：复用原四个 Reviewer，只检查原 review 的处理，不新增全面审稿轮次。
+- PW4：创建新 Full-Paper Fact Auditor。PW5A 创建新的 Competition/Coherence/AI Reviewer；Competition 第一遍只读 front matter，后两者读同一冻结 v2。
+- PW5B：第一遍 memo 落盘后复用原 Competition Reviewer，显式 `judge-review` 并增加同一冻结 v2；全部完整 review 落盘后才进入 PW5R。
+- PW6：复用原四个 Reviewer，只检查原 review 的处理；若首页曾有高影响缺口且 v3 实质修改首页，可额外创建一个 fresh 同角色实例，只读 v3 front matter，一次后停止。
 - REF1 每条路线创建新 Scout；REF2 Human Recorder 在真实回复到达后复用，未回复时不得模拟；REF3 创建新 Literature Auditor。
 - REF4 创建新 Citation Gap Analyst；REF5 每独立主题簇创建新 Citation Scout；REF6 创建新 Citation Auditor。最终 BibTeX 与 references handoff 由 Leader 根据 review 整理。
 - 无独立输入或只会重复已有报告：不创建 Agent。
 - W/D/M/V 原有波次仍最多并行 3 个 worker；图表、正式绘图、论文准备、PW2、FD4 和文献 Scout 不设固定数字上限，只能按独立问题/路线/主题簇、独立写入路径和平台容量并行，不能按单图、单篇论文或单条引用重复派 owner。
-- Leader 保存 Agent 句柄；W/D/M/V 同步波全部返回、失败或取消后才综合，图表 F2 与论文 CP3 按问题流式独立复核；PW5 三份 review 全部落盘后才进入 Leader 修订。
+- Leader 保存 Agent 句柄；W/D/M/V 同步波全部返回、失败或取消后才综合，图表 F2 与论文 CP2/CP3A/CP3B 按问题流式推进；PW5 的 first-page reconstruction 与三份完整 review 全部落盘后才进入 Leader 修订。
 - subagent 完成后先确认指定文件已经落盘；聊天摘要不能替代原始 memo。
 
 ## 6. Leader 的判断纪律
@@ -368,6 +373,7 @@ Task brief 必须明确：
 - 验证按具体主张记录可引用、有条件可引用、暂不可引用、证据反驳或上游失效；不对整个模型做虚假通过判定。
 - 只在高影响不确定性和有区分力、可负担的 probe 同时存在时继续 V3–V5；否则限制主张或上游重开。
 - 每次向 builder 暴露验证信息后更新 exposure ledger；已消耗 holdout 不得重用为独立证据。
+- 贡献是需要证据支持的 claim，不是模型名标签。区分建模前预期与验证后增量；答案增量可以是有效性、可行性、执行性、稳定性或题链决策变化，不只看指标。没有每问贡献配额；必要方法未证增量时降级，未进入答案时移附录或删除。
 
 ## 7. 文件所有权与版本
 
@@ -384,13 +390,13 @@ Task brief 必须明确：
 - F2 Auditor 只写对应单元的 review；F2R 原 Curator 只写 response 和明确授权的新 package 版本；F3 Integrator 只写 `figure-prep/cross-question/integration/`，并且是 `figure-plan.md` 与 `figure-preparation-handoff.md` 的唯一内容 owner；F4 Leader 只核对条件、处理回滚和宣布汇合。
 - 图表支线的所有上游结果、数据、模型、验证交接和论文正文均只读；正式绘图模块只能读取 F4 最终 handoff 和 FR0 白名单。
 - FR1 Producer 只写自己的 `formal-figures/questions/qN/` 或 shared unit；仅指定 style owner 可在全部 v1 后写 `style/`。FR2 Reviewer 只写 v2 figure-review，FR3 只写真实嵌入预览 closure；FR4 coverage、manifest 与 rendering handoff 只由 Leader 写。全部上游和论文主稿只读。
-- CP1 Structure Architect 只写 structure v0；CP2/CP3/CP3R 分别只写本问 material、evidence review 和版本化 response/material。
+- CP1 Structure Architect 只写 structure v0；CP2 Curator 只写本问 material；CP3A/CP3B 同一 Auditor 只写 method reconstruction/必要 closure 与 evidence review；CP3R 原 Curator 只写版本化 response/material。
 - CP4 Integrator 只写 `paper-prep/structure/`、`shared/` 与 `integration/` 获批文件，不能改逐问事实；Competition Reviewer 只写三份 review。
 - CP5R 的事实修订只由原 Question Curator 完成，全篇框架和 `paper-framework-handoff.md` 只由原 Integrator完成；Leader 只核对、回滚和宣布交接。
-- 论文准备的 `data/`、`modeling/`、`validation/`、`figure-prep/` 和国奖蒸馏原件均只读。
-- `paper-writing/manuscript/`、`responses/` 和 `formal-paper-handoff.md` 只有 Leader 可写；逐问 writer 只拥有自己的 `sections/qN/`。
-- PW4/PW5 四个 Reviewer 只写各自 review；Reviewer 不得修改 section、manuscript、response 或上游材料，也不得读取 peer review。
-- PW4R 事实修改复用原问题 writer；PW5R 全文结构、摘要结论、过渡和统一文风只由 Leader 修改。
+- 对论文准备角色，`data/`、`modeling/`、`validation/`、`figure-prep/` 和国奖蒸馏原件均只读。唯一例外是 CP3A 已确认“只漏写已实现语义”后，Leader 显式返回建模模块，复用原 model builder 仅升版其方法说明；论文角色本身仍无该写权。
+- `paper-writing/manuscript/`、`responses/`、`scope/front-matter-v2.md`、`scope/front-matter-v3.md` 和 `formal-paper-handoff.md` 只有 Leader 可写；front matter 必须是对应冻结正文的原样视图，不得另行改写。逐问 writer 只拥有自己的 `sections/qN/`。
+- PW4/PW5 四个 Reviewer 只写各自 review；Competition Reviewer 额外拥有第一遍 reconstruction 和条件触发的 fresh closure 路径。Reviewer 不得修改 section、manuscript、response 或上游材料，也不得读取 peer review。
+- PW4R 事实修改复用原问题 writer；PW5R 若正文漏掉冻结上游已有答案，复用原问题 writer 只写本问 expression response/section-v3；全文结构、摘要结论、过渡和统一文风只由 Leader 修改。
 - FD1 Curator 只写 `final-delivery/supporting-materials/`，其中必须有非空的 `processed-data/`、`results/`、`source-code/`；FD2/FD3 Typesetter 只在候选冻结前写 `source/`、`candidate/`、preflight 和 typesetting memo，并负责正文末尾展示和独立 ZIP。
 - FD4 五个 Reviewer 各自只写一份 review；End-to-End Consistency Auditor 可额外读取 FD0 冻结的全链路 handoff，但不读 peer review。candidate snapshot 冻结后任何 Agent 不得修改正文、候选稿、支撑材料或上游文件。
 - FD5–FD7 只有 Leader 可写问题索引、人工指南、提交清单和 handoff；Leader 不得创建审后修订版或代替人提交。
@@ -409,6 +415,9 @@ Task brief 必须明确：
 - 高影响模型异常先隔离诊断；diagnosis 落盘前不得向诊断者泄露 builder 的事后归因和建议改法。
 - 非平凡模型调整先写 adjustment card；旧 run、失败调整和被替换合同保留并标记失效传播。
 - 验证发现需修改时，由 Leader 发上游变更请求，validator 不得直接修改 `data/` 或 `modeling/`。
+- CP3A 无代码重建失败时，纯方法说明遗漏返回原 model builder 并由同一 Auditor 做一次 closure；涉及模型/结果语义则重开建模与验证并换新 Auditor；缺主答案则返回 V6/答案 owner。
+- PW5B 发现首页—正文断点时按含义处理：正文成立而首页遗漏由 Leader 修；首页事实或语气越权返回 Fact Auditor；正文漏掉已有答案返回原 Question Writer；上游未形成答案返回 V6/M/V。不得用摘要强结论掩盖正文缺口。高影响首页修订最多触发一次 fresh 同角色 front-matter 复核。
+- 贡献断点按最早责任处理：已有证据只缺联结，返回 Curator/Integrator/Writer；必要方法被升级或内容未进入答案，降级、附录或删除；不可省的优越性主张缺决定性比较，返回 M/V；“首次/原创”缺文献边界，删除或返回 REF。Reviewer 和 Leader 不得用国奖表达补造贡献。
 - 修正后只重验受影响主张及下游；若原 owner 已看到原 holdout，先换新独立证据。
 - 图表 worker 未返回时，同角色重试一次；仍失败则记录该问题缺失，不由 Leader 冒充独立复核。单个问题 package 失败不拖延其他独立问题。
 - 图表数据包不可复算或 claim 不获授权时，暂停该候选并保留旧版本；不得为了满足图表数量强行交接。
@@ -416,9 +425,9 @@ Task brief 必须明确：
 - `figure-prep/figure-preparation-handoff.md` 是主 harness 的图表停止点；正式论文图、审美审查、版式迭代、答卷和论文正文不由本支线自动创建。
 - 正式绘图新 subagent 未显式请求 `gpt-5.6-sol + high + fork_turns=none`，或 brief 未显式调用 `$visualize-data → $ssci-plots → $nature-figure`、Python 后端、两个 skill lock/hash、`cassatt2_quiet_journal_v1`/`metbrewer_cassatt2` 时不得启动；覆盖/skill/profile 不可用时停止并报告，不得使用默认 Luna、其他 palette 或普通 Matplotlib 静默替代。C 是视觉语言而非强制 2×2。必须完成 v1→v2 Producer 自审与 v2→final 独立 review 两轮视觉迭代；图数据/claim 问题返回 F/V/M/D，第二轮后新审美方向停止并交给人。
 - `formal-figures/figure-rendering-handoff.md` 是正式绘图停止点；FD0 只消费 manifest 授权 final，不从散乱图片目录挑图。
-- CP6 只有在逐问 evidence review/response、双遍竞赛审读、定向修订、一次关闭检查和高影响 change request 处置完成后才能交接。
+- CP6 只有在逐问 method reconstruction/必要 closure、evidence review/response、验证后贡献重建、双遍竞赛审读、定向修订、一次关闭检查和高影响 change request 处置完成后才能交接。
 - `paper-prep/paper-framework-handoff.md` 是论文准备停止点；完整论文、参考文献检索、正式图、排版和提交包不由本模块创建。
-- PW7 只有在 fact review/response、三路语言 review、Leader v3 和四份关闭检查完成后才能交接。
+- PW7 只有在 fact review/response、首页 reconstruction、三路语言 review、Leader v3、四份关闭检查及已触发的 fresh 首页 closure 完成后才能交接。
 - `paper-writing/formal-paper-handoff.md` 是正式写作停止点；Word/LaTeX、正式图片、参考文献检索、排版、答卷和提交包仍不创建。
 - L2 前必须完成 REF3 route-evidence-handoff、Leader 候选汇报和 H1 真实人工模型决定；没有决定时停在 `AWAITING_HUMAN_MODEL_DECISION`。CP4/CP6/PW0 前必须完成 REF6 references-handoff、claim-to-citation map 和 references.bib。未核验来源保留 citation-needed，不得虚构。
 - `final-delivery/final-delivery-handoff.md` 是最终交付停止点；FD4 后问题只报告不自动修改，状态必须为 `AWAITING_HUMAN_FINALIZATION`，实际微调和投稿由人完成。

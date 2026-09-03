@@ -25,4 +25,6 @@
 
 ## V6 与停止
 
-强题间依赖时创建新 integrated-answer auditor。最后写 claim-evidence map 和 validation handoff，保留条件、限制、否定证据和未决争议。`validation/validation-handoff.md` 完成后停止，不创建绘图、章节材料、答卷或论文角色。
+多问题任务创建一个新 integrated-answer auditor，并保持两次上下文暴露。第一轮只给题面、官方交付、V5 主张处置、授权结果和条件/限制，禁止拟写答案、章节材料、作者辩护与论文语句；确认 `validation/interfaces/answer-reconstruction.md` 落盘后，才复用同一 Agent，增加模型交接、作者预期输出和必要接口，形成 `cross-question-validation.md`。强依赖题展开完整传播审查，弱依赖题只处理答案重建所暴露的必要接口。
+
+你按原因路由而不是做总分门禁：证据不存在或不支持题面精度，返回 M/V；证据存在但仍缺主选择，返回原 Owner/Leader；答案存在而只是尚未成文，才允许 CP 使用；条件性答案只要证据和使用边界成立，可以授权。最后写 claim-evidence map 和 validation handoff，保留条件、限制、否定证据和未决争议。`validation/validation-handoff.md` 完成后停止，不创建绘图、章节材料、答卷或论文角色。

@@ -121,7 +121,7 @@ FR0 冻结 F4 数据并校验两个 skill lock 与 Cassatt2 profile，FR1 逐问
 
 **实现状态：PW0–PW7 已实现。** 设计见 [paper-writing.md](paper-writing.md)，配置见 `paper-writing-team.json`，角色 prompt 位于 `prompts/paper-writing/`，开放模板位于 `templates/paper-writing/`。
 
-该模块消费 paper framework 与 figure handoff。每问 subagent 写独立正式章节，主 Leader 是唯一全文作者，负责公共章节、摘要结论、组装和统一文风；四个独立 Reviewer 分别审事实、竞赛表达、全文连贯和 AI/口水文风，Reviewer 不直接修改正文。
+该模块消费 paper framework、验证后贡献/降级边界与 figure handoff。每问 subagent 写独立正式章节，主 Leader 是唯一全文作者，只表达 CP4/CP5 已支持的贡献，负责公共章节、摘要结论、组装和统一文风；四个独立 Reviewer 分别审事实、竞赛表达、全文连贯和 AI/口水文风，Reviewer 不直接修改正文。竞赛表达 Reviewer 先在正文隐藏时重建首页语义，再由同一 Agent 对照冻结全文和贡献证据；高影响首页修订才条件触发一个 fresh 同角色读者。
 
 主要责任：
 
@@ -277,7 +277,7 @@ JSON 仍只用于路径、哈希、版本、任务状态和运行参数等机械
 
 论文准备使用独立 Evidence Auditor 检查事实，再用 fresh-context Competition Manuscript Reviewer 检查竞赛成文性；两种审查不能合并为一个角色。全篇 Integrator 不拥有逐问事实的修改权。
 
-正式写作由 Leader 独占全文主稿；四个独立 Reviewer 分别检查事实、竞赛表达、全文连贯和 AI/口水文风，全部只写修改单。AI 文风审查不使用检测分数、机械脚本或自动改写。
+正式写作由 Leader 独占全文主稿；四个独立 Reviewer 分别检查事实、竞赛表达、全文连贯和 AI/口水文风，全部只写修改单。贡献先在 CP4 由验证后证据重建、CP5 盲审，再由 PW3 表达；竞赛表达采用 front matter 盲读→同一冻结全文比较的分遍上下文，不能让正文知识倒灌首页判断，也不能从国奖模式发明贡献。AI 文风审查不使用检测分数、机械脚本或自动改写。
 
 新方案和独立复核使用新 subagent；对自己旧实验的解释、修正和材料整理可以复用原 subagent。Leader 负责题间依赖、版本关系、证据主线、回滚范围和最终合成。
 

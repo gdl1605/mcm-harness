@@ -9,7 +9,11 @@
 - 禁止上下文：{{FORBIDDEN_CONTEXT}}
 - 唯一输出与额外写权：{{OUTPUT_AND_WRITES}}
 - 输入/正文版本：{{INPUT_AND_DRAFT_VERSION}}
+- 若为分遍审读，当前遍次、已冻结前一遍 memo、本轮新增可见内容：{{STAGED_CONTEXT_EXPOSURE}}
+- front matter 快照来源版本、原样边界和禁止补写：{{FRONT_MATTER_PROVENANCE}}
 - 旧版保留与停止条件：{{VERSION_AND_STOP}}
+
+贡献与降级边界只从允许读取的当前 narrative spine、claim map 和 PW0 冻结输入继承，不在 brief 中重新概括或生成；Writer 与 Reviewer 必须保留这些材料中的证据边界。
 
 最低责任 A/B/C/D：必须写什么事实或正文；怎样证明来源；哪些限制/禁止表达要保留；谁能修订、何时上游重开。继续列出任务之外的新发现。
 

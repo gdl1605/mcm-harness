@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-paper-writing",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "language": "zh-CN",
   "design_document": "Workflow/paper-writing.md",
   "execution": {
@@ -9,13 +9,28 @@
     "external_orchestrator_required": false,
     "leader_prompt": "prompts/paper-writing/leader.md",
     "worker_base_prompt": "prompts/paper-writing/worker-base.md",
-    "worker_concurrency_policy": "PW2 question sections and PW5 independent reviews may run in parallel only with isolated inputs and writes",
+    "worker_concurrency_policy": "PW2 question sections may run in parallel; at PW5 the Competition reviewer first reads only a front-matter snapshot while Coherence and AI reviewers read frozen v2, then the same Competition reviewer receives v2 for comparison",
     "reviewers_may_edit_manuscript": false
   },
   "scope": {
     "starts_at": "paper_framework_handoff",
     "ends_at": "formal_paper_handoff",
     "canonical_manuscript_format": "markdown",
+    "required_answer_inputs": [
+      "validation/interfaces/answer-reconstruction.md",
+      "validation/interfaces/cross-question-validation.md"
+    ],
+    "required_method_inputs": [
+      "CP0_authorized_modeling/paper-notes/qN-model-method-note.md",
+      "paper-prep/questions/qN/method-reconstruction.md",
+      "paper-prep/questions/qN/method-reconstruction-closure.md when present",
+      "paper-prep/questions/qN/evidence-review.md"
+    ],
+    "required_contribution_inputs": [
+      "current paper-prep/structure/narrative-spine-v2.md when CP5R changed contribution boundaries, otherwise narrative-spine-v1.md",
+      "current paper-prep/shared/claim-to-section-map-v2.md when CP5R changed contribution boundaries, otherwise claim-to-section-map.md",
+      "paper-prep/integration/competition-review-blind.md, competition-review-pattern-sweep.md and competition-review-closure.md"
+    ],
     "required_literature_inputs": [
       "literature/citation-preparation/references-handoff.md",
       "literature/citation-preparation/claim-to-citation-map.md",
@@ -28,6 +43,7 @@
       "layout_and_typesetting",
       "reference_search",
       "submission_package",
+      "opening_code_or_engineering_logs_to_infer_method_semantics",
       "ai_detection_score",
       "mechanical_style_linter",
       "automatic_rewriting"
@@ -35,8 +51,10 @@
   },
   "ownership": {
     "full_manuscript_and_handoff": "leader_only",
+    "front_matter_snapshots": "leader_only_exact_excerpt_without_semantic_rewrite",
     "question_section": "one_new_question_manuscript_writer_per_question",
     "question_fact_revision": "reuse_originating_question_writer",
+    "question_local_semantic_revision_at_PW5R": "reuse_originating_question_writer_only_when_competition_review_finds_body_omits_an existing authorized answer or overstates a local contribution",
     "reviews": "review_only_no_manuscript_writes",
     "global_revision": "leader_only"
   },
@@ -44,23 +62,30 @@
     "question_manuscript_writer": {
       "prompt": "prompts/paper-writing/question-manuscript-writer.md",
       "new_agent_required": true,
+      "method_context_policy": "reads_authoritative_note_reconstruction_optional_closure_and_review_never_code_configs_runs_or_logs",
+      "contribution_policy": "may express only CP4/CP5-supported contribution; no contribution quota and no model-name innovation",
       "writes": ["paper-writing/sections/qN/section-v1.md"]
     },
     "question_manuscript_response": {
       "prompt": "prompts/paper-writing/question-manuscript-response.md",
       "reuse_original_agent": "question_manuscript_writer",
-      "writes": ["paper-writing/sections/qN/section-fact-response.md", "paper-writing/sections/qN/section-v2.md"]
+      "writes": ["paper-writing/sections/qN/section-fact-response.md", "paper-writing/sections/qN/section-v2.md", "paper-writing/sections/qN/section-expression-response.md when PW5R assigns a local answer-visibility repair", "paper-writing/sections/qN/section-v3.md when PW5R assigns a local answer-visibility repair"]
     },
     "full_paper_fact_auditor": {
       "prompt": "prompts/paper-writing/full-paper-fact-auditor.md",
       "new_agent_required": true,
+      "method_context_policy": "reads_authoritative_note_reconstruction_optional_closure_and_review_never_code_configs_runs_or_logs",
+      "contribution_claims_are_fact_checked": true,
       "writes": ["paper-writing/reviews/fact-consistency-review.md", "paper-writing/reviews/closure/fact-closure.md"],
       "review_only": true
     },
     "competition_expression_reviewer": {
       "prompt": "prompts/paper-writing/competition-expression-reviewer.md",
-      "new_agent_required": true,
-      "writes": ["paper-writing/reviews/competition-expression-review.md", "paper-writing/reviews/closure/competition-expression-closure.md"],
+      "new_agent_required_at_PW5A": true,
+      "reuse_same_agent_for_PW5B_and_full_review_closure": true,
+      "fresh_same_role_instance_only_after_high_impact_front_page_repair": true,
+      "contribution_policy": "reconstruct difficulty reference route decisive evidence answer effect and boundary; apply answer-preserving deletion test without editing",
+      "writes": ["paper-writing/reviews/first-page-reconstruction.md", "paper-writing/reviews/competition-expression-review.md", "paper-writing/reviews/closure/competition-expression-closure.md", "paper-writing/reviews/closure/first-page-reconstruction-closure.md when a high-impact first-page repair triggers a fresh-reader check"],
       "review_only": true
     },
     "full_paper_coherence_reviewer": {
@@ -81,17 +106,29 @@
   "phases": [
     {"id": "PW0", "dispatch": "leader_only", "handoff": "paper-writing/scope/frozen-inputs.md"},
     {"id": "PW1", "dispatch": "leader_only", "handoff": "writing plan, section contracts, prose boundary and figure/table slots"},
-    {"id": "PW2", "dispatch": "one_new_writer_per_question", "parallel": true, "handoff": "sections/qN/section-v1.md"},
+    {"id": "PW2", "dispatch": "one_new_writer_per_question", "parallel": true, "visibility": "section_contract_final_material_authoritative_method_note_method_reconstruction_optional_closure_evidence_review_and_authorized_sources_not_code", "handoff": "sections/qN/section-v1.md"},
     {"id": "PW3", "dispatch": "leader_only_full_manuscript_assembly", "handoff": "manuscript/full-paper-v1.md"},
     {"id": "PW4", "dispatch": "one_new_full_paper_fact_auditor", "handoff": "reviews/fact-consistency-review.md"},
     {"id": "PW4R", "dispatch": "reuse_question_writers_for_local_facts_then_leader_reassembles", "handoff": "section-v2, fact-response and full-paper-v2"},
-    {"id": "PW5", "dispatch": "three_new_isolated_language_and_coherence_reviewers", "parallel": true, "frozen_input": "manuscript/full-paper-v2.md"},
-    {"id": "PW5R", "dispatch": "leader_routes_local_facts_and_is_unique_global_editor", "handoff": "language-review-response and full-paper-v3"},
-    {"id": "PW6", "dispatch": "reuse_all_four_reviewers_for_original_issue_closure_only", "handoff": "four closure memos"},
+    {"id": "PW5", "dispatch": "competition_two_pass_plus_two_parallel_full_text_reviewers", "parallel": true, "frozen_input": "manuscript/full-paper-v2.md", "subphases": [
+      {"id": "PW5A", "dispatch": "new_competition_expression_reviewer_front_matter_only_in_parallel_with_new_coherence_and_ai_reviewers", "mcm_profile": "front-page-review", "visibility": "original_problem_official_requirements_and_scope/front-matter-v2.md_not_full_manuscript_or_answer_maps", "handoff": "reviews/first-page-reconstruction.md"},
+      {"id": "PW5B", "dispatch": "reuse_same_competition_expression_reviewer_after_first_page_memo_is_frozen", "mcm_profile": "judge-review_explicit_override", "visibility": "own_first_page_reconstruction_and_same_frozen_full-paper-v2.md_still_not_peer_reviews_or_leader_defense", "handoff": "reviews/competition-expression-review.md"}
+    ]},
+    {"id": "PW5R", "dispatch": "reuse_originating_question_writer_for_local_existing-answer_visibility_or_contribution-boundary_gaps_then_leader_is_unique_global_editor", "handoff": "optional section-expression-response and section-v3, language-review-response, full-paper-v3 and front-matter-v3"},
+    {"id": "PW6", "dispatch": "reuse_all_four_reviewers_for_original_issue_closure_and_conditionally_create_one_fresh_front_page_reader_after_high_impact_repair", "handoff": "four closure memos plus first-page-reconstruction-closure when triggered"},
     {"id": "PW7", "dispatch": "leader_only", "handoff": "final-paper.md and formal-paper-handoff.md"}
   ],
   "review_isolation": {
     "pw5_reviewers_read_same_frozen_v2": true,
+    "pw5_reviewers_read_same_frozen_v2_means": "all full-text passes use the same v2; Competition first pass is deliberately front-matter-only",
+    "pw5_full_text_reviews_use_same_frozen_v2": true,
+    "competition_first_pass_profile": "front-page-review",
+    "competition_first_pass_allowed": ["original_problem", "official_requirements", "paper-writing/scope/front-matter-v2.md"],
+    "competition_first_pass_forbidden": ["full-paper-v2.md", "V6_answer_reconstruction", "chapter_map", "paper_framework", "claim_map", "question_materials", "method_notes", "CP5_reviews", "PW4_reviews", "leader_defense", "award_paper_originals"],
+    "competition_second_pass_available_only_after": "paper-writing/reviews/first-page-reconstruction.md is non-empty and frozen",
+    "competition_second_pass_profile": "judge-review",
+    "competition_second_pass_additional_allowed": ["paper-writing/manuscript/full-paper-v2.md", "own_first-page-reconstruction.md"],
+    "fresh_front_page_closure_profile": "front-page-review",
     "peer_reviews_hidden": true,
     "leader_defense_hidden": true,
     "ai_prose_reviewer_forbidden_context": ["author_identity", "peer_reviews", "engineering_logs", "award_paper_distillation"],
@@ -101,6 +138,12 @@
     "question_writers_may_run_in_parallel": true,
     "no_fixed_numeric_worker_cap": true,
     "do_not_create_one_agent_per_paragraph": true,
+    "high_impact_front_page_repair_may_trigger_one_fresh_same_role_reader": true,
+    "fresh_front_page_reader_must_not_read_body_or_prior_reviews": true,
+    "front_page_gap_routes_by_semantics_not_score": true,
+    "no_contribution_quota_per_question": true,
+    "metric_gain_without_answer_effect_is_not_a_supported_contribution": true,
+    "unsupported_contribution_is_downgraded_removed_or_routed_to_MV_not_rewritten": true,
     "leader_is_unique_manuscript_owner": true
   },
   "final_phase": "FORMAL_PAPER_HANDOFF"

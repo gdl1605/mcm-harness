@@ -6,12 +6,16 @@
 
 - run、时间、Leader、source snapshot：{{IDENTITY}}
 - validation handoff / claim map：{{VALIDATION_INPUTS}}
+- V6 证据优先答案重建 / 意图与题链对照：{{ANSWER_RECONSTRUCTION_INPUTS}}
 - data/model handoff：{{ENGINEERING_HANDOFFS}}
+- 逐问权威方法说明及其 build contract、代码/config、授权结果和接口对应版本：{{AUTHORITATIVE_METHOD_NOTES}}
 - 候选模型汇报 / 真实人工模型决定 / route handoff：{{HUMAN_AUTHORIZED_ROUTE_TRACE}}
 
 ## 逐问授权
 
-逐问链接可使用的结果、公式、claim、题间接口、版本、单位、精度、条件和限制；列出不能使用的旧 run、未验证候选和诊断猜想。
+逐问链接可使用的结果、公式、claim、题间接口、版本、单位、精度、条件和限制；把 M6 指定且与当前验证处置一致的一个方法说明版本冻结为 CP3A 权威输入，并列出旧说明和已知语义缺口。说明哪些答案已经存在、哪些只能条件化使用、哪些仍因证据或决策缺口不能成文。CP 不得补造未形成的答案，也不得从代码反推方法。
+
+同时区分建模前“相比 baseline 预期增加什么”与验证后实际成立的内容。逐问链接同口径 baseline/直观路线、主模型、有效挑战或结构反例，以及能够说明有效性、可行性、答案变化或无实质增量的证据；若没有完成必要比较，明确记录，不能把预期价值冻结为论文贡献。
 
 ## 官方要求与篇幅
 

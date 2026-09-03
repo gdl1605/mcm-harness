@@ -67,7 +67,7 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 - 需要回答自己旧判断或保持数据版本连续时复用原 Agent。
 - Leader 必须保存 subagent 句柄，原判断角色复核和路线提案者回应不得由新角色代写。
 - 候选汇报、人工决定记录和按决定形成的 route handoff 分别保留；模型家族后续改变时重新 H1，不用 builder 或 reviewer 代替用户批准。
-- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、正式绘图、论文准备、正式写作和最终交付是 artifact-bundle 例外：单元 worker 只拥有自己的独立根；Reviewer 只写 review；不同 owner 不得共享写入根。文献 Scout 只写自己的 memo/source notes/候选 BibTeX，Auditor 只写 review，Human Recorder 只记录真实回复，共享 handoff 与最终 BibTeX 由 Leader 独写。FD3 candidate snapshot 后候选包与支撑材料永久只读。
+- W/D/M/V 与前半程角色只写派工时指定的唯一 Markdown memo，或 brief 明列的工程路径。图表、正式绘图、论文准备、正式写作和最终交付是 artifact-bundle 例外：单元 worker 只拥有自己的独立根；Reviewer 只写 review；不同 owner 不得共享写入根。论文贡献只能由 CP4 Integrator 从验证后证据重建并经 CP5 审查，正式 Writer/Leader 只表达授权边界，不能重新发明。文献 Scout 只写自己的 memo/source notes/候选 BibTeX，Auditor 只写 review，Human Recorder 只记录真实回复，共享 handoff 与最终 BibTeX 由 Leader 独写。FD3 candidate snapshot 后候选包与支撑材料永久只读。
 - 提案者可以回应一次，但不能做自己的唯一独立终审。
 - 如果任务没有独立输入、不同视角或可区分交付，就不创建 Agent。
 
@@ -75,4 +75,4 @@ Worker 可复用 task brief 的问题作为标题，也可重组报告。禁止�
 
 W/D/M/V 与前半程同步波中，本波所有角色已返回、失败或取消，且原文已保存后，Leader 才能综合。缺失角色要明确记录，不能用 Leader 自己补写来冒充独立意见。
 
-图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。正式绘图 FR1 按问题包并行，全部 v1 齐备后默认一个 Portfolio Reviewer 统一审查。REF1/REF5 Scout 按路线或主题簇并行，不能按单篇论文拆 Agent。正式写作 PW2 可逐问并行；PW5 三个 Reviewer 必须审同一冻结 v2，并在全部返回后由 Leader 综合。PW6 只关闭原问题，不开启新全面审稿。最终交付 FD4 五个 Reviewer 必须审同一 candidate snapshot；全链路 Reviewer 使用 fresh context 和额外冻结 handoff。全部返回后 Leader 只建立人工问题索引，不创建修订或关闭轮次。
+图表与论文准备不使用全局整波等待：F1 package 或 CP2 v1 落盘后即可进入本单元独立审查。正式绘图 FR1 按问题包并行，全部 v1 齐备后默认一个 Portfolio Reviewer 统一审查。REF1/REF5 Scout 按路线或主题簇并行，不能按单篇论文拆 Agent。正式写作 PW2 可逐问并行；PW5 的全部全文 pass 使用同一冻结 v2，但 Competition Reviewer 第一遍只读该版本的原样 front matter，第一遍 memo 落盘后才增加全文。首页 reconstruction 与三份完整 review 全部返回后 Leader 才综合。PW6 只关闭原问题；仅高影响首页实质修订可条件触发一个 fresh 同角色 front-matter 复核，不开启新全面审稿。最终交付 FD4 五个 Reviewer 必须审同一 candidate snapshot；全链路 Reviewer 使用 fresh context 和额外冻结 handoff。全部返回后 Leader 只建立人工问题索引，不创建修订或关闭轮次。

@@ -1,5 +1,38 @@
+# OS and Python caches
 .DS_Store
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and credentials (never commit real secrets)
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local tool state, not shared workflow configuration
+/.claude/settings.local.json
+/.codex/config.local.toml
+/.code-review-graph/
+/.cache/
+
+# Case-specific inputs and generated runs belong outside the public framework
+/raw-sources/
+/run/
+/runs/
+/tmp/
+/outputs/
+/build/
+/dist/
+/.agents/skills/mcm/assets/end_to_end_demo/*/outputs/
+
+# External skills are referenced by lock files, not redistributed (see NOTICE.md)
 .agents/skills/nature-figure/
 .agents/skills/ssci-plots/

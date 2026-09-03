@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-paper-preparation",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "language": "zh-CN",
   "design_document": "Workflow/paper-preparation.md",
   "execution": {
@@ -9,7 +9,7 @@
     "external_orchestrator_required": false,
     "leader_prompt": "prompts/paper-preparation/leader.md",
     "worker_base_prompt": "prompts/paper-preparation/worker-base.md",
-    "worker_concurrency_policy": "CP2/CP3 只按独立问题和独立写入根流式并行，不按段落拆 Agent；其余全篇阶段串行",
+    "worker_concurrency_policy": "CP2 与 CP3A 可按问题和独立写入并行；CP3B 等待同问 v1 与冻结 reconstruction 后复用原 Auditor；不按段落拆 Agent；其余全篇阶段串行",
     "leader_speaks_last_at_merge": true
   },
   "scope": {
@@ -20,6 +20,21 @@
       "routes/model-candidate-briefing.md",
       "routes/human-model-decision.md",
       "routes/route-handoff.md"
+    ],
+    "required_validation_inputs": [
+      "validation/interfaces/answer-reconstruction.md",
+      "validation/interfaces/cross-question-validation.md",
+      "validation/claims/claim-evidence-map.md",
+      "validation/validation-handoff.md"
+    ],
+    "required_method_inputs": [
+      "modeling/model-handoff.md",
+      "one_M6_authoritative_and_validation_consistent_modeling/paper-notes/qN-model-method-note.md_per_question"
+    ],
+    "required_contribution_evidence_inputs": [
+      "CP0_frozen_premodel_expectations_separate_from_postvalidation_evidence",
+      "same-scope_baseline_or_direct_route_primary_model_effective_challenge_or_structural_counterexample",
+      "validated_answer_effect_or_explicit_no_increment_boundary"
     ],
     "required_literature_inputs_before_CP4_CP6": [
       "literature/citation-preparation/references-handoff.md",
@@ -32,6 +47,7 @@
       "aesthetic_or_layout_review",
       "reference_search",
       "submission_package_generation",
+      "opening_code_or_engineering_logs_to_reconstruct_method_semantics",
       "semantic_json_schema"
     ]
   },
@@ -45,13 +61,17 @@
       "prompt": "prompts/paper-preparation/question-chapter-curator.md",
       "new_agent_required": true,
       "one_owner_per_question": true,
+      "preserves_local_difficulty_baseline_evidence_answer_effect_without_self_awarding_contribution": true,
       "writes": ["paper-prep/questions/qN/chapter-material-v1.md"]
     },
     "chapter_evidence_auditor": {
       "prompt": "prompts/paper-preparation/chapter-evidence-auditor.md",
-      "new_agent_required": true,
-      "writes": ["paper-prep/questions/qN/evidence-review.md"],
-      "read_only_upstream": true
+      "new_agent_required_at_CP3A": true,
+      "reuse_same_agent_for_CP3B": true,
+      "reuse_same_agent_once_for_documentation_only_closure": true,
+      "writes": ["paper-prep/questions/qN/method-reconstruction.md", "paper-prep/questions/qN/evidence-review.md", "paper-prep/questions/qN/method-reconstruction-closure.md when an authoritative-note-only repair is assigned"],
+      "read_only_upstream": true,
+      "code_and_engineering_logs_forbidden": true
     },
     "chapter_curator_response": {
       "prompt": "prompts/paper-preparation/chapter-curator-response.md",
@@ -61,34 +81,42 @@
     "paper_framework_integrator": {
       "prompt": "prompts/paper-preparation/paper-framework-integrator.md",
       "new_agent_required": true,
-      "writes": ["paper-prep/structure/chapter-map-v1.md", "paper-prep/shared/**", "paper-prep/integration/paper-framework-v1.md"]
+      "reconstructs_supported_contest_contribution_without_creating_evidence": true,
+      "writes": ["paper-prep/structure/chapter-map-v1.md", "paper-prep/structure/narrative-spine-v1.md", "paper-prep/shared/**", "paper-prep/integration/paper-framework-v1.md"]
     },
     "competition_manuscript_reviewer": {
       "prompt": "prompts/paper-preparation/competition-manuscript-reviewer.md",
       "new_agent_required": true,
       "two_pass_context_policy": "blind memo must be persisted before award-paper distillation is exposed",
+      "contribution_policy": "evidence-first blind audit; award patterns may improve expression only after the contribution is established",
       "writes": ["paper-prep/integration/competition-review-blind.md", "paper-prep/integration/competition-review-pattern-sweep.md", "paper-prep/integration/competition-review-closure.md"],
       "read_only_upstream": true
     },
     "paper_framework_response": {
       "prompt": "prompts/paper-preparation/paper-framework-response.md",
       "reuse_original_agent": "paper_framework_integrator",
-      "writes": ["paper-prep/integration/framework-response.md", "paper-prep/integration/paper-framework-v2.md", "paper-prep/paper-framework-handoff.md"]
+      "writes": ["paper-prep/integration/framework-response.md", "paper-prep/integration/paper-framework-v2.md", "paper-prep/structure/narrative-spine-v2.md when CP5R changes contribution boundaries", "paper-prep/shared/claim-to-section-map-v2.md when CP5R changes contribution boundaries", "paper-prep/paper-framework-handoff.md"]
     }
   },
   "phases": [
     {"id": "CP0", "dispatch": "leader_only", "handoff": "paper-prep/scope/frozen-inputs.md"},
     {"id": "CP1", "dispatch": "one_new_structure_architect", "handoff": "chapter-map-v0, narrative-spine and page-budget; chapter-map-v0 immediately unblocks figure F3"},
-    {"id": "CP2", "dispatch": "one_new_curator_per_question", "streaming": true, "handoff": "questions/qN/chapter-material-v1.md"},
-    {"id": "CP3", "dispatch": "one_new_evidence_auditor_per_completed_v1", "streaming": true, "handoff": "questions/qN/evidence-review.md"},
-    {"id": "CP3R", "dispatch": "reuse_originating_question_curator_once", "handoff": "evidence-response and chapter-material-v2"},
-    {"id": "CP4", "dispatch": "one_new_framework_integrator_after_required_question_responses", "handoff": "chapter-map-v1, shared registries and paper-framework-v1"},
+    {"id": "CP2", "dispatch": "one_new_curator_per_question", "streaming": true, "may_run_in_parallel_with": "CP3A_for_the_same_question", "handoff": "questions/qN/chapter-material-v1.md"},
+    {"id": "CP3A", "dispatch": "one_new_no_code_evidence_auditor_per_question_before_exposure_to_v1", "streaming": true, "visibility": "question_official_deliverables_V6_answer_reconstruction_authoritative_method_note_authorized_results_conditions_and_necessary_interfaces_not_code_or_chapter_material", "handoff": "questions/qN/method-reconstruction.md"},
+    {"id": "CP3B", "dispatch": "reuse_same_CP3A_auditor_after_v1_and_reconstruction_or_closure_are_frozen", "streaming": true, "visibility": "own_frozen_reconstruction_optional_closure_chapter_material_v1_claim_map_and_same_authorized_evidence_still_not_code", "handoff": "questions/qN/evidence-review.md"},
+    {"id": "CP3R", "dispatch": "reuse_originating_question_curator_once_after_CP3B", "handoff": "evidence-response and chapter-material-v2"},
+    {"id": "CP4", "dispatch": "one_new_framework_integrator_after_all_required_questions_have_existing_or_honestly_conditional_answers_method_reconstruction_responses_and_frozen_contribution_evidence", "handoff": "chapter-map-v1, narrative-spine-v1, claim-to-section map and paper-framework-v1"},
     {"id": "CP5", "dispatch": "one_new_fresh_context_competition_reviewer", "handoff": "blind review first, award-pattern sweep second"},
-    {"id": "CP5R", "dispatch": "owner_routed_repairs_then_reuse_integrator_and_reviewer_once", "handoff": "paper-framework-v2 and closure review"},
+    {"id": "CP5R", "dispatch": "owner_routed_repairs_then_reuse_integrator_and_reviewer_once", "handoff": "paper-framework-v2, optional narrative-spine-v2 and claim-to-section-map-v2, and closure review"},
     {"id": "CP6", "dispatch": "reuse_framework_integrator_as_unique_handoff_owner", "handoff": "paper-prep/paper-framework-handoff.md"}
   ],
   "context_isolation": {
-    "competition_blind_forbidden": ["code", "engineering_logs", "leader_defense", "evidence_reviews", "award_paper_distillation", "embedded_mcm_skill"],
+    "CP3A_allowed": ["question_and_official_deliverables", "validation/interfaces/answer-reconstruction.md", "CP0_authoritative_method_note_version", "authorized_results_conditions_and_limits", "necessary_interface_and_notation"],
+    "CP3A_forbidden": ["code", "configs", "runs_and_engineering_logs", "chapter_material_v1", "curator_private_reasoning", "leader_defense", "competition_reviews", "award_paper_distillation"],
+    "CP3B_additional_allowed_only_after_CP3A_freeze": ["own_method_reconstruction", "optional_method_reconstruction_closure", "chapter_material_v1", "validation_claim_map"],
+    "CP3B_still_forbidden": ["code", "configs", "runs_and_engineering_logs", "curator_private_reasoning", "leader_defense"],
+    "competition_blind_allowed": ["original_problem", "official_requirements", "chapter-map-v1", "narrative-spine-v1", "claim-to-section-map", "paper-framework-v1", "final_question_materials", "Figure_Table_placeholders"],
+    "competition_blind_forbidden": ["code", "engineering_logs", "leader_defense", "method_reconstruction", "authoritative_method_notes", "evidence_reviews", "award_paper_distillation", "embedded_mcm_skill"],
     "award_pattern_sweep_available_only_after": "competition-review-blind.md is non-empty and frozen",
     "blind_mcm_profile": "blind-review",
     "second_pass_mcm_profile": "judge-review",
@@ -96,6 +124,14 @@
   },
   "branch_policy": {
     "question_tasks_may_run_in_parallel": true,
+    "CP2_and_CP3A_same_question_may_run_in_parallel": true,
+    "CP3B_requires_same_CP3A_agent": true,
+    "documentation_only_gap_reuses_original_model_builder_then_same_auditor_once": true,
+    "model_semantics_or_result_change_requires_upstream_revalidation_and_fresh_auditor": true,
+    "missing_answer_routes_to_V6_not_CP_or_method_note": true,
+    "no_contribution_quota_per_question": true,
+    "metric_improvement_alone_is_not_answer_gain": true,
+    "unsupported_contribution_is_downgraded_or_routed_upstream_not_rewritten_into_existence": true,
     "no_fixed_numeric_worker_cap": true,
     "do_not_create_one_agent_per_section": true,
     "figure_preparation_may_run_concurrently": true,
