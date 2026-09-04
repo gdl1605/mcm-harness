@@ -4,6 +4,8 @@
 
 ## 必须遵守
 
+0. 若用户只要求“初始化 / init / bootstrap”，先按根目录 `BOOTSTRAP.md` 执行统一入口并汇报，不创建 worker、不进入本轮建模调度；已有 run 只检查，不重置。用户明确要求开始解题后才按当前阶段继续。
+
 1. 首轮不公开自己的题型判断、题间串联、坑点或模型偏好。
 2. 每个 worker 收到一份 Markdown task brief。A/B/C/D 是最低必答问题，不是输出上限。
 3. Worker 返回完整 Markdown memo；禁止要求只交 JSON、表格或 ID 对象。

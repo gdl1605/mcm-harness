@@ -27,6 +27,7 @@ git diff --check
 
 ```bash
 python3 -m unittest discover -s tests -v
+python3 scripts/bootstrap.py --help
 python3 scripts/init_run.py --help
 python3 scripts/build_prompt.py --help
 python3 scripts/check_workspace.py --help

@@ -65,7 +65,7 @@ FD3 冻结候选后，FD4 的五个 Reviewer 分别检查排版合规、扣题�
 
 ## 快速开始
 
-这个仓库是供 Agent 读取和执行的工作流，不是运行一条 Python 命令就能自动完成比赛的求解器。
+clone 仓库，在 Agent 中打开它，然后说“初始化”即可。默认 [Bootstrap](BOOTSTRAP.md) 负责准备材料目录、建立 run、记录来源和执行基础检查，不再要求用户手工拼初始化命令。
 
 1. 获取仓库并进入根目录：
 
@@ -74,27 +74,30 @@ FD3 冻结候选后，FD4 的五个 Reviewer 分别检查排版合规、扣题�
    cd mcm-harness
    ```
 
-2. 准备 Python 3.10+ 和支持原生 subagent、文件读写及命令执行的 Agent 环境。三个辅助脚本仅依赖 Python 标准库；实际建模、绘图与排版依赖按任务另行准备。
-3. 将合法取得的题目和附件放在仓库外；初始化一个不存在或为空的运行目录。替换以下示例路径后执行：
-
-   ```bash
-   python3 scripts/init_run.py ../my-c-run --title "我的 C 题" --source /path/to/problem.pdf --source /path/to/attachment.xlsx
-   python3 scripts/check_workspace.py ../my-c-run --stage init --json
-   ```
-
-   `--source` 可重复；原始资料只记录路径、大小和哈希，不自动复制。已有非空运行目录不会被覆盖。生成的 manifest 含本地绝对路径，不要直接公开。
-
-4. 在能够读取本仓库及运行目录的 Agent 会话中提出任务，例如：
+2. 在支持项目 `AGENTS.md` 的 Agent 中打开仓库，使用 Python 3.10+，直接发送：
 
    ```text
-   阅读本仓库 AGENTS.md 和 Workflow/README.md，使用已初始化的 ../my-c-run。
-   执行 C 题全流程自动化建模：先完成审题、候选路线与文献校准。
-   到 H1 向我汇报模型选项并等待；我明确选择后，再按阶段继续数据、建模、验证、绘图、论文和最终交付。
-   如预算不足、依赖缺失或需重新选择模型，暂停汇报，不静默降级。
-   FD4 起只报告终审问题，不再改候选；FD7 交给我最终修改和投稿。
+   初始化这个项目。
    ```
 
-Leader 按 [任务模板](templates/task-brief.md) 填写真实任务边界，再用 `scripts/build_prompt.py` 生成各角色上下文；三个辅助脚本不会创建或调度 subagent。完整顺序与命令见 [Workflow/README.md](Workflow/README.md)。
+3. 将合法取得的赛题和附件放入自动准备的 `raw-sources/`，再说“进行 init”。已有材料也可直接告诉 Agent 文件路径，无需复制。Bootstrap 有材料时默认建立 `run/`；没有材料就提示补充，不冻结空来源 run。重复 init 只核对旧 run，不覆盖或重置进度。这两个默认目录已被 `.gitignore` 排除。
+
+4. 初始化后，要开始解题时发送：
+
+   ```text
+   使用当前 run 开始 C 题全流程建模；到 H1 等我选模型，FD7 交给我最终修改和投稿。
+   ```
+
+“初始化 / 执行初始化 / 进行 init / bootstrap”都路由到同一入口。只要求初始化时不会自动开始解题；也可说“初始化并开始解题”，但人工 gate 不变。若客户端未自动加载项目规则，先让它读取 `AGENTS.md`；不要与客户端自身的 `/init` 或 `git init` 混淆。
+
+手动入口及多题运行（可选）：
+
+```bash
+python3 scripts/bootstrap.py
+python3 scripts/bootstrap.py --run-dir runs/case-02 --title "另一道 C 题" --source /path/to/problem.pdf --source /path/to/attachment.xlsx
+```
+
+辅助脚本只依赖 Python 标准库，不创建或调度 subagent。Bootstrap 不安装外部技能或所有建模依赖，缺项会按阶段报告；完整流程仍需相应平台能力。原始材料只记录路径和哈希，不修改；生成的 manifest 含本地绝对路径，不要直接公开。Leader 按 [任务模板](templates/task-brief.md) 和 [详细调度手册](Workflow/README.md) 继续派工。
 
 ## 依赖与使用边界
 
@@ -106,6 +109,7 @@ Leader 按 [任务模板](templates/task-brief.md) 填写真实任务边界，�
 
 ## 文档入口
 
+- [BOOTSTRAP.md](BOOTSTRAP.md)：自然语言初始化路由、默认目录、幂等检查和能力预检。
 - [AGENTS.md](AGENTS.md)：Leader 调度、上下文隔离、角色复用、所有权和跨模块交接规则。
 - [.agents/skills/mcm/SKILL.md](.agents/skills/mcm/SKILL.md)：内置数学建模与国奖向论文语义 Skill；无需外部安装。
 - [Workflow/mcm-skill-integration.json](Workflow/mcm-skill-integration.json)：`build_prompt.py` 使用的阶段/角色 → Skill 模式与参考文件路由；只做上下文注入，不裁决论文质量。

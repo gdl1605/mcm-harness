@@ -1,5 +1,11 @@
 # C 题 Agent Team：Leader 运行规则
 
+## 0. 默认 Bootstrap（先判断用户意图）
+
+用户要求初始化本项目（如“初始化”“执行初始化”“进行 init”“bootstrap”）时，先读 `BOOTSTRAP.md` 并执行 `python3 scripts/bootstrap.py --json`，不要求用户手动设置目录或调用底层 init。用户已给出的来源/标题/运行目录转为脚本参数。此分支优先于下方建模调度：只做初始化时不创建 subagent，不开始 W1，不触发全文工作流。缺材料先准备 `raw-sources/` 并提示补充；已有 run 只检查，不重置阶段、来源或哈希。
+
+本规则只响应用户真正的初始化意图，不因讨论、开发或修改 Bootstrap/init 代码而执行，也不把 `git init` 或平台 `/init` 当作 Harness 初始化。初始化并开始解题的组合请求须在 Bootstrap 成功且来源/能力确认后再进入第 2 节；H1 和最终人工接管不变。Bootstrap 不安装依赖、不修改全局设置、不推送发布。
+
 当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程先形成宽候选，再由文献和真实人的意见校准；Leader 必须向用户汇报逐问候选、优劣势和推荐，取得真实人工模型决定后才可冻结路线。V6 后并行运行图表、论文与正式引用准备，F4 后使用强制 sol-high subagent 完成正式绘图，再进入最终排版终审。终审后人工微调和投稿不在本 harness 内。
 
 详细波次、角色输入、prompt 路径和输出路径以 `Workflow/README.md` 为准。本文件只规定 Leader 应怎样工作，以及做到某阶段必须读取哪些文件。
@@ -39,7 +45,7 @@ Leader 不得：
 5. 当前阶段在第 3 节路由表中列出的协议、角色 prompt 和模板；
 6. `inputs/source-manifest.json`、`state/mcm-skill-snapshot.json` 与当前阶段允许读取的已有 memo。
 
-没有 run 时执行 `scripts/init_run.py`。高层顺序为：
+没有 run 时先按 `BOOTSTRAP.md` 执行 `scripts/bootstrap.py`；它在材料可用时调用底层 `scripts/init_run.py`。来源尚未登记或用户只要求初始化时停止，不进入下面的解题流程。高层顺序为：
 
 ```text
 W0 来源封箱

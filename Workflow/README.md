@@ -2,6 +2,8 @@
 
 本文是 Leader 的逐波调度手册。根目录 `AGENTS.md` 规定 Leader 的行为、判断纪律和文件路由；本文说明每一波创建谁、复用谁、给什么 prompt、允许看什么、写到哪里。各模块 `*-team.json` 只是同一安排的机器可读清单，不能替代本文。
 
+初始化请求先走根目录 [BOOTSTRAP.md](../BOOTSTRAP.md)：`python3 scripts/bootstrap.py --json` 默认准备 `raw-sources/`，材料可用时建立 `run/`，重复运行只核对已有记录。Bootstrap 不启动波次；用户只要求 init 时到此停止，明确开始解题后才进入本文调度。没有来源、存在来源/快照冲突或当前阶段所需能力不可用时不得开始 W1。
+
 当前实现范围包括独立验证、两条准备支线、sol-high 正式绘图、正式论文 Markdown 写作，以及最终排版终审与人工交接：
 
 ```text
@@ -1033,7 +1035,8 @@ FD4 后不创建 Agent 修订版。FD7 状态必须为 `AWAITING_HUMAN_FINALIZAT
 机械脚本只做辅助：
 
 ```bash
-python3 scripts/init_run.py RUN_DIR --title "题目名称" --source /path/to/problem.pdf
+python3 scripts/bootstrap.py
+python3 scripts/bootstrap.py --run-dir RUN_DIR --title "题目名称" --source /path/to/problem.pdf
 python3 scripts/build_prompt.py --role literal-contract --task-brief RUN_DIR/briefs/W1-literal.md
 python3 scripts/build_prompt.py --literature-role route_literature_scout --task-brief RUN_DIR/literature/route-alignment/search-briefs/route-a.md
 python3 scripts/build_prompt.py --data-role data_profiler --task-brief RUN_DIR/data/briefs/D1-profiler.md
