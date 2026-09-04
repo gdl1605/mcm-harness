@@ -2,7 +2,7 @@
 
 本文是 Leader 的逐波调度手册。根目录 `AGENTS.md` 规定 Leader 的行为、判断纪律和文件路由；本文说明每一波创建谁、复用谁、给什么 prompt、允许看什么、写到哪里。各模块 `*-team.json` 只是同一安排的机器可读清单，不能替代本文。
 
-初始化请求先走根目录 [BOOTSTRAP.md](../BOOTSTRAP.md)：`python3 scripts/bootstrap.py --json` 默认准备 `raw-sources/`，材料可用时建立 `run/`，重复运行只核对已有记录。Bootstrap 不启动波次；用户只要求 init 时到此停止，明确开始解题后才进入本文调度。没有来源、存在来源/快照冲突或当前阶段所需能力不可用时不得开始 W1。
+初始化请求先走根目录 [BOOTSTRAP.md](../BOOTSTRAP.md)：`python3 scripts/bootstrap.py --prepare-only --json` 列出候选来源；缺材料主动索取题目和数据地址，收到后继续。Agent 核对完整性后，去掉 `--prepare-only` 并显式传入已确认的 `--source` 才建立新 `run/`。脚本只准备工作区；Leader 默认自动衔接 W0–W4/L1 材料阅读与审查，再推进 W5/REF 路线竞标、文献校准和 L2C 展示，到 H1 等待真实选择，不再要求启动 prompt。用户明确只准备时保留 `--setup-only` 并停止。已有 run 先核对阶段和活动任务，只续接尚未完成的前半程，不重跑、不用 init 越过 H1 或恢复后半程。没有来源、存在来源/快照冲突或当前阶段能力不可用时不启动；仅缺后续绘图能力不阻止前半程。
 
 当前实现范围包括独立验证、两条准备支线、sol-high 正式绘图、正式论文 Markdown 写作，以及最终排版终审与人工交接：
 
@@ -370,16 +370,20 @@ Zotero 可作为只读来源；Zotero item key 与 BibTeX key 分开。导入、
 | 执行者 | Leader，不创建新的选择角色 |
 | 必读协议 | `Workflow/protocols/route-tournament.md` |
 | 输入 | 题意基线、A/B 原提案、结构审查、逐候选 route-evidence-handoff、真实咨询记录和两份 W5C 回应 |
-| 模板 | `templates/model-candidate-briefing.md` |
-| 输出 | `routes/model-candidate-briefing.md` |
+| 模板 | `templates/model-candidate-briefing.md`、`templates/model-selection-presentation.md` |
+| 输出 | `routes/model-candidate-briefing.md`（完整依据）、`routes/model-selection-presentation.md`（直接发到聊天的正文） |
 
-Leader 逐问展示值得人选择的完整候选范围，说明结构、适配理由、文献支持/削弱、优劣势、假设、失败风险、题间作用、实现/验证成本和竞赛价值；另给主选、备选/敏感性、baseline 和不推荐意见。不得只展示首选，也不得因为库未安装、代码较难或简单模型没报错而隐藏候选。
+Leader 按 `Workflow/protocols/route-tournament.md` 第 5 节核对全部实际候选去向（合并保留原名称与理由），逐问重点比较结构不同候选和最强竞品。聊天正文直接展示对应论文标题、作者/年份、DOI/URL、实际核验层级、支持/限制及其如何改变取舍，然后给出推荐与未决条件；完整文件链接不能替代这些内容。不因实现困难隐藏候选，不把预期当实测优胜。
+
+Leader 对照原始 memo 自查展示覆盖，再运行 `python3 scripts/check_workspace.py <run_dir> --stage model-briefing --json`。此检查只核对上游、完整依据和展示正文非空，不要求 H1 决定或 route handoff；检查成功不能证明内容充分或消息已发送。旧 `route`/`data` 检查对缺少展示正文仅作兼容提示，不代表新 L2C 可以跳过本步骤。
 
 ### H1：真实人工模型决策
 
-Leader 将完整 briefing 交给用户，并把状态置为 `AWAITING_HUMAN_MODEL_DECISION`。此时不创建 subagent，也不得进入 L2、D0 或 M0。
+Leader 将状态置为 `AWAITING_HUMAN_MODEL_DECISION`，把同版本展示正文实际发到聊天并附完整 briefing 链接，然后停止；待发送文件不等于已展示。此时不创建 subagent，也不得进入 L2、D0 或 M0。
 
 用户可以选择主模型；选择主模型加备选/敏感性模型；要求补文献或扩展候选；全部否决；或规定时间、依赖和实现限制。只有收到真实回复后，Leader 才能使用 `templates/human-model-decision.md` 忠实记录为 `routes/human-model-decision.md`。REF2 咨询、Agent 判断、超时或沉默均不构成批准。
+
+记录决定时保存 `routes/presentations/<H1版本>-presentation.md` 与 `<H1版本>-briefing.md` 不可覆盖快照，绑定实际消息与真实回复；不声称用户已阅读未确认的材料，不伪造平台未提供的消息 ID/时间。重开同样升版并直接展示受影响问题的比较；历史缺失只记缺口，不能事后补造已展示证据。
 
 ### L2：Leader 按人工决定路线交接
 

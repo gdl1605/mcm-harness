@@ -1,6 +1,6 @@
 {
   "workflow_name": "cumcm-c-front-half",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "language": "zh-CN",
   "execution": {
     "mode": "leader_with_native_subagents",
@@ -129,13 +129,18 @@
       "dispatch": "leader_only",
       "roles": ["leader"],
       "visibility": "all_route_memos_route_evidence_handoff_human_consultation_and_route_responses",
-      "handoff": "routes/model-candidate-briefing.md"
+      "handoff": "routes/model-candidate-briefing.md",
+      "presentation": "routes/model-selection-presentation.md",
+      "presentation_template": "templates/model-selection-presentation.md",
+      "preflight_stage": "model-briefing"
     },
     {
       "id": "H1",
       "dispatch": "real_human_checkpoint",
       "roles": [],
-      "visibility": "complete_model_candidate_briefing",
+      "visibility": "complete_model_candidate_briefing_and_direct_chat_presentation",
+      "presentation": "routes/model-selection-presentation.md",
+      "presentation_snapshot_dir": "routes/presentations/",
       "required_status_while_waiting": "AWAITING_HUMAN_MODEL_DECISION",
       "agent_must_not_create_decision_without_real_reply": true,
       "handoff": "routes/human-model-decision.md",

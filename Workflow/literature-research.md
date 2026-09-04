@@ -71,6 +71,8 @@ Auditor 检查文献真实性、元数据、是否过度依赖摘要、假设/�
 
 Leader 据此写 `route-alignment/route-evidence-handoff.md`，交给原 Route A/B 作者在 W5C 回应。Handoff 区分：逐候选文献支持/削弱、人的经验判断、仍不可判、应调整假设、应加入的新候选或替代路线，以及需要数据判别的内容。它不选模型；L2C 之后由 H1 真实人工决定。
 
+L2C 不能把这些依据只留在文献目录：按 `Workflow/protocols/route-tournament.md` 第 5 节，在实际聊天展示中把重点候选与论文标题、作者/年份、直接链接、实际读取层级和支持/限制相连，并说明文献如何改变或维持推荐；完整报告保留全部检索来源的去重索引及未采用原因。没有已核验来源的候选如实标缺口，不等正式引用阶段再披露选型时的证据边界。
+
 ## 7. REF4：最终引用缺口地图
 
 V6 完成且 CP1 已形成 `chapter-map-v0.md` 后，创建新的 Citation Gap Analyst。它只读验证授权主张、route evidence、章节地图、图表/论文准备输入和已有来源，写 `citation-preparation/citation-gap-map.md`。

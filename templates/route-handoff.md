@@ -8,7 +8,7 @@
 
 ## 人工模型决策来源
 
-链接 `routes/model-candidate-briefing.md`、真实用户回复和 `routes/human-model-decision.md`。说明人工决定的范围与限制；没有真实决定不得生成本交接。
+链接 `routes/model-candidate-briefing.md`、H1 记录中绑定的实际展示/完整依据版本快照、真实用户回复和 `routes/human-model-decision.md`。说明人工决定的范围与限制；历史展示证据缺失如实标记，不能以事后补写报告替代。没有真实决定不得生成本交接。
 
 ## 人工选择的主路线与主模型
 

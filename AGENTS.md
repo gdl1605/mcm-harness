@@ -2,11 +2,11 @@
 
 ## 0. 默认 Bootstrap（先判断用户意图）
 
-用户要求初始化本项目（如“初始化”“执行初始化”“进行 init”“bootstrap”）时，先读 `BOOTSTRAP.md` 并执行 `python3 scripts/bootstrap.py --json`，不要求用户手动设置目录或调用底层 init。用户已给出的来源/标题/运行目录转为脚本参数。此分支优先于下方建模调度：只做初始化时不创建 subagent，不开始 W1，不触发全文工作流。缺材料先准备 `raw-sources/` 并提示补充；已有 run 只检查，不重置阶段、来源或哈希。
+用户要求初始化本项目（如“初始化”“执行初始化”“进行 init”“bootstrap”）时，先读 `BOOTSTRAP.md` 并执行 `python3 scripts/bootstrap.py --prepare-only --json`，不要求用户手动设置目录或调用底层 init。用户已给出的来源/标题/运行目录转为脚本参数。缺材料必须主动询问题目文件和全部数据附件的地址；收到回复后继续本次初始化，无需用户再发 init。新 run 先核对完整题面与附件，再去掉 `--prepare-only` 并用 `--source` 显式登记已核对的文件。材料、自检及前半程所需能力齐备后，默认自动进入材料阅读与模型路线竞标（W0→L2C→H1），发简短进度说明后在同一轮实际推进，不再次索要“开始”prompt，也不只回复“开始建模”就结束；到 H1 展示方案并等待真实选择，不能进入 L2/D0/M0。
 
-本规则只响应用户真正的初始化意图，不因讨论、开发或修改 Bootstrap/init 代码而执行，也不把 `git init` 或平台 `/init` 当作 Harness 初始化。初始化并开始解题的组合请求须在 Bootstrap 成功且来源/能力确认后再进入第 2 节；H1 和最终人工接管不变。Bootstrap 不安装依赖、不修改全局设置、不推送发布。
+本规则只响应用户真正的初始化意图或对正在收集材料的任务补充文件地址，不因讨论、开发或修改 Bootstrap/init 代码而执行，也不把 `git init` 或平台 `/init` 当作 Harness 初始化。用户明确“只初始化、暂不开始阅读/竞标”时，传入 `--setup-only` 并在准备后停止；该限制在其后补充地址时仍有效，除非用户撤回。已有 run 不重置：先核对当前阶段和活动任务，仅衔接尚未完成的前半程，不重复派工；已到 H1 或最终人工交接时维持等待，单独 init 不授权恢复后半程。Python 脚本只做准备和返回下一步提示，由 Leader 调度；不安装依赖、不修改全局设置、不推送发布。
 
-当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程先形成宽候选，再由文献和真实人的意见校准；Leader 必须向用户汇报逐问候选、优劣势和推荐，取得真实人工模型决定后才可冻结路线。V6 后并行运行图表、论文与正式引用准备，F4 后使用强制 sol-high subagent 完成正式绘图，再进入最终排版终审。终审后人工微调和投稿不在本 harness 内。
+当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程先形成宽候选，再由文献和真实人的意见校准；Leader 必须在用户聊天中直接展示逐问全部实际候选去向、重点优劣、对应论文及其如何影响取舍，再给推荐，不能用首选摘要或文件链接替代。取得真实人工模型决定后才可冻结路线。V6 后并行运行图表、论文与正式引用准备，F4 后使用强制 sol-high subagent 完成正式绘图，再进入最终排版终审。终审后人工微调和投稿不在本 harness 内。
 
 详细波次、角色输入、prompt 路径和输出路径以 `Workflow/README.md` 为准。本文件只规定 Leader 应怎样工作，以及做到某阶段必须读取哪些文件。
 
@@ -45,7 +45,7 @@ Leader 不得：
 5. 当前阶段在第 3 节路由表中列出的协议、角色 prompt 和模板；
 6. `inputs/source-manifest.json`、`state/mcm-skill-snapshot.json` 与当前阶段允许读取的已有 memo。
 
-没有 run 时先按 `BOOTSTRAP.md` 执行 `scripts/bootstrap.py`；它在材料可用时调用底层 `scripts/init_run.py`。来源尚未登记或用户只要求初始化时停止，不进入下面的解题流程。高层顺序为：
+没有 run 时先按 `BOOTSTRAP.md` 执行 `scripts/bootstrap.py`；它在材料核对后调用底层 `scripts/init_run.py`。来源/能力未确认、检查失败或用户明确只做准备时停止；普通 init 默认在准备完成后衔接以下前半程，到 H1 等待人工选择，不默认授权后续数据工程与模型实现。高层顺序为：
 
 ```text
 W0 来源封箱
@@ -144,8 +144,8 @@ W0 来源封箱
 | REF0–REF2 路线证据 | A/B 原提案、检索合同和隔离 brief | `prompts/literature/route-literature-scout.md`、`human-consultation-recorder.md` | route scouts、source notes、真实 human response |
 | REF3 文献证据审查 | A/B、结构 review、来源与 human response | `prompts/literature/literature-evidence-auditor.md`；新 subagent | evidence-review、route-evidence-handoff |
 | W5C 候选重构 | 路线评审、route-evidence-handoff 与各自原路线 | `prompts/roles/route-proposer-response.md`，复用原 A/B subagent | `routes/responses/` |
-| L2C 候选汇报 | 全部路线、结构、文献、真实人类咨询与 W5C 回应 | 无；Leader 综合且不能只展示首选 | `templates/model-candidate-briefing.md` → `routes/model-candidate-briefing.md` |
-| H1 人工模型决策 | 完整候选汇报 | 无；Leader 将汇报交给真实用户并等待，不得模拟 | `templates/human-model-decision.md` → `routes/human-model-decision.md` |
+| L2C 候选汇报 | 全部路线、结构、文献、真实人类咨询与 W5C 回应；`route-tournament.md` 第 5 节 | 无；Leader 写完整依据与聊天正文，核对候选/证据/取舍 | 同名模板 → `routes/model-candidate-briefing.md`、`routes/model-selection-presentation.md` |
+| H1 人工模型决策 | 完整候选汇报与实际展示正文 | 无；Leader 直接展示、等待真实回复并绑定版本，不得模拟 | `templates/human-model-decision.md` → `routes/human-model-decision.md`；`routes/presentations/` 版本快照 |
 | L2 路线交接 | 候选汇报与真实人工决定及全部依据 | 无；Leader 按决定综合 | `templates/route-handoff.md` → `routes/route-handoff.md` |
 
 ### 3.1.1 文献与引用证据
@@ -333,7 +333,7 @@ Task brief 必须明确：
 - 新视角、隔离盲读、独立攻击和独立复核：创建新的 subagent。
 - 原判断角色复核：复用提出该判断的 W1/W2 subagent。
 - 路线提案者回应：复用原 Route A/B subagent。
-- W5C 后由 Leader 独写候选模型汇报并进入 H1；不创建“人工决策 Agent”。只有真实用户回复才能由 Leader 忠实记录为 `routes/human-model-decision.md`。
+- W5C 后由 Leader 独写完整候选汇报和 `routes/model-selection-presentation.md`；按选型协议第 5 节语义自查，并运行 `check_workspace.py <run_dir> --stage model-briefing --json` 后实际展示，进入 H1；不创建“人工决策 Agent”。只有真实用户回复才能记录 `routes/human-model-decision.md`，同时绑定实际展示和完整依据的不可覆盖快照。文件非空不证明已发送、已阅读或内容充分；历史缺失不伪造回填。
 - 数据实现者修订：复用原 D3 数据管道实现者。
 - 每问首次模型实现和首次高影响诊断：创建新的 subagent。
 - 模型实现者回应、获批调整重跑和跨问接口交接：复用对应原 model builder。
@@ -386,7 +386,7 @@ Task brief 必须明确：
 - 原始题面、附件、说明和模板永久只读。
 - W/D/M/V 与前半程 worker 只拥有 task brief 指定的唯一 memo；D3/D4R 与模型 builder/获批 response 仅可额外修改明确列出的工程路径。图表和论文 Curator 是 artifact-bundle 例外，只拥有 brief 指定的独立单元根；Auditor、response 和 Integrator 仍受明确子路径限制。
 - `submissions/`、`reviews/`、`routes/responses/` 与数据 review 原文只追加、不覆盖。
-- `routes/model-candidate-briefing.md` 只由 Leader 写；`routes/human-model-decision.md` 只能忠实记录真实用户回复。Agent 不得代签、猜测或把 REF2 咨询/沉默当成 H1 批准。
+- `routes/model-candidate-briefing.md`、`routes/model-selection-presentation.md` 与 `routes/presentations/` 版本快照只由 Leader 写；`routes/human-model-decision.md` 只能忠实记录真实用户回复及其对应展示版本。重新 H1 必须升版，不覆盖历史快照。Agent 不得代签、猜测或把 REF2 咨询/沉默当成 H1 批准。
 - Leader 综合必须链接其依据的全部原始报告。
 - 旧报告、失败代码、旧数据版本和被替换产物不删除；新版本说明影响范围。
 - 每问模型代码、shared kernel 和 M5 适配代码分别只有一个 Leader 指定 owner；diagnostician 只读。

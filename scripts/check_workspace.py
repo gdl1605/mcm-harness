@@ -13,7 +13,7 @@ from zipfile import BadZipFile, ZipFile
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MCM_INTEGRATION_PATH = PROJECT_ROOT / "Workflow" / "mcm-skill-integration.json"
 
-STAGES = {"init": 0, "baseline": 1, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "formal-figures": 7, "final-delivery": 8, "literature": 9}
+STAGES = {"init": 0, "baseline": 1, "model-briefing": 2, "route": 2, "data": 3, "figure-prep": 4, "paper-prep": 5, "paper-writing": 6, "formal-figures": 7, "final-delivery": 8, "literature": 9}
 ASYNC_STAGES = {"figure-prep", "paper-prep", "paper-writing", "formal-figures", "final-delivery", "literature"}
 
 DATA_DIRS = (
@@ -894,7 +894,7 @@ def main() -> int:
             warnings.append("no raw worker Markdown submissions found; checker does not infer whether this is intentional")
 
     if args.stage not in ASYNC_STAGES and STAGES[args.stage] >= STAGES["route"]:
-        for relative in (
+        route_files = (
             "routes/route-a.md",
             "routes/route-b.md",
             "routes/route-review.md",
@@ -907,12 +907,29 @@ def main() -> int:
             "routes/responses/route-a-response.md",
             "routes/responses/route-b-response.md",
             "routes/model-candidate-briefing.md",
-            "routes/human-model-decision.md",
-            "routes/route-handoff.md",
-        ):
+        )
+        # The presentation preflight happens BEFORE asking the human.  Never
+        # require a decision or final route handoff just to prepare that ask.
+        if args.stage != "model-briefing":
+            route_files += (
+                "routes/human-model-decision.md",
+                "routes/route-handoff.md",
+            )
+        for relative in route_files:
             path = run_dir / relative
             if not path.is_file() or path.stat().st_size == 0:
                 errors.append(f"missing or empty report file: {relative}")
+        presentation = "routes/model-selection-presentation.md"
+        if not nonempty_file(run_dir / presentation):
+            if args.stage == "model-briefing":
+                errors.append(f"missing or empty report file: {presentation}")
+            else:
+                # Preserve historical run compatibility.  New L2C/H1 work
+                # must explicitly use the stricter model-briefing preflight.
+                warnings.append(
+                    f"missing or empty model-selection presentation: {presentation}; "
+                    "historical delivery is unverified; use --stage model-briefing for new L2C/H1 work"
+                )
         route_source_notes = list(
             (run_dir / "literature/route-alignment/sources").glob("*/source-note.md")
         )
@@ -964,6 +981,8 @@ def main() -> int:
         "literature_semantics_checked": False,
         "human_opinion_authenticity_checked": False,
         "human_model_decision_authenticity_checked": False,
+        "model_selection_presentation_content_checked": False,
+        "model_selection_presentation_delivery_checked": False,
         "citation_support_checked": False,
         "errors": errors,
         "warnings": warnings,

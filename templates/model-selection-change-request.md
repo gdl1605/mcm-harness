@@ -18,6 +18,8 @@
 
 列出可选替代、优劣势、文献状态、需要重跑的下游和时间/依赖代价。不得静默执行。
 
+重新 H1 按 `Workflow/protocols/route-tournament.md` 第 5 节升版完整报告和 `routes/model-selection-presentation.md`；在聊天直接比较受影响问题的旧选项、新候选、对应论文及证据如何改变判断，不只发替代名称或文件链接。未受影响问题说明沿用的授权版本；实际展示与新回复绑定，旧展示及批准不覆盖。
+
 ## 当前停止状态
 
 `AWAITING_HUMAN_MODEL_DECISION`。收到真实回复前停止改变核心模型。

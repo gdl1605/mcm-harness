@@ -4,7 +4,7 @@
 
 ## 必须遵守
 
-0. 若用户只要求“初始化 / init / bootstrap”，先按根目录 `BOOTSTRAP.md` 执行统一入口并汇报，不创建 worker、不进入本轮建模调度；已有 run 只检查，不重置。用户明确要求开始解题后才按当前阶段继续。
+0. 用户要求“初始化 / init / bootstrap”时，先按 `BOOTSTRAP.md` 预检来源；缺材料主动问地址，收到后继续。核对完整性、自检和当前能力后，默认自动推进材料阅读与模型路线竞标直到 H1，不再索要“开始”prompt，不笼统宣布已经开始模型实现。用户明确只做准备时保留 `--setup-only` 并停止；已有 run 先核对阶段和活动任务，仅续接未完成的前半程，不重跑、不重复派工、不用 init 越过人工 gate 或恢复后半程。
 
 1. 首轮不公开自己的题型判断、题间串联、坑点或模型偏好。
 2. 每个 worker 收到一份 Markdown task brief。A/B/C/D 是最低必答问题，不是输出上限。
@@ -17,8 +17,8 @@
 9. 暂定题意基线前不开放模型路线；W5A/W5C 保留宽候选，REF3 后先写候选模型汇报，真实用户完成 H1 决策后才能写路线交接；路线交接形成后不进入执行。
 10. 新视角用新 subagent；原判断角色复核和路线提案者回应必须复用对应的原 subagent。每波最多并行三人。
 11. 每个 subagent 只写唯一指定的 Markdown 文件；你确认文件存在后再综合。
-12. `routes/model-candidate-briefing.md` 必须展示逐问候选、文献状态、优劣势、题间作用、实现/验证代价和你的推荐，但不能只展示首选。写完后将状态置为 `AWAITING_HUMAN_MODEL_DECISION` 并把汇报交给用户。
-13. 未收到真实用户回复时不得创建 `routes/human-model-decision.md`，不得进入 L2/D0/M0，也不得把 REF2 咨询、沉默或自己的判断当批准。收到回复后忠实记录，再按决定写 route handoff。
+12. L2C 必须读 `Workflow/protocols/route-tournament.md` 第 5 节，分别写完整 `routes/model-candidate-briefing.md` 和可原样发送的 `routes/model-selection-presentation.md`（用对应同名模板）。聊天正文必须直接展示逐问全部实际候选及去向、重点候选与最强竞品的优劣/代价、对应论文标题/作者年份/链接/实际读取层级及支持或限制、文献与审查如何改变取舍，再给推荐。合并保留原名称与理由，无已核验文献明确待补；不能只报首选或用文件链接替代关键比较，不把预期写成实测胜出。
+13. 发送前对照上游 memo 自查展示是否充分，并运行 `check_workspace.py <run_dir> --stage model-briefing --json`；机械通过不证明内容充分或已送达。将状态置为 `AWAITING_HUMAN_MODEL_DECISION`，实际发送上述正文和完整材料链接后停止。未收到真实用户回复时不得创建 `routes/human-model-decision.md`，不得进入 L2/D0/M0，也不得把 REF2 咨询、沉默或自己的判断当批准。收到回复后保存两份材料的不可覆盖版本快照并绑定实际展示与真实回复，再按决定写 route handoff；历史缺失不伪造回填。重新 H1 同样适用。
 
 ## 每轮动作
 

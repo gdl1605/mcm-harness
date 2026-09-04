@@ -17,6 +17,7 @@ SOURCE_SUFFIXES = {
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".tsv",
     ".txt", ".md", ".json", ".png", ".jpg", ".jpeg", ".zip", ".7z",
 }
+SOURCE_QUESTION = "请提供题目文件和全部数据附件的本地路径，或上传文件/提供可访问下载链接；如果没有独立数据附件，请说明。"
 
 
 def read_object(path: Path) -> dict:
@@ -108,7 +109,10 @@ def bootstrap(args: argparse.Namespace) -> dict:
         "skipped_source_entries": skipped,
         "requirements": requirements,
         "semantic_correctness_checked": False,
-        "initialization_only": True,
+        "source_completeness_checked": False,
+        "registered_source_paths": [],
+        "script_preparation_only": True,
+        "setup_only_requested": args.setup_only,
     }
     if run_dir.exists() and any(run_dir.iterdir()):
         # Existing runs (including progressed ones) are strictly read-only.
@@ -136,7 +140,13 @@ def bootstrap(args: argparse.Namespace) -> dict:
         read_object(run_dir / "state/mcm-skill-snapshot.json")
         report.update(status="EXISTING_RUN", run_id=state["run_id"], phase=state["phase"])
     elif not sources:
-        report.update(status="AWAITING_SOURCES", registered_sources=0)
+        report.update(status="AWAITING_SOURCES", registered_sources=0,
+                      next_action="ASK_FOR_PROBLEM_AND_DATA_LOCATIONS", user_question=SOURCE_QUESTION)
+        return report
+    elif args.prepare_only:
+        report.update(status="AWAITING_SOURCE_REVIEW", registered_sources=0,
+                      candidate_source_paths=[str(path) for path in sources],
+                      next_action="REVIEW_PROBLEM_AND_DATA_COVERAGE")
         return report
     else:
         command = [str(run_dir), "--title", args.title or "C problem"]
@@ -150,7 +160,21 @@ def bootstrap(args: argparse.Namespace) -> dict:
     if checked.get("embedded_mcm_skill_drift_detected"):
         raise ValueError("embedded mcm changed since initialization; keep the run and review the drift")
     report["warnings"] = checked.get("warnings", [])
-    report["registered_sources"] = len(read_object(run_dir / "inputs/source-manifest.json")["materials"])
+    materials = read_object(run_dir / "inputs/source-manifest.json")["materials"]
+    report["registered_sources"] = len(materials)
+    report["registered_source_paths"] = [item["path"] for item in materials]
+    # This is an Agent handoff, not Python orchestration or a semantic approval.
+    report["agent_continuation_requires"] = ["complete_readable_sources", "current_stage_capabilities"]
+    if args.setup_only:
+        report["next_action"] = "STOP_AFTER_SETUP"
+    elif state["phase"] in ("H1", "AWAITING_HUMAN_MODEL_DECISION"):
+        report["next_action"] = "WAIT_FOR_HUMAN_MODEL_DECISION"
+    elif state["phase"] == "AWAITING_HUMAN_FINALIZATION":
+        report["next_action"] = "WAIT_FOR_HUMAN_FINALIZATION"
+    elif report["status"] == "INITIALIZED":
+        report["next_action"] = "START_MATERIAL_READING_AND_ROUTE_TOURNAMENT"
+    else:
+        report["next_action"] = "REVIEW_EXISTING_PHASE_AND_RESUME_PRE_H1_ONLY"
     return report
 
 
@@ -159,13 +183,15 @@ def main() -> int:
     parser.add_argument("--run-dir", type=Path, help="Default: repository run/; never overwritten")
     parser.add_argument("--source", type=Path, action="append", default=[], help="Repeat to use explicit files instead of raw-sources/")
     parser.add_argument("--title", help="Title for a new run")
+    parser.add_argument("--prepare-only", action="store_true", help="List candidate sources without creating a new run; existing runs remain read-only")
+    parser.add_argument("--setup-only", action="store_true", help="User explicitly requested setup without subsequent Agent reading/route exploration")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
     try:
         report = bootstrap(args)
         code = 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
-        report = {"status": "BLOCKED", "error": str(exc), "initialization_only": True}
+        report = {"status": "BLOCKED", "error": str(exc), "script_preparation_only": True}
         code = 2
     if args.as_json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -176,9 +202,27 @@ def main() -> int:
         print(f"运行目录: {report['run_dir']}")
         print(f"已登记材料: {report['registered_sources']}")
         if report["status"] == "AWAITING_SOURCES":
-            print(f"请将赛题和附件放入 {report['source_directory']}，再说“初始化”；也可提供文件路径。")
+            print(report["user_question"])
+            print(f"也可放入 {report['source_directory']}；Agent 收到材料后继续初始化，无需重复发 init。")
+        elif report["status"] == "AWAITING_SOURCE_REVIEW":
+            print("候选材料（尚未冻结，请核对完整题面与全部数据附件）：")
+            for path in report["candidate_source_paths"]:
+                print(f"  {path}")
+            print("核对齐备后，去掉 --prepare-only，并用 --source 显式登记这批文件。")
         else:
-            print(f"当前阶段: {report['phase']}；已有记录不会重置。初始化结束，尚未启动建模。")
+            print(f"当前阶段: {report['phase']}；已有记录不会重置，脚本未调度 Agent。")
+            print("已登记路径：")
+            for path in report["registered_source_paths"]:
+                print(f"  {path}")
+            print("文件登记不等于材料齐备；Agent 仍须核对题面和数据附件。")
+            guidance = {
+                "STOP_AFTER_SETUP": "按用户要求只做准备，暂不开始材料阅读或路线竞标。",
+                "WAIT_FOR_HUMAN_MODEL_DECISION": "当前在 H1，继续等待真实模型选择，不自动放行。",
+                "WAIT_FOR_HUMAN_FINALIZATION": "保持最终人工接管，不自动修改或投稿。",
+                "START_MATERIAL_READING_AND_ROUTE_TOURNAMENT": "材料与当前能力确认后，Agent 自动开始材料阅读与模型路线竞标，到 H1 等待用户选模型，无需另发启动 prompt。",
+                "REVIEW_EXISTING_PHASE_AND_RESUME_PRE_H1_ONLY": "Agent 先核对现有阶段和活动任务，仅续接未完成的前半程；不重跑、不越过人工 gate 或自动恢复后半程。",
+            }
+            print(guidance[report["next_action"]])
         if report["skipped_source_entries"]:
             print("未自动登记（请人工确认）: " + ", ".join(report["skipped_source_entries"]))
         for name, status in report["requirements"]["local_figure_skills"].items():

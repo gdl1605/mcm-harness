@@ -49,6 +49,9 @@ class BootstrapTests(unittest.TestCase):
         for _ in range(2):
             report = self.call()
             self.assertEqual(report["status"], "AWAITING_SOURCES")
+            self.assertEqual(report["next_action"], "ASK_FOR_PROBLEM_AND_DATA_LOCATIONS")
+            self.assertIn("题目文件和全部数据附件", report["user_question"])
+            self.assertFalse(report["source_completeness_checked"])
             self.assertFalse((self.repo / "run").exists())
             self.assertTrue((self.repo / "raw-sources").is_dir())
             self.assertFalse(report["requirements"]["full_workflow_ready"])
@@ -64,11 +67,16 @@ class BootstrapTests(unittest.TestCase):
         report = self.call()
         self.assertEqual(report["status"], "INITIALIZED")
         self.assertEqual(report["phase"], "SOURCE_FREEZE")
+        self.assertEqual(report["next_action"], "START_MATERIAL_READING_AND_ROUTE_TOURNAMENT")
+        self.assertTrue(report["script_preparation_only"])
+        self.assertFalse(report["setup_only_requested"])
         self.assertEqual(report["registered_sources"], 2)
+        self.assertEqual(len(report["registered_source_paths"]), 2)
         self.assertEqual(report["skipped_source_entries"], ["notes.exe", "subfolder"])
         before = self.snapshot()
         again = self.call()
         self.assertEqual(again["status"], "EXISTING_RUN")
+        self.assertEqual(again["next_action"], "REVIEW_EXISTING_PHASE_AND_RESUME_PRE_H1_ONLY")
         self.assertEqual(again["run_id"], report["run_id"])
         self.assertEqual(before, self.snapshot())
         self.assertFalse((self.repo / "run/routes/human-model-decision.md").exists())
@@ -84,7 +92,89 @@ class BootstrapTests(unittest.TestCase):
         before = self.snapshot()
         report = self.call()
         self.assertEqual(report["phase"], "AWAITING_HUMAN_FINALIZATION")
+        self.assertEqual(report["next_action"], "WAIT_FOR_HUMAN_FINALIZATION")
         self.assertEqual(before, self.snapshot())
+
+    def test_prepare_only_lists_sources_without_freezing_partial_inputs(self) -> None:
+        problem = self.source()
+        report = self.call("--prepare-only")
+        self.assertEqual(report["status"], "AWAITING_SOURCE_REVIEW")
+        self.assertEqual(report["candidate_source_paths"], [str(problem.resolve())])
+        self.assertEqual(report["registered_sources"], 0)
+        self.assertEqual(report["registered_source_paths"], [])
+        self.assertFalse(report["source_completeness_checked"])
+        self.assertFalse((self.repo / "run").exists())
+        # User supplies the missing data while no partial run has been frozen.
+        data = self.source("data.csv")
+        report = self.call("--prepare-only")
+        self.assertEqual(len(report["candidate_source_paths"]), 2)
+        self.assertFalse((self.repo / "run").exists())
+        initialized = self.call("--source", str(problem), "--source", str(data))
+        self.assertEqual(initialized["status"], "INITIALIZED")
+        self.assertEqual(initialized["registered_sources"], 2)
+        self.assertEqual(initialized["next_action"], "START_MATERIAL_READING_AND_ROUTE_TOURNAMENT")
+
+    def test_explicit_setup_only_preserves_opt_out_across_source_intake(self) -> None:
+        waiting = self.call("--prepare-only", "--setup-only")
+        self.assertEqual(waiting["status"], "AWAITING_SOURCES")
+        self.assertTrue(waiting["setup_only_requested"])
+        self.source()
+        prepared = self.call("--prepare-only", "--setup-only")
+        self.assertEqual(prepared["status"], "AWAITING_SOURCE_REVIEW")
+        self.assertTrue(prepared["setup_only_requested"])
+        self.assertFalse((self.repo / "run").exists())
+        report = self.call("--setup-only")
+        self.assertEqual(report["status"], "INITIALIZED")
+        self.assertEqual(report["next_action"], "STOP_AFTER_SETUP")
+        self.assertTrue(report["setup_only_requested"])
+        before = self.snapshot()
+        self.assertEqual(self.call("--setup-only")["next_action"], "STOP_AFTER_SETUP")
+        self.assertEqual(before, self.snapshot())
+
+    def test_h1_is_not_approved_by_providing_sources_or_reinitializing(self) -> None:
+        source = self.source()
+        self.call()
+        path = self.repo / "run/state/run-state.json"
+        state = json.loads(path.read_text())
+        for phase in ("H1", "AWAITING_HUMAN_MODEL_DECISION"):
+            state["phase"] = phase
+            path.write_text(json.dumps(state))
+            before = self.snapshot()
+            report = self.call("--source", str(source))
+            self.assertEqual(report["next_action"], "WAIT_FOR_HUMAN_MODEL_DECISION")
+            self.assertEqual(before, self.snapshot())
+            self.assertFalse((self.repo / "run/routes/human-model-decision.md").exists())
+
+    def test_existing_later_phase_is_not_restarted(self) -> None:
+        self.source()
+        self.call()
+        path = self.repo / "run/state/run-state.json"
+        state = json.loads(path.read_text())
+        state["phase"] = "M3"
+        state["active_tasks"] = ["existing-builder"]
+        path.write_text(json.dumps(state))
+        before = self.snapshot()
+        report = self.call()
+        self.assertEqual(report["next_action"], "REVIEW_EXISTING_PHASE_AND_RESUME_PRE_H1_ONLY")
+        self.assertEqual(before, self.snapshot())
+
+    def test_prepare_only_checks_existing_run_without_changing_it(self) -> None:
+        self.source()
+        self.call()
+        before = self.snapshot()
+        report = self.call("--prepare-only")
+        self.assertEqual(report["status"], "EXISTING_RUN")
+        self.assertEqual(len(report["registered_source_paths"]), 1)
+        self.assertEqual(before, self.snapshot())
+
+    def test_prepare_only_accepts_user_supplied_paths_and_no_separate_data(self) -> None:
+        problem = self.base / "problem-with-inline-data.txt"
+        problem.write_text("Synthetic problem with data included")
+        report = self.call("--prepare-only", "--source", str(problem))
+        self.assertEqual(report["candidate_source_paths"], [str(problem.resolve())])
+        self.assertFalse((self.repo / "run").exists())
+        # File-count heuristics must not invent a requirement for a second file.
+        self.assertEqual(self.call("--source", str(problem))["status"], "INITIALIZED")
 
     def test_explicit_source_and_custom_run(self) -> None:
         source = self.base / "source with 空格.txt"
@@ -180,6 +270,7 @@ class BootstrapTests(unittest.TestCase):
         result = subprocess.run(command, text=True, capture_output=True, check=False)
         self.assertEqual(result.returncode, 0)
         self.assertIn("AWAITING_SOURCES", result.stdout)
+        self.assertIn("题目文件和全部数据附件", result.stdout)
         self.assertIn("不安装依赖", result.stdout)
         (self.repo / "run").write_text("Not a directory")
         result = subprocess.run(command, text=True, capture_output=True, check=False)
@@ -226,9 +317,31 @@ class BootstrapTests(unittest.TestCase):
 
     def test_agent_entrypoint_is_early_and_distinguishes_development(self) -> None:
         agents = (ROOT / "AGENTS.md").read_text()
-        self.assertIn("scripts/bootstrap.py --json", agents[:4000])
+        self.assertIn("scripts/bootstrap.py --prepare-only --json", agents[:4000])
         self.assertIn("开发或修改", agents[:4000])
         self.assertTrue((ROOT / "BOOTSTRAP.md").is_file())
+
+    def test_readme_starts_with_usage_and_agent_requests_source_locations(self) -> None:
+        readme = (ROOT / "README.md").read_text()
+        self.assertLess(readme.index("## 快速开始（Bootstrap）"), readme.index("## 我们的用途"))
+        self.assertIn("不需要再发一次 init", readme)
+        bootstrap = (ROOT / "BOOTSTRAP.md").read_text()
+        for phrase in ("题目文件和全部数据附件", "已有题目但缺数据", "已有数据但缺题面",
+                       "--source` 不接受 URL", "不强制凑一个数据文件"):
+            self.assertIn(phrase, bootstrap)
+
+    def test_docs_wire_default_continuation_with_explicit_opt_out(self) -> None:
+        readme = (ROOT / "README.md").read_text()
+        self.assertIn("自动进入材料阅读与模型路线竞标", readme)
+        self.assertNotIn("只说初始化不会自动开始建模", readme)
+        self.assertNotIn("准备完成后，再说", readme)
+        for name in ("AGENTS.md", "BOOTSTRAP.md", "Workflow/README.md", "prompts/leader.md"):
+            text = (ROOT / name).read_text()
+            self.assertIn("--setup-only", text, name)
+            self.assertIn("H1", text, name)
+            for obsolete in ("用户只要求 init 时到此停止", "仅初始化不创建 worker",
+                             "来源尚未登记或用户只要求初始化时停止", "不要求再发 init。核对完整性后才冻结新 run；不创建 worker"):
+                self.assertNotIn(obsolete, text, name)
 
 
 if __name__ == "__main__":

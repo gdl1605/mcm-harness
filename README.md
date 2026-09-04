@@ -2,6 +2,33 @@
 
 [MIT License](LICENSE) · [版权与第三方说明](NOTICE.md) · [贡献指南](CONTRIBUTING.md) · [安全反馈](SECURITY.md) · [更新记录](CHANGELOG.md)
 
+## 快速开始（Bootstrap）
+
+**clone 仓库，在 Agent 中打开项目，然后说“执行初始化”或“init”即可。** 不需要自己搬运脚本、填写 `AGENTS.md` 或拼接初始化参数。需要 Python 3.10+，且 Agent 已加载仓库的 `AGENTS.md`；未自动加载时，先让它读取该文件。
+
+```bash
+git clone https://github.com/gdl1605/mcm-harness.git
+cd mcm-harness
+```
+
+1. 在 Agent 中发送：`初始化这个项目。`（`执行初始化`、`进行 init`、`bootstrap` 均可。）
+2. **如果还没提供材料，Agent 会主动问你：**
+
+   > 请提供题目文件和全部数据附件的本地路径，或上传文件/提供可访问下载链接；如果没有独立数据附件，请说明。
+
+3. 回复题目与数据地址即可，例如 `题目：/path/to/problem.pdf；数据附件：/path/to/attachment.xlsx`。也可给出材料所在目录，或把材料放入 `raw-sources/`。Agent 收到后继续初始化，**不需要再发一次 init**；已有题目就只追问缺少的数据，反之亦然。下载链接由 Agent 先获取为本地文件，无法访问会明确提示。
+4. Agent 核对完整题面和全部附件，建立 `run/`、登记来源和哈希并自检后，**自动进入材料阅读与模型路线竞标，不需要你再发“开始”prompt**：隔离审题与交叉审查 → 宽候选路线提案 → 文献校准与候选重构 → 直接展示候选及优劣势。完成后停在 **H1 等你选模型**，不是收到文件就开始训练、求解或写论文。缺材料、文件不可读或当前阶段能力不可用时先明确报告阻塞。
+
+材料齐备后，Agent 会简短说明并继续执行，而不是再次索要启动指令：
+
+```text
+好的，现在开始材料阅读与模型路线竞标；完成后我会展示候选方案，等你选择模型。
+```
+
+若你明确说“只初始化，暂不开始阅读/竞标”，则仅做准备。已有 run 不会从头重跑：尚在前半程的按现有进度衔接，已到 H1 的继续等待真实选择；单独 init 不授权恢复后半程或越过最终人工接管。
+
+重复 init 不覆盖已有 run；`raw-sources/` 与 `run/` 默认已被 `.gitignore` 排除。Bootstrap 不自动安装所有依赖，不改原始文件；模型和外部工具缺项会按阶段报告。详细规则见 [BOOTSTRAP.md](BOOTSTRAP.md)。这里的 `init` 是发给 Agent 的普通消息，不是平台 `/init` 或 `git init`。
+
 ## 我们的用途
 
 `mcm-harness` 面向全国大学生数学建模竞赛 C 题，目标是实现从赛题和附件到模型、验证、图表、论文及提交候选包的全流程自动化建模。它适合探索多 Agent 如何协作完成一整套建模任务，也可用于已有解题流程的分阶段复现、审查与改进。
@@ -51,6 +78,10 @@
 
 完成候选重构与 L2C 汇报后，流程停在 `AWAITING_HUMAN_MODEL_DECISION`。用户可以选择主模型及备选/敏感性路线、要求补文献或扩展候选、全部否决，或给出时间与实现限制。
 
+选型汇报必须直接在聊天中呈现：逐问全部实际候选及去向、几个关键竞品的优劣比较、对应论文与读取层级，以及证据如何影响取舍，最后给推荐。不能只发推荐组合或让用户自行翻文件。完整依据与展示正文分别保存在 `routes/model-candidate-briefing.md` 和 `routes/model-selection-presentation.md`，真实决定绑定不可覆盖的展示/依据版本快照。
+
+发送前用 `python3 scripts/check_workspace.py <run_dir> --stage model-briefing --json` 检查产物齐备；它不判断内容质量、实际送达或用户已阅读。旧 run 缺少展示记录不追溯补造；旧 `route`/`data` 检查对此仅提示。
+
 只有真实回复才能写入运行目录的 `routes/human-model-decision.md`。没有确认就不能进入 L2、D0 或 M0；Agent 推荐、REF2 咨询、沉默和超时都不算批准。
 
 **H1 可能重新触发：** 后续如果必须改变已授权的模型家族、目标或核心结构，先写变更请求，再等待用户重新决定，不能因实现困难而静默换成更简单的模型。合同内的实现修复和已授权调整不要求每一步都由人确认。
@@ -63,37 +94,12 @@ FD3 冻结候选后，FD4 的五个 Reviewer 分别检查排版合规、扣题�
 
 另外，缺失数据、外部技能/模型不可用、权限不足或高影响争议也可能需要用户处理。这些是按条件触发的暂停，不是每个阶段都新增一次人工 gate；H1 与最终人工接管不能被“自动运行”指令跳过。
 
-## 快速开始
+## 可选命令行入口
 
-clone 仓库，在 Agent 中打开它，然后说“初始化”即可。默认 [Bootstrap](BOOTSTRAP.md) 负责准备材料目录、建立 run、记录来源和执行基础检查，不再要求用户手工拼初始化命令。
-
-1. 获取仓库并进入根目录：
-
-   ```bash
-   git clone https://github.com/gdl1605/mcm-harness.git
-   cd mcm-harness
-   ```
-
-2. 在支持项目 `AGENTS.md` 的 Agent 中打开仓库，使用 Python 3.10+，直接发送：
-
-   ```text
-   初始化这个项目。
-   ```
-
-3. 将合法取得的赛题和附件放入自动准备的 `raw-sources/`，再说“进行 init”。已有材料也可直接告诉 Agent 文件路径，无需复制。Bootstrap 有材料时默认建立 `run/`；没有材料就提示补充，不冻结空来源 run。重复 init 只核对旧 run，不覆盖或重置进度。这两个默认目录已被 `.gitignore` 排除。
-
-4. 初始化后，要开始解题时发送：
-
-   ```text
-   使用当前 run 开始 C 题全流程建模；到 H1 等我选模型，FD7 交给我最终修改和投稿。
-   ```
-
-“初始化 / 执行初始化 / 进行 init / bootstrap”都路由到同一入口。只要求初始化时不会自动开始解题；也可说“初始化并开始解题”，但人工 gate 不变。若客户端未自动加载项目规则，先让它读取 `AGENTS.md`；不要与客户端自身的 `/init` 或 `git init` 混淆。
-
-手动入口及多题运行（可选）：
+正常使用只需在 Agent 中说“初始化 / init”。手动预检或多题运行时，可用以下命令；先确认题面和数据附件齐备，再执行第二条建立 run：
 
 ```bash
-python3 scripts/bootstrap.py
+python3 scripts/bootstrap.py --prepare-only
 python3 scripts/bootstrap.py --run-dir runs/case-02 --title "另一道 C 题" --source /path/to/problem.pdf --source /path/to/attachment.xlsx
 ```
 
