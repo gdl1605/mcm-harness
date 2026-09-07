@@ -210,7 +210,7 @@ def main() -> int:
             "after figure-prep/figure-preparation-handoff.md and paper preparation stops after "
             "paper-prep/paper-framework-handoff.md. Formal Markdown writing stops after "
             "paper-writing/formal-paper-handoff.md. Formal figure rendering may start after F4, uses "
-            "explicit gpt-5.6-sol high-reasoning subagents plus $visualize-data -> $ssci-plots -> $nature-figure "
+            "explicit gpt-6-astra high-reasoning subagents plus $visualize-data -> $ssci-plots -> $nature-figure "
             "with backend=python and cassatt2_quiet_journal_v1, "
             "requires v1-to-v2 and v2-to-final visual iterations, and stops after "
             "formal-figures/figure-rendering-handoff.md. When FD0 is explicitly started with that handoff, "

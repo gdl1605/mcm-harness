@@ -4,7 +4,7 @@
 
 初始化请求先走根目录 [BOOTSTRAP.md](../BOOTSTRAP.md)：`python3 scripts/bootstrap.py --prepare-only --json` 列出候选来源；缺材料主动索取题目和数据地址，收到后继续。Agent 核对完整性后，去掉 `--prepare-only` 并显式传入已确认的 `--source` 才建立新 `run/`。脚本只准备工作区；Leader 默认自动衔接 W0–W4/L1 材料阅读与审查，再推进 W5/REF 路线竞标、文献校准和 L2C 展示，到 H1 等待真实选择，不再要求启动 prompt。用户明确只准备时保留 `--setup-only` 并停止。已有 run 先核对阶段和活动任务，只续接尚未完成的前半程，不重跑、不用 init 越过 H1 或恢复后半程。没有来源、存在来源/快照冲突或当前阶段能力不可用时不启动；仅缺后续绘图能力不阻止前半程。
 
-当前实现范围包括独立验证、两条准备支线、sol-high 正式绘图、正式论文 Markdown 写作，以及最终排版终审与人工交接：
+当前实现范围包括独立验证、两条准备支线、astra-high 正式绘图、正式论文 Markdown 写作，以及最终排版终审与人工交接：
 
 ```text
 题意诊断、宽候选与人工模型决策 W0–H1–L2
@@ -22,7 +22,7 @@
 → 停止于 final-delivery/final-delivery-handoff.md
 ```
 
-文献模块在 W5A 后验证、反驳并扩展候选，H1 由真实用户选择模型，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；正式绘图使用强制 sol-high Producer/Reviewer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`（Python backend）并采用用户选择的 Cassatt2 安静期刊风完成两轮视觉迭代；论文准备和正式写作可与绘图并行。最终交付消费 rendering handoff 与已审引用，在参考文献后生成“支撑材料”结果/代码展示，并生成含处理后数据、结果和完整原始脚本的独立 ZIP；冻结后只审不改并交给人微调。实际投稿仍不在本模块内。
+文献模块在 W5A 后验证、反驳并扩展候选，H1 由真实用户选择模型，在 V6/CP1 后补齐正式引用；图表支线准备数据和图型建议；正式绘图使用强制 astra-high Producer/Reviewer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`（Python backend）并采用用户选择的 Cassatt2 安静期刊风完成两轮视觉迭代；论文准备和正式写作可与绘图并行。最终交付消费 rendering handoff 与已审引用，在参考文献后生成“支撑材料”结果/代码展示，并生成含处理后数据、结果和完整原始脚本的独立 ZIP；冻结后只审不改并交给人微调。实际投稿仍不在本模块内。
 
 ## 1. Leader 怎样使用本文
 
@@ -137,7 +137,7 @@ prompts/formal-figures/worker-base.md
 + 基于 templates/formal-figures/task-brief.md 的开放 brief
 ```
 
-Leader 创建每个新 Producer/Reviewer 时必须显式指定 `model=gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并写 `formal-figures/scope/dispatch-log.json`。每条派工还必须显式写完整 skill chain、`backend=python`、两个 lock/hash、`visual_profile=cassatt2_quiet_journal_v1` 和 `palette=metbrewer_cassatt2`；任一不可检测时停止，不得静默回退。Producer 每问/共享单元一个，负责 `v1 → Round 1 → v2`；默认一个 Portfolio Reviewer 审 v2，原 Producer 再完成 `Round 2 → final`。
+Leader 创建每个新 Producer/Reviewer 时必须显式指定 `model=gpt-6-astra`、`reasoning_effort=high`、`fork_turns=none`，并写 `formal-figures/scope/dispatch-log.json`。每条派工还必须显式写完整 skill chain、`backend=python`、两个 lock/hash、`visual_profile=cassatt2_quiet_journal_v1` 和 `palette=metbrewer_cassatt2`；任一不可检测时停止，不得静默回退。Producer 每问/共享单元一个，负责 `v1 → Round 1 → v2`；默认一个 Portfolio Reviewer 审 v2，原 Producer 再完成 `Round 2 → final`。
 
 论文准备使用：
 
@@ -175,7 +175,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 
 每次派工都按以下顺序执行：
 
-1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、正式绘图、论文准备、PW2、FD4 独立终审和文献 Scout 按隔离写入根派工，不受该数字上限约束。正式绘图额外强制 sol-high。
+1. Leader 确认当前波次、唯一目标和并发范围。W/D/M/V 每波最多 3 个 worker；图表、正式绘图、论文准备、PW2、FD4 独立终审和文献 Scout 按隔离写入根派工，不受该数字上限约束。正式绘图额外强制 astra-high。
 2. 根据下表决定创建新 subagent，还是复用原 subagent。
 3. 从对应模板新建开放 task brief，写明允许读取、禁止读取、唯一主输出路径、额外工程写入权限和停止条件。
 4. 用 `scripts/build_prompt.py` 生成提示词；脚本会先按 `Workflow/mcm-skill-integration.json` 注入内置 `$mcm` 的模式和精确参考文件，再组合 worker-base、角色 prompt 与 task brief。向 subagent 发送完整 prompt，并直接给出绝对或 run 内可解析路径。
@@ -194,7 +194,7 @@ Task brief 中的 A/B/C/D 是最低必答问题，不是报告字段白名单。
 - V3 定向 probe：复用提出该问题的 auditor；V4 回应：复用原 model/data owner。
 - 原 owner 因验证证据修正后，若旧 holdout 已消耗，使用新独立证据并在必要时创建 fresh-context auditor。
 - 图表 F1 每问或共享结果单元创建一个新 Question Figure Curator；F2 每个 package 落盘后立即流式创建一个新 Figure Evidence Auditor；F2R 复用原 Curator；F3 创建一个新 Figure–Chapter Integrator。
-- 正式绘图 FR1 每问/共享单元创建一个显式 sol-high Visual Producer，不按图拆 Agent；FR2 创建一个 fresh-context sol-high Portfolio Reviewer；FR2R/FR3 分别复用原 Producer/Reviewer；FR4 Leader 独写 manifest/handoff。
+- 正式绘图 FR1 每问/共享单元创建一个显式 astra-high Visual Producer，不按图拆 Agent；FR2 创建一个 fresh-context astra-high Portfolio Reviewer；FR2R/FR3 分别复用原 Producer/Reviewer；FR4 Leader 独写 manifest/handoff。
 - F3 Integrator 是 `figure-plan.md` 与 `figure-preparation-handoff.md` 的唯一内容 owner；F4 Leader 只核对条件、处理回滚和宣布汇合。
 - 论文 CP1 创建新 Structure Architect；每问 CP2 新 Curator 与 CP3A 新 Evidence Auditor 可并行，Auditor 未见 v1、代码或日志先写 method reconstruction；CP3B 复用同一 Auditor 对照 v1，CP3R 复用原 Curator；CP4 创建新 Integrator；CP5 创建新 Competition Reviewer。
 - CP5 blind review 使用 `competition_manuscript_reviewer` 的默认 `blind-review` profile，落盘前禁止加载 `$mcm` 和国奖论文蒸馏；第二遍复用同一 Reviewer，并用 `--mcm-profile judge-review` 重建后续 prompt。CP5R/CP6 复用原 Integrator，事实修订复用原 Question Curator。
@@ -819,9 +819,9 @@ F4 不是新的写作角色。Integrator 已写出 `figure-plan.md` 和 `figure-
 
 ## 7A. 正式论文绘图 FR0–FR4
 
-完整设计见 [`Workflow/formal-figure-rendering.md`](formal-figure-rendering.md)。模块只有两类 subagent：Question Visual Producer 和 Figure Portfolio Reviewer。所有新 Agent 都必须由 Leader 显式创建为 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，并在 prompt/brief/dispatch 中显式调用 `$visualize-data → $ssci-plots → $nature-figure`、固定 Python/Cassatt2 profile。默认 Luna、隐式 skill/profile 选择和静默 fallback 均不得使用。
+完整设计见 [`Workflow/formal-figure-rendering.md`](formal-figure-rendering.md)。模块只有两类 subagent：Question Visual Producer 和 Figure Portfolio Reviewer。所有新 Agent 都必须由 Leader 显式创建为 `gpt-6-astra`、`reasoning_effort=high`、`fork_turns=none`，并在 prompt/brief/dispatch 中显式调用 `$visualize-data → $ssci-plots → $nature-figure`、固定 Python/Cassatt2 profile。默认 Luna、隐式 skill/profile 选择和静默 fallback 均不得使用。
 
-### 7A.1 FR0 冻结与 sol-high 调度
+### 7A.1 FR0 冻结与 astra-high 调度
 
 F4 handoff 和 `chapter-map-v0.md` 落盘后，Leader 先核对两个 skill lock、项目本地 `ssci-plots`/`nature-figure` 哈希、`$visualize-data` 可发现性和 Cassatt2 profile，再写 `formal-figures/scope/frozen-inputs.md`，解析每个 Figure ID 的数据包、provenance、recommendation、claim、章节、官方版心、路径、版本和哈希。
 
@@ -831,7 +831,7 @@ Leader 指定一个 Producer 兼任 style owner。Cassatt2 palette、白底、�
 
 ### 7A.2 FR1 每问/共享 Visual Producer
 
-每问创建一个新的 sol-high Producer；真实共享结果可创建一个同角色 shared Producer。不得按 Figure ID 拆 Agent。Producer 写：
+每问创建一个新的 astra-high Producer；真实共享结果可创建一个同角色 shared Producer。不得按 Figure ID 拆 Agent。Producer 写：
 
 - `visual-plan.md`：由 `$visualize-data` 规划数据/统计、关系、模型结构、核心结果、baseline、误差/稳健性、情景/决策和题间接口覆盖，并在 Cassatt2 语言内保留可比较布局方向；
 - 每图 `chart-contract.md` 与 `data-ref.md`：固定 claim、粒度、单位、时间、样本量、误差和比较任务；首稿前不把布局、颜色和装饰硬锁成唯一答案；
@@ -839,11 +839,11 @@ Leader 指定一个 Producer 兼任 style owner。Cassatt2 palette、白底、�
 - `render.py`、render config/memo 和使用 `$ssci-plots` Cassatt2 profile/完整冻结数据的 v1 PNG/PDF/SVG；
 - 实际打开 v1，在 `iteration-log.md` 写 Round 1 诊断：是否普通/不好看、Cassatt2 漂移、2×2 强套、重复图例/caption、未授权派生 claim、层级弱、重叠、裁切、压缩、失真、目标宽度不可读、颜色或留白失衡，并生成 v2。
 
-典型每问先考虑数据/结构、核心结果、比较/不确定性三类，必要时加情景图；典型三至四问题目的 12–20 候选、正文 8–14 张只是规划参考。没有 claim、重复表格或证据不足时放弃/转附录，不按数量凑图。缺关键数据包时写 coverage request 返回 F1/F2。
+按 [正文深度与逐步骤图量协议](protocols/paper-depth-and-visual-coverage.md)规划：研究正文默认25–35页；数据统计、预处理、建模、结果、验证等每个研究步骤1–3张图。图总量由步骤数决定，不按每问一图或全篇8–14张封顶；表格保留精确值，但不能代替步骤最低图覆盖。短稿先审论证深度与缺图，新增数据包经原F/D/M/V流程授权，不造图凑数。已冻结run不自动迁移。
 
 ### 7A.3 FR2/FR2R 统一审图与原 Producer 修订
 
-所有 v2 落盘后，创建一个 fresh-context sol-high Portfolio Reviewer，使用完整 skill chain/Cassatt2 profile 和 `prompts/formal-figures/figure-portfolio-reviewer.md`，只写 `formal-figures/figure-review.md`。默认一次审全部图；确实超出上下文才按问题包拆多个同角色 Reviewer。
+所有 v2 落盘后，创建一个 fresh-context astra-high Portfolio Reviewer，使用完整 skill chain/Cassatt2 profile 和 `prompts/formal-figures/figure-portfolio-reviewer.md`，只写 `formal-figures/figure-review.md`。默认一次审全部图；确实超出上下文才按问题包拆多个同角色 Reviewer。
 
 Reviewer 在同一报告中审：数据/单位/样本量/误差/轴域与 claim，图型与图量覆盖，视觉是否显得默认/粗糙、字体/颜色/层级/碰撞/裁切/压缩/灰度与全篇风格，以及目标版心中的可读性。它不改图、不用单一综合分掩盖具体问题。
 
@@ -1061,7 +1061,7 @@ python3 scripts/check_workspace.py RUN_DIR --stage final-delivery --json
 python3 scripts/check_workspace.py RUN_DIR --stage literature --json
 ```
 
-这些脚本不创建或调度 subagent；`build_prompt.py` 只路由 Skill 语义上下文，不产生语义结论。`check_workspace.py` 不解析 Markdown 语义，也不证明题意、模型、图形准确/美观、竞赛表达或 AI 文风正确。formal-figures checker 只验证 dispatch log 请求了 sol-high，不能证明运行平台实际提供了该模型；Leader 仍需保存真实创建结果。当前没有 `check_workspace.py --stage validation`。
+这些脚本不创建或调度 subagent；`build_prompt.py` 只路由 Skill 语义上下文，不产生语义结论。`check_workspace.py` 不解析 Markdown 语义，也不证明题意、模型、图形准确/美观、竞赛表达或 AI 文风正确。formal-figures checker 只验证 dispatch log 请求了 astra-high，不能证明运行平台实际提供了该模型；Leader 仍需保存真实创建结果。当前没有 `check_workspace.py --stage validation`。
 
 ## 12. 运行目录与最终停止边界
 

@@ -1104,7 +1104,7 @@ class WorkflowToolTests(unittest.TestCase):
         self.assertIn("不直接修改正文", ai_prompt)
         self.assertIn("不要把必要技术术语", ai_prompt)
 
-    def test_formal_figure_workspace_prompts_templates_and_sol_high_team(self) -> None:
+    def test_formal_figure_workspace_prompts_templates_and_astra_high_team(self) -> None:
         template_root = PROJECT_ROOT / "templates/formal-figures"
         expected_templates = {
             "task-brief.md",
@@ -1133,7 +1133,7 @@ class WorkflowToolTests(unittest.TestCase):
             (PROJECT_ROOT / "Workflow/formal-figure-team.json").read_text(encoding="utf-8")
         )
         runtime = team["execution"]["required_subagent_runtime"]
-        self.assertEqual(runtime["model"], "gpt-5.6-sol")
+        self.assertEqual(runtime["model"], "gpt-6-astra")
         self.assertEqual(runtime["reasoning_effort"], "high")
         self.assertEqual(runtime["fork_turns"], "none")
         self.assertTrue(runtime["must_be_explicit_on_every_new_spawn"])
@@ -1204,7 +1204,7 @@ class WorkflowToolTests(unittest.TestCase):
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             for marker in (
-                "gpt-5.6-sol",
+                "gpt-6-astra",
                 "reasoning_effort: high",
                 "fork_turns: none",
                 "$visualize-data",
@@ -1223,7 +1223,7 @@ class WorkflowToolTests(unittest.TestCase):
 
             brief = run_dir / "formal-figures/briefs/FR1-q1.md"
             brief.write_text(
-                "# FR1\n\nmodel=gpt-5.6-sol; reasoning_effort=high; fork_turns=none; "
+                "# FR1\n\nmodel=gpt-6-astra; reasoning_effort=high; fork_turns=none; "
                 "$visualize-data; $ssci-plots; $nature-figure; backend=python; "
                 "visual_profile=cassatt2_quiet_journal_v1; palette=metbrewer_cassatt2; "
                 "Workflow/ssci-plots-skill.lock.json; Workflow/nature-figure-skill.lock.json。\n",
@@ -1274,7 +1274,7 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertIn("cassatt2_quiet_journal_v1", reviewer.stdout)
             self.assertIn("v2", reviewer.stdout)
 
-    def test_formal_figure_stage_checks_requested_sol_high_and_artifacts(self) -> None:
+    def test_formal_figure_stage_checks_requested_astra_high_and_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             run_dir = Path(temp) / "run"
             initialized = subprocess.run(
@@ -1350,7 +1350,7 @@ class WorkflowToolTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 if relative.startswith("formal-figures/briefs/"):
                     path.write_text(
-                        "gpt-5.6-sol high fork_turns=none $visualize-data $ssci-plots "
+                        "gpt-6-astra high fork_turns=none $visualize-data $ssci-plots "
                         "$nature-figure backend=python cassatt2_quiet_journal_v1 "
                         "metbrewer_cassatt2 Workflow/ssci-plots-skill.lock.json "
                         "Workflow/nature-figure-skill.lock.json\n",
@@ -1368,7 +1368,7 @@ class WorkflowToolTests(unittest.TestCase):
                         "unit": "q1",
                         "agent_handle": "agent-producer",
                         "task_brief": "formal-figures/briefs/FR1-q1.md",
-                        "requested_model": "gpt-5.6-sol",
+                        "requested_model": "gpt-6-astra",
                         "requested_reasoning_effort": "high",
                         "fork_turns": "none",
                         "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
@@ -1383,7 +1383,7 @@ class WorkflowToolTests(unittest.TestCase):
                         "unit": "portfolio",
                         "agent_handle": "agent-reviewer",
                         "task_brief": "formal-figures/briefs/FR2-portfolio.md",
-                        "requested_model": "gpt-5.6-sol",
+                        "requested_model": "gpt-6-astra",
                         "requested_reasoning_effort": "high",
                         "fork_turns": "none",
                         "required_skills": ["visualize-data", "ssci-plots", "nature-figure"],
@@ -1431,11 +1431,11 @@ class WorkflowToolTests(unittest.TestCase):
             self.assertEqual(rejected.returncode, 1)
             rejected_report = json.loads(rejected.stdout)
             self.assertTrue(
-                any("requested_model='gpt-5.6-sol'" in error for error in rejected_report["errors"]),
+                any("requested_model='gpt-6-astra'" in error for error in rejected_report["errors"]),
                 rejected_report["errors"],
             )
 
-            dispatch["tasks"][0]["requested_model"] = "gpt-5.6-sol"
+            dispatch["tasks"][0]["requested_model"] = "gpt-6-astra"
             dispatch["tasks"][0]["skill_invocations"] = [
                 "$visualize-data",
                 "$sci-plot",

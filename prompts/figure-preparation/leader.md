@@ -50,3 +50,7 @@ Integrator 是 `figure-plan.md` 和 `figure-preparation-handoff.md` 的唯一内
 - 每问完成即可流式进入审查；不为等待最慢问题而串行化全部工作。
 - Leader 只冻结、派工、记录状态、处理回滚/重开和汇合，不把自己的观察冒充独立 curator/auditor。
 - 所有语义交接用开放 Markdown；JSON 仅限配置、路径、哈希、版本、状态和运行参数。
+
+## 新规划的正文深度与图覆盖
+
+先读`Workflow/protocols/paper-depth-and-visual-coverage.md`，作为本模块控制协议：研究正文默认25–35页，每研究步骤1–3张图，短稿先查展开不足与关键内容误入附录。逐步骤缺图须补授权数据包，不能只验收少量最终结果图；不靠排版/源码凑页。本协议不扩大数据读写/盲读权限；现有已冻结run不因仓库更新自动迁移，FD4之后仍只报告。

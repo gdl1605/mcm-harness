@@ -53,7 +53,7 @@ def external_requirements() -> dict:
         "agent_must_verify": [
             "native subagents and file/command permissions",
             "source reading and literature retrieval tools before their stages",
-            "visualize-data and gpt-5.6-sol/high availability before formal figures",
+            "visualize-data and gpt-6-astra/high availability before formal figures",
         ],
         "full_workflow_ready": False,
     }

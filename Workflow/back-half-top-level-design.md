@@ -1,6 +1,6 @@
 # C 题后半程顶层设计
 
-> 状态：路线文献校准、正式引用、数据、建模、验证、图表准备、sol-high 正式绘图、论文准备、正式论文 Markdown 写作，以及最终排版终审与人工交接均已实现；实际人工投稿仍由人完成。
+> 状态：路线文献校准、正式引用、数据、建模、验证、图表准备、astra-high 正式绘图、论文准备、正式论文 Markdown 写作，以及最终排版终审与人工交接均已实现；实际人工投稿仍由人完成。
 
 ## 1. 目标与入口
 
@@ -105,7 +105,7 @@ Zotero 是可选只读来源，不是依赖。向 Zotero 导入、保存或修�
 
 **实现状态：FR0–FR4 已实现。** 设计见 [formal-figure-rendering.md](formal-figure-rendering.md)，配置见 `formal-figure-team.json`，角色 prompt 位于 `prompts/formal-figures/`，开放模板位于 `templates/formal-figures/`。
 
-模块只有两类 subagent：每问/共享单元一个 Question Visual Producer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`/Python，使用用户选择的 `cassatt2_quiet_journal_v1` 完成 v1→v2 第一轮视觉迭代；默认一个 fresh-context Figure Portfolio Reviewer 审 v2，原 Producer 再完成 v2→final 第二轮。审查同时覆盖数据准确性、视觉层级、不好看/默认感、Cassatt2 漂移、重复图例/caption、重叠、裁切、压缩和真实版面。C 是视觉语言，不把所有图强制为 2×2。所有新 Agent 必须显式请求 `gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none`，默认 Luna、skill/profile 缺失和静默降级均禁止。
+模块只有两类 subagent：每问/共享单元一个 Question Visual Producer，显式调用 `$visualize-data → $ssci-plots → $nature-figure`/Python，使用用户选择的 `cassatt2_quiet_journal_v1` 完成 v1→v2 第一轮视觉迭代；默认一个 fresh-context Figure Portfolio Reviewer 审 v2，原 Producer 再完成 v2→final 第二轮。审查同时覆盖数据准确性、视觉层级、不好看/默认感、Cassatt2 漂移、重复图例/caption、重叠、裁切、压缩和真实版面。C 是视觉语言，不把所有图强制为 2×2。所有新 Agent 必须显式请求 `gpt-6-astra`、`reasoning_effort=high`、`fork_turns=none`，默认 Luna、skill/profile 缺失和静默降级均禁止。
 
 FR0 冻结 F4 数据并校验两个 skill lock 与 Cassatt2 profile，FR1 逐问并行生成 v1、看图形成 v2，FR2/FR2R 独立审查和第二轮 final 修订，FR3 在 A4/官方页面的实际嵌入预览中关闭原问题，FR4 交付带物理尺寸/最小可读宽度的 manifest 与 `figure-rendering-handoff.md`。该模块可与 CP4–PW4 并行，但必须在 FD0 前完成。
 
@@ -160,7 +160,7 @@ flowchart LR
     F --> R2["REF4–REF6 正式引用"]
     H1 --> R2
     R2 --> H2
-    G --> I["FR0–FR4 sol-high 正式绘图"]
+    G --> I["FR0–FR4 astra-high 正式绘图"]
     H1 --> G
     H1 --> H2
     G --> H2
@@ -337,7 +337,7 @@ FD1 将最终结果数据和实际运行脚本完整源码整理为支撑材料�
 3. **已实现：** 建模构建 M0–M6 与动态调整；
 4. **已实现：** 独立模型验证 V0–V6；
 5. **已实现：** 图表准备 F0–F4；
-6. **已实现：** 正式绘图 FR0–FR4、强制 sol-high 调度、统一图包审查和 rendering handoff；
+6. **已实现：** 正式绘图 FR0–FR4、强制 astra-high 调度、统一图包审查和 rendering handoff；
 7. **已实现：** 论文准备 CP0–CP6；
 8. **已实现：** 正式写作 PW0–PW7；
 9. **已实现：** 最终交付 FD0–FD7、五路终审和人工交接；

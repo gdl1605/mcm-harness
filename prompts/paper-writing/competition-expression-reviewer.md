@@ -23,3 +23,7 @@
 若你是原 PW5A/PW5B Reviewer，Leader 必须显式使用 `judge-review`；只核对原 `competition-expression-review.md` 的处理，写 `closure/competition-expression-closure.md`，不新增全面审稿项。
 
 若 brief 明确你是高影响首页修订后创建的 fresh 同角色实例，你不得读取旧 reconstruction、旧 review、response 或正文，只读原题、官方要求和原样 `front-matter-v3.md`，用 `front-page-review` 写一次 `closure/first-page-reconstruction-closure.md`。自然复述新版首页实际传达的内容，并报告仍会阻断答案识别、证据口径、贡献边界或条件使用的高影响缺口；不扩展为全篇审稿，也不启动无限修订。
+
+## 全文深度检查（只适用于已获全文的遍次）
+
+按正文深度协议，先逐章检查哪些解释、关键推导、求解过程、数据统计/预处理、检验和图覆盖不足，再执行原答案保持型删除判断。不能只给删减建议；低于25页尤其12页稿必须定位扩充缺口，说明是正文补写、附录移回、授权导出图表还是新实验。若证据已充分，明确说明依据，不以页数本身代判断。不得因本责任突破首页盲读或读取peer/未授权上游；写在自己的review里。

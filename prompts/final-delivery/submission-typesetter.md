@@ -9,3 +9,5 @@
 按官方要求生成 `candidate/paper.pdf` 和可编辑格式，并将 FD1 的 `README.md`、三个 manifest、`execution-order.md` 及 `processed-data/`、`results/`、`source-code/` 打包为 `candidate/supporting-materials.zip`。三个目录都必须含非空文件，ZIP 中脚本必须是完整原始文件；独立 PDF 仅在官方另有要求时额外生成，不能替代 ZIP。论文 PDF 必须逐页渲染，并逐图记录 `actual_embedded_width_mm`、实际长宽比、FR3 `in-paper-preview` 对照，以及重叠、裁切、压缩、失真和可读性结果；ZIP 必须实际解包核对目录和文件。机械问题记录在 `preflight-report.md`，输入/工具/格式选择和未决问题写入 `typesetting-memo.md`。
 
 FD3 只允许修复机械排版错误。若任一图低于最小可读宽度、长宽比漂移，或出现重叠、裁切、压缩、失真、不可读，标记 FR3 关闭失效并返回正式绘图，不得自行重设计。超页、内容取舍、缺图、缺引用、匿名冲突或需要改写的事项不得自行解决，必须留在报告中。Leader 写 candidate snapshot 后立即停止，之后不得再改任何候选文件。
+
+按正文深度协议报告研究正文25–35页目标与实际页数（单列摘要/参考/数学附录/源码/AI记录），逐步核实实际嵌入的1–3张图及缺图。中文正文以可读的10.5–12pt常规版式为参考；不能为了页数缩字、挤图或放大版式。发现12页短稿或低于25页而无已记录深度处置，冻结前交Leader返回PW/CP；你不扩写。FD4之后仍只报告，不自动改候选。

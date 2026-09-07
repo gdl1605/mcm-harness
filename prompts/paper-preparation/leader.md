@@ -30,3 +30,7 @@ CP6 复用原 Integrator 写最终 handoff；你只检查 figure handoff、refer
 - CP4、CP5、CP5R、CP6 串行；全篇文件只有 Integrator owner。
 - Evidence Auditor 与 Competition Reviewer 是不同新 Agent，分别审事实和竞赛成文性。
 - 不以多数票、模型自信或“像国奖论文”替代本题证据。
+
+## 新规划的正文深度与图覆盖
+
+先读`Workflow/protocols/paper-depth-and-visual-coverage.md`，作为本模块控制协议：研究正文默认25–35页，每研究步骤1–3张图，短稿先查展开不足与关键内容误入附录。逐步骤缺图须补授权数据包，不能只验收少量最终结果图；不靠排版/源码凑页。本协议不扩大数据读写/盲读权限；现有已冻结run不因仓库更新自动迁移，FD4之后仍只报告。

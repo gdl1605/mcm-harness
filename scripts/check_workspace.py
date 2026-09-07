@@ -714,7 +714,7 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
                 if role == "question_visual_producer" and isinstance(task.get("unit"), str):
                     producer_units.add(task["unit"])
                 expected = {
-                    "requested_model": "gpt-5.6-sol",
+                    "requested_model": "gpt-6-astra",
                     "requested_reasoning_effort": "high",
                     "fork_turns": "none",
                     "backend": "python",
@@ -748,7 +748,7 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
                 else:
                     brief_text = (run_dir / brief_ref).read_text(encoding="utf-8")
                     for marker in (
-                        "gpt-5.6-sol",
+                        "gpt-6-astra",
                         "high",
                         "fork_turns=none",
                         "$visualize-data",
@@ -778,7 +778,7 @@ def check_formal_figures(run_dir: Path, errors: list[str], warnings: list[str]) 
         check_formal_figure_bundle(bundle, errors)
         if bundle.name not in producer_units:
             errors.append(
-                f"formal-figure dispatch log has no sol-high producer task for question unit: {bundle.name}"
+                f"formal-figure dispatch log has no astra-high producer task for question unit: {bundle.name}"
             )
     shared_root = run_dir / "formal-figures/shared"
     if shared_root.is_dir():

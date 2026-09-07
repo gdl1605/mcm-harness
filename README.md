@@ -109,7 +109,7 @@ python3 scripts/bootstrap.py --run-dir runs/case-02 --title "另一道 C 题" --
 
 - 内置 `.agents/skills/mcm/` 随仓库提供；无需额外安装 mcm。
 - 正式绘图依赖 `$visualize-data → $ssci-plots → $nature-figure`。后两者的技能目录不随仓库分发，visualize-data 由用户平台提供。来源与许可状态见 [NOTICE.md](NOTICE.md)；锁文件是依赖记录，不是安装器。
-- 当前正式绘图协议要求 `gpt-5.6-sol + high + fork_turns=none` 及指定 Python/样式配置。这是本项目配置要求，不保证任意平台均提供该模型或技能；无法满足时停止并报告，不静默降级。
+- 当前正式绘图协议要求 `gpt-6-astra + high + fork_turns=none` 及指定 Python/样式配置。这是本项目配置要求，不保证任意平台均提供该模型或技能；无法满足时停止并报告，不静默降级。
 - 模型服务账号、调用费用、检索权限和阶段性依赖由使用者准备；无需为阅读工作流或运行基础测试安装所有科学计算库。
 - 本项目不提供赛题原件、官方附件、完整参考论文或真实比赛运行包；不代表官方要求，也不保证获奖。实际比赛规则、AI 使用合规及最终投稿由使用者核对和负责。
 
@@ -133,7 +133,7 @@ python3 scripts/bootstrap.py --run-dir runs/case-02 --title "另一道 C 题" --
 - [Workflow/figure-preparation.md](Workflow/figure-preparation.md)：V6 后异步图表准备 F0–F4、逐问 Curator、流式复核和 FR0–FR4 数据交接。
 - [Workflow/figure-preparation-team.json](Workflow/figure-preparation-team.json)：图表准备角色、阶段和机械所有权配置。
 - [Workflow/formal-figure-rendering.md](Workflow/formal-figure-rendering.md)：FR0–FR4 图量覆盖、绘图、统一审查、真实版面 QA 和正式图交接。
-- [Workflow/formal-figure-team.json](Workflow/formal-figure-team.json)：两类正式图角色、强制 sol-high 调度、所有权和迭代配置。
+- [Workflow/formal-figure-team.json](Workflow/formal-figure-team.json)：两类正式图角色、强制 astra-high 调度、所有权和迭代配置。
 - [Workflow/nature-figure-skill.lock.json](Workflow/nature-figure-skill.lock.json)：正式绘图所需 `$nature-figure` 的项目级安装来源、hash、Python 后端和许可边界。
 - [Workflow/ssci-plots-skill.lock.json](Workflow/ssci-plots-skill.lock.json)：`$ssci-plots` 项目级来源、commit、hash 与 MIT 许可证。
 - [Workflow/formal-figure-style-profile.cassatt2.json](Workflow/formal-figure-style-profile.cassatt2.json)：用户选择的 C / Cassatt2 安静期刊视觉语言、palette 语义与布局边界。

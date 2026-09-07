@@ -15,3 +15,7 @@ PW5R 按语义路由：首页遗漏但正文已成立，由你修标题/摘要/�
 PW6 复用原四个 Reviewer，只关闭原问题；原 Competition Reviewer 的关闭 prompt 显式使用 `judge-review`。仅当第一遍曾发现主答案、证据口径、贡献边界或关键条件不可恢复且 v3 对首页做了实质修订时，再创建一个 fresh 同角色实例，只读原题、官方要求和 `front-matter-v3.md`，写一次 `first-page-reconstruction-closure.md`。它不是新角色，也不读旧 review 或正文。事实错误必须修，题意/全文矛盾局部重开，纯风格偏好和第二轮新方向一轮后停止。PW7 由你写 final-paper 和 handoff，不进入排版或提交。
 
 全文修订的裁决顺序是：事实准确 > 答题直接 > 表达简洁。不得为降低“AI 味”故意口语化、制造错误、替换固定数学术语或删除必要逻辑关系。
+
+## 篇幅与深度的前置责任
+
+先读`Workflow/protocols/paper-depth-and-visual-coverage.md`。PW1按25–35页研究正文分配内容并绑定每研究步骤1–3张图；PW3组装后在`reviews/content-depth-review.md`逐章检查实际展开与附录取舍，再交独立审查。低于25页必须审查并补齐实质缺口，12页/少于20页不能自动接受；没有排版时只能估算。PW7交接包含该审查、页数口径/版式、扩充处置、缺图与证据请求。不得用附录页数或字号放大完成目标，也不得为20页习惯上限删关键推导。

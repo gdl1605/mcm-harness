@@ -11,8 +11,8 @@
     "worker_base_prompt": "prompts/formal-figures/worker-base.md",
     "default_subagent_model_is_not_accepted": "luna",
     "required_subagent_runtime": {
-      "user_facing_alias": "gpt5.6sol-high",
-      "model": "gpt-5.6-sol",
+      "user_facing_alias": "gpt-6-astra-high",
+      "model": "gpt-6-astra",
       "reasoning_effort": "high",
       "fork_turns": "none",
       "must_be_explicit_on_every_new_spawn": true,
@@ -118,9 +118,9 @@
     "upstream_change_request_decision": "leader_only"
   },
   "phases": [
-    {"id": "FR0", "dispatch": "leader_only_freeze_and_explicit_sol_high_skill_chain_and_cassatt2_profile_setup", "handoff": "formal-figures/scope/frozen-inputs.md and dispatch-log.json"},
-    {"id": "FR1", "dispatch": "one_new_sol_high_visual_producer_per_question_or_shared_unit", "parallel": true, "handoff": "visualize-data contracts, ssci-plots Cassatt2 v1, round-1 visual diagnosis and v2 bundles"},
-    {"id": "FR2", "dispatch": "one_new_fresh_sol_high_portfolio_reviewer", "handoff": "v2 portfolio review in formal-figures/figure-review.md"},
+    {"id": "FR0", "dispatch": "leader_only_freeze_and_explicit_astra_high_skill_chain_and_cassatt2_profile_setup", "handoff": "formal-figures/scope/frozen-inputs.md and dispatch-log.json"},
+    {"id": "FR1", "dispatch": "one_new_astra_high_visual_producer_per_question_or_shared_unit", "parallel": true, "handoff": "visualize-data contracts, ssci-plots Cassatt2 v1, round-1 visual diagnosis and v2 bundles"},
+    {"id": "FR2", "dispatch": "one_new_fresh_astra_high_portfolio_reviewer", "handoff": "v2 portfolio review in formal-figures/figure-review.md"},
     {"id": "FR2R", "dispatch": "reuse_originating_visual_producers", "handoff": "round-2 iteration logs, responses and final figure bundles"},
     {"id": "FR3", "dispatch": "reuse_original_portfolio_reviewer_for_closure", "handoff": "figure-review-closure.md"},
     {"id": "FR4", "dispatch": "leader_only", "handoff": "figure manifest, placement/caption handoff and figure-rendering-handoff.md"}

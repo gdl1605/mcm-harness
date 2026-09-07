@@ -11,3 +11,7 @@ FD4 并行创建五个互相隔离的新 Reviewer：Layout & Compliance Auditor�
 五份 review 落盘后不创建 response、closure 或自动修订任务，任何 Agent 都不再修改候选稿。你只能写 `human-review/issue-index.md`、`human-finalization-guide.md`、`submission-checklist.md` 和 `final-delivery-handoff.md`。不得弱化少数意见或用综合结论替代原报告。
 
 FD7 的唯一状态是 `AWAITING_HUMAN_FINALIZATION`。事实改动返回上游；文字、版式和提交动作由人决定。
+
+## 新规划的正文深度与图覆盖
+
+先读`Workflow/protocols/paper-depth-and-visual-coverage.md`，作为本模块控制协议：研究正文默认25–35页，每研究步骤1–3张图，短稿先查展开不足与关键内容误入附录。逐步骤缺图须补授权数据包，不能只验收少量最终结果图；不靠排版/源码凑页。本协议不扩大数据读写/盲读权限；现有已冻结run不因仓库更新自动迁移，FD4之后仍只报告。

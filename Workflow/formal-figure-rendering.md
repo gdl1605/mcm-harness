@@ -17,12 +17,12 @@
 本模块所有新 subagent 都必须由 Leader 显式指定：
 
 ```text
-model = gpt-5.6-sol
+model = gpt-6-astra
 reasoning_effort = high
 fork_turns = none
 ```
 
-用户口径 `gpt5.6sol-high` 对应上述 canonical 配置。默认 Luna 不得用于正式图 Producer 或 Reviewer。因为模型覆盖与 full-history fork 不能同时使用，Leader 必须用 `fork_turns="none"` 创建 Agent，并在 task brief 中提供完整文件路径和边界。若指定模型或 high reasoning 不可用，停止该任务并报告用户；不得静默降级。
+用户口径 `gpt-6-astra-high` 对应上述 canonical 配置。默认 Luna 不得用于正式图 Producer 或 Reviewer。因为模型覆盖与 full-history fork 不能同时使用，Leader 必须用 `fork_turns="none"` 创建 Agent，并在 task brief 中提供完整文件路径和边界。若指定模型或 high reasoning 不可用，停止该任务并报告用户；不得静默降级。
 
 正式图 Producer 和 Reviewer 还必须显式调用 `$visualize-data`、`$ssci-plots`、`$nature-figure`，并在 brief 中预先选择 `backend=python` 与 `visual_profile=cassatt2_quiet_journal_v1`。三者分别负责信息层级/图型合同、Cassatt2 样式实现、Python 导出与最终版面 QA。当前 harness 的重建合同是 `render.py + frozen data`，因此不让 skill 在派工后再次询问 Python/R，也不允许转用 R 或普通 Matplotlib 静默替代。Leader 在 FR0 校验两个项目级 `SKILL.md` 哈希与各自 lock 一致，并确认 `$visualize-data` 可发现；任一缺失或不一致时停止并报告。
 
@@ -47,7 +47,7 @@ fork_turns = none
 - 误差、残差、敏感性、稳健性和不确定性；
 - 情景、优化、决策与跨问总结。
 
-典型问题先考虑“1 张数据/结构图 + 1 张核心结果图 + 1 张比较/不确定性图 + 必要时 1 张情景图”。典型三至四问题目的规划参考为 12–20 个候选、正文 8–14 张、其余附录或放弃；这不是语义门禁。每张图必须服务一个明确问题或 claim，精确查值更合适时明确以表代图。
+按 [正文深度与逐步骤图量协议](protocols/paper-depth-and-visual-coverage.md)，先枚举研究步骤，每步1–3张图，默认考虑2张，至少1张核心图进入对应正文；总量由步骤数决定，不以正文8–14张封顶。数据统计、预处理、模型、结果和验证分别有覆盖。精确数值仍用表，但以表代图不能注销步骤的最低图责任；重复或无数据的单图可退回重规划/补证，不得用装饰图凑数。多面板只按一个Figure ID计数。
 
 若 F4 包不足以覆盖关键统计分析、主结果或稳健性证据，Producer 只写 `formal-figures/change-requests/coverage-request.md`。Leader 局部重开 F1/F2 获取新数据包和 Figure ID；Producer 不自行制造数据或 claim。
 
@@ -55,13 +55,13 @@ fork_turns = none
 
 Leader 写 `formal-figures/scope/frozen-inputs.md`，逐项记录允许读取的 Figure ID、数据包、provenance、recommendation、claim、章节位置、官方版心和文件哈希。不得让 Producer 搜索 modeling/validation 目录挑结果。
 
-Leader 读取两个 skill lock 和 `Workflow/formal-figure-style-profile.cassatt2.json`，确认 `.agents/skills/ssci-plots/SKILL.md`、`.agents/skills/nature-figure/SKILL.md` 哈希一致，并确认 `$visualize-data` 可发现。然后在每次创建正式图 subagent 时显式传入 `gpt-5.6-sol`、`high` 和 `fork_turns="none"`，并在 `formal-figures/scope/dispatch-log.json` 保存 Agent 句柄、角色、单元、模型请求、`required_skills=[visualize-data,ssci-plots,nature-figure]`、对应三个 invocation、`backend=python`、`visual_profile=cassatt2_quiet_journal_v1`、`palette=metbrewer_cassatt2` 和两个 lock 哈希。该 JSON 仅是机械调度元数据，不承载视觉判断。未显式覆盖、skill/profile preflight 失败均视为未派工。
+Leader 读取两个 skill lock 和 `Workflow/formal-figure-style-profile.cassatt2.json`，确认 `.agents/skills/ssci-plots/SKILL.md`、`.agents/skills/nature-figure/SKILL.md` 哈希一致，并确认 `$visualize-data` 可发现。然后在每次创建正式图 subagent 时显式传入 `gpt-6-astra`、`high` 和 `fork_turns="none"`，并在 `formal-figures/scope/dispatch-log.json` 保存 Agent 句柄、角色、单元、模型请求、`required_skills=[visualize-data,ssci-plots,nature-figure]`、对应三个 invocation、`backend=python`、`visual_profile=cassatt2_quiet_journal_v1`、`palette=metbrewer_cassatt2` 和两个 lock 哈希。该 JSON 仅是机械调度元数据，不承载视觉判断。未显式覆盖、skill/profile preflight 失败均视为未派工。
 
 Leader 指定一个 Question Visual Producer 兼任 style owner。Cassatt2 palette、白底、低装饰、图外总标题/长注释和非颜色冗余编码从 profile 起即固定；图型、面板数量和画布布局仍由证据决定，不在首稿前写死。各 Producer 先生成完整数据 v1；全部 v1 可见后，style owner 才从真实成图提炼 `formal-figures/style/visual-system.md`、`paper.mplstyle` 和必要 `theme.py`，记录 Cassatt2 palette API/角色映射与例外，不复制或手改 HEX。
 
 ## 5. FR1：逐问 Visual Producer 与第一轮视觉迭代
 
-每问创建一个新的 sol-high Producer，写自己的 `formal-figures/questions/qN/`；真实共享单元使用同一 prompt 写 `formal-figures/shared/UNIT-ID/`。
+每问创建一个新的 astra-high Producer，写自己的 `formal-figures/questions/qN/`；真实共享单元使用同一 prompt 写 `formal-figures/shared/UNIT-ID/`。
 
 Producer 先写 `visual-plan.md`，说明覆盖责任、正文/附录优先级、缺图和以表代图理由。每个 Figure ID 写 `chart-contract.md`，首稿前只冻结分析问题、claim、数据粒度/单位/时间/样本量、误差、读者比较任务、必须保留的限制和禁止误导项。图型、画布比例、面板大小、图例位置和正文位置在 v1 前均为开放视觉变量；可以记录候选方向，但不得写成不可调整的合同。
 
@@ -88,7 +88,7 @@ FIG-ID/
 
 ## 6. FR2/FR2R：第二轮统一审查与原 Producer 修订
 
-全部 v2 完成后，Leader 创建一个新的 sol-high、fresh-context Figure Portfolio Reviewer。Reviewer 读取同一冻结 portfolio、v1→v2 的可定位变化和目标宽度预览，不读 Producer 辩护，只写 `formal-figures/figure-review.md`。
+全部 v2 完成后，Leader 创建一个新的 astra-high、fresh-context Figure Portfolio Reviewer。Reviewer 读取同一冻结 portfolio、v1→v2 的可定位变化和目标宽度预览，不读 Producer 辩护，只写 `formal-figures/figure-review.md`。
 
 一份 review 同时覆盖：
 
@@ -152,4 +152,4 @@ formal-figures/
 └── figure-rendering-handoff.md
 ```
 
-语义交接使用开放 Markdown。JSON 只记录团队、模型请求、路径、哈希、版本和状态。机械 checker 不判断数据语义或审美，也不能证明实际 subagent 模型身份；Leader 必须在调度记录中保存显式 sol-high 请求。
+语义交接使用开放 Markdown。JSON 只记录团队、模型请求、路径、哈希、版本和状态。机械 checker 不判断数据语义或审美，也不能证明实际 subagent 模型身份；Leader 必须在调度记录中保存显式 astra-high 请求。

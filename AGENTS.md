@@ -6,7 +6,7 @@
 
 本规则只响应用户真正的初始化意图或对正在收集材料的任务补充文件地址，不因讨论、开发或修改 Bootstrap/init 代码而执行，也不把 `git init` 或平台 `/init` 当作 Harness 初始化。用户明确“只初始化、暂不开始阅读/竞标”时，传入 `--setup-only` 并在准备后停止；该限制在其后补充地址时仍有效，除非用户撤回。已有 run 不重置：先核对当前阶段和活动任务，仅衔接尚未完成的前半程，不重复派工；已到 H1 或最终人工交接时维持等待，单独 init 不授权恢复后半程。Python 脚本只做准备和返回下一步提示，由 Leader 调度；不安装依赖、不修改全局设置、不推送发布。
 
-当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程先形成宽候选，再由文献和真实人的意见校准；Leader 必须在用户聊天中直接展示逐问全部实际候选去向、重点优劣、对应论文及其如何影响取舍，再给推荐，不能用首选摘要或文件链接替代。取得真实人工模型决定后才可冻结路线。V6 后并行运行图表、论文与正式引用准备，F4 后使用强制 sol-high subagent 完成正式绘图，再进入最终排版终审。终审后人工微调和投稿不在本 harness 内。
+当前主 Agent 自动担任唯一 Leader，直接创建和复用原生 subagent。不要实现独立 orchestrator、队列服务或语义 JSON schema。前半程先形成宽候选，再由文献和真实人的意见校准；Leader 必须在用户聊天中直接展示逐问全部实际候选去向、重点优劣、对应论文及其如何影响取舍，再给推荐，不能用首选摘要或文件链接替代。取得真实人工模型决定后才可冻结路线。V6 后并行运行图表、论文与正式引用准备，F4 后使用强制 astra-high subagent 完成正式绘图，再进入最终排版终审。终审后人工微调和投稿不在本 harness 内。
 
 详细波次、角色输入、prompt 路径和输出路径以 `Workflow/README.md` 为准。本文件只规定 Leader 应怎样工作，以及做到某阶段必须读取哪些文件。
 
@@ -86,7 +86,7 @@ W0 来源封箱
 → F2/F2R 图表证据复核与回应
 → CP3B/CP3R 材料对照复核与回应
 → F3/F4 图表整合与交接
-⇉ FR0/FR1 sol-high 正式图冻结与逐问渲染（与 CP4–PW4 并行）
+⇉ FR0/FR1 astra-high 正式图冻结与逐问渲染（与 CP4–PW4 并行）
 → FR2 全篇图包独立审查与 FR2R 原 Producer 修订
 → CP4 全文框架整合
 → CP5 双遍竞赛论文独立审读
@@ -236,7 +236,7 @@ Agent 不能模拟人的意见。Zotero 是可选只读来源；导入、保存�
 | FR3 真实版面关闭 | final 图、full-paper-v2、figure-table-slots、预览 | 复用原 Portfolio Reviewer，只关闭原问题 | figure-review-closure、contact/in-paper preview |
 | FR4 正式图交接 | 全部 final、review/closure、未决请求 | 无；Leader 执行 | coverage map、manifest、placement/caption handoff、figure-rendering-handoff |
 
-所有新 Producer 和 Reviewer 必须显式用 `model=gpt-5.6-sol`、`reasoning_effort=high`、`fork_turns=none` 创建；默认 Luna 禁止，不能静默降级。Leader 将请求配置写入 dispatch-log。只有两类 subagent：Producer 负责规划/绘制/回应，Reviewer 统一审准确性、图型、审美和版面。
+所有新 Producer 和 Reviewer 必须显式用 `model=gpt-6-astra`、`reasoning_effort=high`、`fork_turns=none` 创建；默认 Luna 禁止，不能静默降级。Leader 将请求配置写入 dispatch-log。只有两类 subagent：Producer 负责规划/绘制/回应，Reviewer 统一审准确性、图型、审美和版面。
 
 ### 3.6 章节材料包与竞赛论文框架
 
@@ -315,7 +315,7 @@ Task brief 必须明确：
 - 建模任务还必须写明问题/共享构建单元、真实人工模型决定、授权候选边界、build contract、开发反馈、保留信息、父运行/分支、代码 owner、调整权限与预算；
 - 验证任务还必须写明冻结主张/模型/结果版本、已用开发反馈、可见/禁止保留信息、暴露对象、probe 写入根、原 owner 和复验预算；V6 第一遍只暴露题面、官方交付、主张处置、授权结果及条件/限制，第二遍必须等 `answer-reconstruction.md` 落盘后才向同一 Agent 增加作者意图和题间接口；
 - 图表任务还必须写明问题/共享结果单元、冻结结果和版本、诊断图与论文候选的边界、数据包导出写入根、review/response 路径、章节依赖、是否允许共享结果读取以及禁止修改的上游目录；
-- 正式绘图任务还必须记录显式 `gpt-5.6-sol + high + fork_turns=none` 请求、Figure ID、冻结数据包/claim、图量覆盖、style-owner 权限、pilot/final 边界、唯一写入根、真实版心和迭代预算；
+- 正式绘图任务还必须记录显式 `gpt-6-astra + high + fork_turns=none` 请求、Figure ID、冻结数据包/claim、图量覆盖、style-owner 权限、pilot/final 边界、唯一写入根、真实版心和迭代预算；
 - 论文准备任务还必须写明问题/全篇单元、材料版本、验证授权范围、唯一 owner、正文/附录边界、图表状态、两遍竞赛审读的上下文隔离、国奖蒸馏暴露时点和禁止生成完整论文；
 - 正式写作任务还必须写明全文/section 版本、唯一主稿 owner、逐问 contract、技术术语与工程词边界、Figure/Table 占位、Reviewer 只读权限、peer review 隔离和禁止生成非 Markdown 交付；
 - 最终交付任务还必须写明冻结候选/官方规则、处理后数据/结果/原始脚本白名单、支撑材料写入根、参考文献后“支撑材料”展示、独立 ZIP、代码过多时的片段—完整脚本映射、排版可改与事实不可改边界、FD4 同快照隔离审查、第五路可读的精确全链路 handoff、终审后零 Agent 修改和人工接管状态；
@@ -345,7 +345,7 @@ Task brief 必须明确：
 - F2R：复用产生该 package 的原 Curator，使用 response prompt 做一次集中回应。
 - F3：所有逐问 package 完成且章节最小地图可用后，创建新的 Figure–Chapter Integrator。
 - F0 和冻结清单由 Leader 写；F3 Integrator 独自写 `figure-plan.md` 与最终 handoff；F4 Leader 只核对条件、处理回滚和宣布汇合。
-- FR1 每问/真实共享单元创建一个显式 sol-high Question Visual Producer，不按 Figure ID 拆 Agent；指定一个 Producer 兼任 style owner。FR2 创建一个 fresh-context sol-high Portfolio Reviewer；FR2R 复用原 Producer，FR3 复用原 Reviewer；FR4 由 Leader 写 manifest 和 handoff。
+- FR1 每问/真实共享单元创建一个显式 astra-high Question Visual Producer，不按 Figure ID 拆 Agent；指定一个 Producer 兼任 style owner。FR2 创建一个 fresh-context astra-high Portfolio Reviewer；FR2R 复用原 Producer，FR3 复用原 Reviewer；FR4 由 Leader 写 manifest 和 handoff。
 - CP1：创建新的 Paper Structure Architect；chapter-map-v0 落盘后立即提供给 F3。
 - CP2/CP3A：每问分别创建一个新 Question Chapter Curator 与一个新 Chapter Evidence Auditor；两者可并行，但 Auditor 第一遍不得看 v1 或代码。
 - CP3B/CP3R：v1 与 reconstruction/必要 closure 冻结后，复用原 Auditor 做对照；再复用产生 v1 的原 Curator，一次集中形成 response 和 v2。
@@ -429,7 +429,7 @@ Task brief 必须明确：
 - 图表数据包不可复算或 claim 不获授权时，暂停该候选并保留旧版本；不得为了满足图表数量强行交接。
 - F4 只有在逐问 package/review/response、change request 裁决和 `figure-plan.md` 对齐章节地图后才能交接；结果章节不得在这些条件缺失时标记定稿。
 - `figure-prep/figure-preparation-handoff.md` 是主 harness 的图表停止点；正式论文图、审美审查、版式迭代、答卷和论文正文不由本支线自动创建。
-- 正式绘图新 subagent 未显式请求 `gpt-5.6-sol + high + fork_turns=none`，或 brief 未显式调用 `$visualize-data → $ssci-plots → $nature-figure`、Python 后端、两个 skill lock/hash、`cassatt2_quiet_journal_v1`/`metbrewer_cassatt2` 时不得启动；覆盖/skill/profile 不可用时停止并报告，不得使用默认 Luna、其他 palette 或普通 Matplotlib 静默替代。C 是视觉语言而非强制 2×2。必须完成 v1→v2 Producer 自审与 v2→final 独立 review 两轮视觉迭代；图数据/claim 问题返回 F/V/M/D，第二轮后新审美方向停止并交给人。
+- 正式绘图新 subagent 未显式请求 `gpt-6-astra + high + fork_turns=none`，或 brief 未显式调用 `$visualize-data → $ssci-plots → $nature-figure`、Python 后端、两个 skill lock/hash、`cassatt2_quiet_journal_v1`/`metbrewer_cassatt2` 时不得启动；覆盖/skill/profile 不可用时停止并报告，不得使用默认 Luna、其他 palette 或普通 Matplotlib 静默替代。C 是视觉语言而非强制 2×2。必须完成 v1→v2 Producer 自审与 v2→final 独立 review 两轮视觉迭代；图数据/claim 问题返回 F/V/M/D，第二轮后新审美方向停止并交给人。
 - `formal-figures/figure-rendering-handoff.md` 是正式绘图停止点；FD0 只消费 manifest 授权 final，不从散乱图片目录挑图。
 - CP6 只有在逐问 method reconstruction/必要 closure、evidence review/response、验证后贡献重建、双遍竞赛审读、定向修订、一次关闭检查和高影响 change request 处置完成后才能交接。
 - `paper-prep/paper-framework-handoff.md` 是论文准备停止点；完整论文、参考文献检索、正式图、排版和提交包不由本模块创建。
