@@ -30,7 +30,7 @@ def read_object(path: Path) -> dict:
 def run_tool(name: str, *args: str) -> str:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / name), *args],
-        text=True, capture_output=True, check=False,
+        text=True, encoding="utf-8", capture_output=True, check=False,
     )
     if result.returncode:
         raise ValueError(f"{name} failed: {result.stderr.strip() or result.stdout.strip()}")
@@ -234,4 +234,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from cli_io import configure_output
+
+    configure_output()
     raise SystemExit(main())

@@ -58,7 +58,7 @@ def mcm_skill_snapshot(created_at: str) -> dict[str, object]:
         "skill_name": skill.get("name"),
         "skill_invocation": skill.get("invocation"),
         "skill_entrypoint": skill.get("entrypoint"),
-        "integration_config": str(MCM_INTEGRATION_PATH.relative_to(PROJECT_ROOT)),
+        "integration_config": MCM_INTEGRATION_PATH.relative_to(PROJECT_ROOT).as_posix(),
         "integration_config_sha256": sha256_file(MCM_INTEGRATION_PATH),
         "recorded_at": created_at,
         "file_sha256": file_hashes,
@@ -232,4 +232,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from cli_io import configure_output
+
+    configure_output()
     raise SystemExit(main())

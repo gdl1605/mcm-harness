@@ -233,7 +233,7 @@ def render_mcm_context(config: dict[str, object], profile_name: str | None) -> s
         path = skill_root / relative
         if not path.is_file():
             raise ValueError(f"mcm profile {profile_name} references missing file: {path}")
-        rendered_refs.append(f"- `{path.relative_to(PROJECT_ROOT)}`")
+        rendered_refs.append(f"- `{path.relative_to(PROJECT_ROOT).as_posix()}`")
 
     lines = [
         "# 内置 mcm Skill 运行协议",
@@ -763,4 +763,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from cli_io import configure_output
+
+    configure_output()
     raise SystemExit(main())

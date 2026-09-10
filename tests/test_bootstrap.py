@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BootstrapTests(unittest.TestCase):
+    def make_symlink(self, link: Path, target: Path, *, directory: bool = False) -> None:
+        try:
+            link.symlink_to(target, target_is_directory=directory)
+        except OSError as exc:
+            if os.name == "nt" and exc.winerror == 1314:
+                self.skipTest("Windows account lacks symlink privilege (enable Developer Mode)")
+            raise
+
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -27,6 +36,7 @@ class BootstrapTests(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(self.repo / "scripts/bootstrap.py"), "--json", *args],
             cwd=self.base, text=True, capture_output=True, check=False,
+            encoding="utf-8",
         )
         self.assertEqual(result.returncode, code, result.stdout + result.stderr)
         return json.loads(result.stdout)
@@ -85,10 +95,10 @@ class BootstrapTests(unittest.TestCase):
         self.source()
         self.call()
         path = self.repo / "run/state/run-state.json"
-        state = json.loads(path.read_text())
+        state = json.loads(path.read_text(encoding="utf-8"))
         state["phase"] = "AWAITING_HUMAN_FINALIZATION"
-        path.write_text(json.dumps(state))
-        (self.repo / "run/synthesis/memo.md").write_text("Do not replace")
+        path.write_text(json.dumps(state), encoding="utf-8")
+        (self.repo / "run/synthesis/memo.md").write_text("Do not replace", encoding="utf-8")
         before = self.snapshot()
         report = self.call()
         self.assertEqual(report["phase"], "AWAITING_HUMAN_FINALIZATION")
@@ -135,10 +145,10 @@ class BootstrapTests(unittest.TestCase):
         source = self.source()
         self.call()
         path = self.repo / "run/state/run-state.json"
-        state = json.loads(path.read_text())
+        state = json.loads(path.read_text(encoding="utf-8"))
         for phase in ("H1", "AWAITING_HUMAN_MODEL_DECISION"):
             state["phase"] = phase
-            path.write_text(json.dumps(state))
+            path.write_text(json.dumps(state), encoding="utf-8")
             before = self.snapshot()
             report = self.call("--source", str(source))
             self.assertEqual(report["next_action"], "WAIT_FOR_HUMAN_MODEL_DECISION")
@@ -149,10 +159,10 @@ class BootstrapTests(unittest.TestCase):
         self.source()
         self.call()
         path = self.repo / "run/state/run-state.json"
-        state = json.loads(path.read_text())
+        state = json.loads(path.read_text(encoding="utf-8"))
         state["phase"] = "M3"
         state["active_tasks"] = ["existing-builder"]
-        path.write_text(json.dumps(state))
+        path.write_text(json.dumps(state), encoding="utf-8")
         before = self.snapshot()
         report = self.call()
         self.assertEqual(report["next_action"], "REVIEW_EXISTING_PHASE_AND_RESUME_PRE_H1_ONLY")
@@ -169,7 +179,7 @@ class BootstrapTests(unittest.TestCase):
 
     def test_prepare_only_accepts_user_supplied_paths_and_no_separate_data(self) -> None:
         problem = self.base / "problem-with-inline-data.txt"
-        problem.write_text("Synthetic problem with data included")
+        problem.write_text("Synthetic problem with data included", encoding="utf-8")
         report = self.call("--prepare-only", "--source", str(problem))
         self.assertEqual(report["candidate_source_paths"], [str(problem.resolve())])
         self.assertFalse((self.repo / "run").exists())
@@ -178,7 +188,7 @@ class BootstrapTests(unittest.TestCase):
 
     def test_explicit_source_and_custom_run(self) -> None:
         source = self.base / "source with 空格.txt"
-        source.write_text("Synthetic explicit source")
+        source.write_text("Synthetic explicit source", encoding="utf-8")
         target = self.base / "custom run"
         report = self.call("--source", source.name, "--source", source.name,
                            "--run-dir", str(target), "--title", "Explicit title")
@@ -195,7 +205,7 @@ class BootstrapTests(unittest.TestCase):
         source = self.source()
         self.call()
         before = self.snapshot()
-        source.write_text("Changed source")
+        source.write_text("Changed source", encoding="utf-8")
         report = self.call(code=2)
         self.assertIn("missing or changed", report["error"])
         self.assertEqual(before, self.snapshot())
@@ -219,13 +229,13 @@ class BootstrapTests(unittest.TestCase):
         self.call()
         self.assertIn("title differs", self.call("--title", "Other", code=2)["error"])
         replacement = self.base / "other.txt"
-        replacement.write_text("Other synthetic source")
+        replacement.write_text("Other synthetic source", encoding="utf-8")
         self.assertIn("source set changed", self.call("--source", str(replacement), code=2)["error"])
 
     def test_nonempty_unrecognized_directory_is_preserved(self) -> None:
         run = self.repo / "run"
         run.mkdir()
-        (run / "keep.txt").write_text("Keep")
+        (run / "keep.txt").write_text("Keep", encoding="utf-8")
         before = self.snapshot()
         self.call(code=2)
         self.assertEqual(before, self.snapshot())
@@ -235,7 +245,7 @@ class BootstrapTests(unittest.TestCase):
         self.call()
         before = self.snapshot()
         skill = self.repo / ".agents/skills/mcm/SKILL.md"
-        skill.write_text(skill.read_text() + "\nChanged instructions\n")
+        skill.write_text(skill.read_text(encoding="utf-8") + "\nChanged instructions\n", encoding="utf-8")
         self.assertIn("changed since initialization", self.call(code=2)["error"])
         self.assertEqual(before, self.snapshot())
 
@@ -249,7 +259,7 @@ class BootstrapTests(unittest.TestCase):
         self.source()
         self.call()
         path = self.repo / "run/state/run-state.json"
-        path.write_text("[]")
+        path.write_text("[]", encoding="utf-8")
         before = self.snapshot()
         self.assertIn("JSON object", self.call(code=2)["error"])
         self.assertEqual(before, self.snapshot())
@@ -258,6 +268,7 @@ class BootstrapTests(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(self.repo / "scripts/init_run.py"), str(self.repo / "run")],
             text=True, capture_output=True, check=False,
+            encoding="utf-8",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         before = self.snapshot()
@@ -267,13 +278,13 @@ class BootstrapTests(unittest.TestCase):
 
     def test_text_output_explains_waiting_and_invalid_paths(self) -> None:
         command = [sys.executable, str(self.repo / "scripts/bootstrap.py")]
-        result = subprocess.run(command, text=True, capture_output=True, check=False)
+        result = subprocess.run(command, text=True, capture_output=True, check=False, encoding="utf-8")
         self.assertEqual(result.returncode, 0)
         self.assertIn("AWAITING_SOURCES", result.stdout)
         self.assertIn("题目文件和全部数据附件", result.stdout)
         self.assertIn("不安装依赖", result.stdout)
-        (self.repo / "run").write_text("Not a directory")
-        result = subprocess.run(command, text=True, capture_output=True, check=False)
+        (self.repo / "run").write_text("Not a directory", encoding="utf-8")
+        result = subprocess.run(command, text=True, capture_output=True, check=False, encoding="utf-8")
         self.assertEqual(result.returncode, 2)
         self.assertIn("Bootstrap blocked", result.stderr)
 
@@ -281,62 +292,64 @@ class BootstrapTests(unittest.TestCase):
         self.source()
         self.call()
         config_path = self.repo / "Workflow/mcm-skill-integration.json"
-        config_path.write_text(config_path.read_text() + "\n")
+        config_path.write_text(config_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
         before = self.snapshot()
         self.assertIn("changed since initialization", self.call(code=2)["error"])
         self.assertEqual(before, self.snapshot())
 
     def test_auto_discovery_does_not_follow_symlinks(self) -> None:
         raw = self.repo / "raw-sources"
-        raw.symlink_to(self.base, target_is_directory=True)
+        self.make_symlink(raw, self.base, directory=True)
         self.assertIn("symlink", self.call(code=2)["error"])
         raw.unlink()
         source = self.source()
-        (raw / "linked.txt").symlink_to(source)
+        self.make_symlink(raw / "linked.txt", source)
         self.assertIn("symlink", self.call(code=2)["error"])
         self.assertFalse((self.repo / "run").exists())
 
     def test_unsafe_run_destinations_are_rejected(self) -> None:
         self.assertIn("contain the repository", self.call("--run-dir", str(self.repo), code=2)["error"])
+
+    def test_symlink_run_destination_is_rejected(self) -> None:
         target = self.base / "external"
         target.mkdir()
-        (self.repo / "run").symlink_to(target, target_is_directory=True)
+        self.make_symlink(self.repo / "run", target, directory=True)
         self.assertIn("symlink", self.call(code=2)["error"])
         self.assertEqual(list(target.iterdir()), [])
 
     def test_external_skill_hash_is_reported_not_installed(self) -> None:
         entry = self.repo / ".agents/skills/ssci-plots/SKILL.md"
         entry.parent.mkdir(parents=True)
-        entry.write_text("test fixture")
+        entry.write_text("test fixture", encoding="utf-8")
         self.assertEqual(self.call()["requirements"]["local_figure_skills"]["ssci-plots"], "hash_mismatch")
         lock_path = self.repo / "Workflow/ssci-plots-skill.lock.json"
-        lock = json.loads(lock_path.read_text())
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
         lock["skill_md_sha256"] = hashlib.sha256(entry.read_bytes()).hexdigest()
-        lock_path.write_text(json.dumps(lock))
+        lock_path.write_text(json.dumps(lock), encoding="utf-8")
         self.assertEqual(self.call()["requirements"]["local_figure_skills"]["ssci-plots"], "hash_matches_lock")
 
     def test_agent_entrypoint_is_early_and_distinguishes_development(self) -> None:
-        agents = (ROOT / "AGENTS.md").read_text()
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("scripts/bootstrap.py --prepare-only --json", agents[:4000])
         self.assertIn("开发或修改", agents[:4000])
         self.assertTrue((ROOT / "BOOTSTRAP.md").is_file())
 
     def test_readme_starts_with_usage_and_agent_requests_source_locations(self) -> None:
-        readme = (ROOT / "README.md").read_text()
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertLess(readme.index("## 快速开始（Bootstrap）"), readme.index("## 我们的用途"))
         self.assertIn("不需要再发一次 init", readme)
-        bootstrap = (ROOT / "BOOTSTRAP.md").read_text()
+        bootstrap = (ROOT / "BOOTSTRAP.md").read_text(encoding="utf-8")
         for phrase in ("题目文件和全部数据附件", "已有题目但缺数据", "已有数据但缺题面",
                        "--source` 不接受 URL", "不强制凑一个数据文件"):
             self.assertIn(phrase, bootstrap)
 
     def test_docs_wire_default_continuation_with_explicit_opt_out(self) -> None:
-        readme = (ROOT / "README.md").read_text()
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("自动进入材料阅读与模型路线竞标", readme)
         self.assertNotIn("只说初始化不会自动开始建模", readme)
         self.assertNotIn("准备完成后，再说", readme)
         for name in ("AGENTS.md", "BOOTSTRAP.md", "Workflow/README.md", "prompts/leader.md"):
-            text = (ROOT / name).read_text()
+            text = (ROOT / name).read_text(encoding="utf-8")
             self.assertIn("--setup-only", text, name)
             self.assertIn("H1", text, name)
             for obsolete in ("用户只要求 init 时到此停止", "仅初始化不创建 worker",

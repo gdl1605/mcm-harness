@@ -39,6 +39,7 @@ class ModelSelectionPresentationTests(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPTS / "init_run.py"), str(self.run_dir)],
             capture_output=True, text=True, check=False,
+            encoding="utf-8",
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for relative in UPSTREAM_REPORTS:
@@ -54,6 +55,7 @@ class ModelSelectionPresentationTests(unittest.TestCase):
             [sys.executable, str(SCRIPTS / "check_workspace.py"),
              str(self.run_dir), "--stage", stage, "--json"],
             capture_output=True, text=True, check=False,
+            encoding="utf-8",
         )
         self.assertIn(result.returncode, (0, 1), result.stdout + result.stderr)
         return result.returncode, json.loads(result.stdout)
@@ -142,6 +144,7 @@ class ModelSelectionPresentationTests(unittest.TestCase):
         result = subprocess.run(
             [sys.executable, str(SCRIPTS / "build_prompt.py"), "--leader"],
             capture_output=True, text=True, check=False,
+            encoding="utf-8",
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for obligation in (PRESENTATION, "--stage model-briefing", "最强竞品", "论文标题", "重新 H1"):

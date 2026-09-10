@@ -26,6 +26,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -34,6 +35,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -55,6 +57,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(rendered.returncode, 0, rendered.stderr)
             self.assertIn("Worker Base Prompt", rendered.stdout)
@@ -107,6 +110,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -138,6 +142,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(blocked.returncode, 1)
             blocked_report = json.loads(blocked.stdout)
@@ -156,6 +161,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(released.returncode, 0, released.stdout + released.stderr)
 
@@ -187,6 +193,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -227,6 +234,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing_handoff.returncode, 1)
             missing_report = json.loads(missing_handoff.stdout)
@@ -238,6 +246,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -251,6 +260,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(data_leader.returncode, 0, data_leader.stderr)
             self.assertIn("数据工程 Leader", data_leader.stdout)
@@ -260,6 +270,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(data_worker.returncode, 0, data_worker.stderr)
             self.assertIn("数据工程 Worker Base Prompt", data_worker.stdout)
@@ -284,6 +295,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(response_worker.returncode, 0, response_worker.stderr)
             self.assertIn("角色：数据实现者集中回应", response_worker.stdout)
@@ -302,6 +314,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -329,6 +342,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(figure_leader.returncode, 0, figure_leader.stderr)
             self.assertIn("图表准备", figure_leader.stdout)
@@ -353,6 +367,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(figure_worker.returncode, 0, figure_worker.stderr)
             self.assertIn("图表准备 Worker Base Prompt", figure_worker.stdout)
@@ -374,6 +389,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(legacy.returncode, 0, legacy.stderr)
             self.assertIn("Worker Base Prompt", legacy.stdout)
@@ -387,6 +403,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -415,6 +432,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1, missing.stdout + missing.stderr)
             missing_report = json.loads(missing.stdout)
@@ -452,6 +470,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -539,6 +558,7 @@ class WorkflowToolTests(unittest.TestCase):
             initialized = subprocess.run(
                 [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             for relative in (
@@ -557,6 +577,7 @@ class WorkflowToolTests(unittest.TestCase):
             leader = subprocess.run(
                 [sys.executable, str(SCRIPTS / "build_prompt.py"), "--literature-leader"],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             self.assertIn("REF0", leader.stdout)
@@ -568,6 +589,7 @@ class WorkflowToolTests(unittest.TestCase):
                 [sys.executable, str(SCRIPTS / "build_prompt.py"), "--literature-role",
                  "route_literature_scout", "--task-brief", str(brief)],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(scout.returncode, 0, scout.stderr)
             self.assertIn("文献与引用证据 Worker Base Prompt", scout.stdout)
@@ -579,6 +601,7 @@ class WorkflowToolTests(unittest.TestCase):
             initialized = subprocess.run(
                 [sys.executable, str(SCRIPTS / "init_run.py"), str(run_dir)],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -586,6 +609,7 @@ class WorkflowToolTests(unittest.TestCase):
                 [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
                  "--stage", "literature", "--json"],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1)
             missing_report = json.loads(missing.stdout)
@@ -621,6 +645,7 @@ class WorkflowToolTests(unittest.TestCase):
                 [sys.executable, str(SCRIPTS / "check_workspace.py"), str(run_dir),
                  "--stage", "literature", "--json"],
                 text=True, capture_output=True, check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -699,6 +724,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             for relative in (
@@ -718,6 +744,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             self.assertIn("CP0", leader.stdout)
@@ -737,6 +764,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(worker.returncode, 0, worker.stderr)
             self.assertIn("论文准备 Worker Base Prompt", worker.stdout)
@@ -751,6 +779,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -766,6 +795,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1)
             missing_report = json.loads(missing.stdout)
@@ -825,6 +855,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -920,6 +951,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             for relative in (
@@ -940,6 +972,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             self.assertIn("唯一全文作者", leader.stdout)
@@ -959,6 +992,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(writer.returncode, 0, writer.stderr)
             self.assertIn("正式论文写作 Worker Base Prompt", writer.stdout)
@@ -972,6 +1006,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -987,6 +1022,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1)
             missing_report = json.loads(missing.stdout)
@@ -1049,6 +1085,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -1178,6 +1215,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             for relative in (
@@ -1201,6 +1239,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             for marker in (
@@ -1241,6 +1280,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(producer.returncode, 0, producer.stderr)
             self.assertIn("Question Visual Producer", producer.stdout)
@@ -1264,6 +1304,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(reviewer.returncode, 0, reviewer.stderr)
             self.assertIn("Figure Portfolio Reviewer", reviewer.stdout)
@@ -1282,6 +1323,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -1297,6 +1339,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1)
             missing_report = json.loads(missing.stdout)
@@ -1409,6 +1452,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             self.assertEqual(json.loads(checked.stdout)["errors"], [])
@@ -1427,6 +1471,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(rejected.returncode, 1)
             rejected_report = json.loads(rejected.stdout)
@@ -1454,6 +1499,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(wrong_skill.returncode, 1)
             wrong_skill_report = json.loads(wrong_skill.stdout)
@@ -1481,6 +1527,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(wrong_profile.returncode, 1)
             wrong_profile_report = json.loads(wrong_profile.stdout)
@@ -1555,6 +1602,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             for relative in (
@@ -1576,6 +1624,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(leader.returncode, 0, leader.stderr)
             self.assertIn("FD0–FD7", leader.stdout)
@@ -1595,6 +1644,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(curator.returncode, 0, curator.stderr)
             self.assertIn("完整原始脚本", curator.stdout)
@@ -1613,6 +1663,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(prose.returncode, 0, prose.stderr)
             for marker in ("首先", "比喻", "口水话", "pipeline", "不给 AI 分数", "不得直接修改"):
@@ -1630,6 +1681,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(chain.returncode, 0, chain.stderr)
             for marker in ("fresh-context", "题意", "路线", "数据", "验证", "最早产生偏差"):
@@ -1643,6 +1695,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
 
@@ -1658,6 +1711,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing.returncode, 1)
             missing_report = json.loads(missing.stdout)
@@ -1756,6 +1810,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -1779,6 +1834,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(missing_figure_gate.returncode, 1)
             missing_figure_report = json.loads(missing_figure_gate.stdout)
@@ -1814,6 +1870,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(incomplete_archive.returncode, 1)
             incomplete_report = json.loads(incomplete_archive.stdout)
@@ -1850,6 +1907,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(rejected.returncode, 1)
             rejected_report = json.loads(rejected.stdout)
@@ -1869,6 +1927,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(result.returncode, 2)
             self.assertEqual(owned.read_text(encoding="utf-8"), "keep")
@@ -1906,6 +1965,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
             snapshot_path = run_dir / "state/mcm-skill-snapshot.json"
@@ -1926,6 +1986,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
             report = json.loads(checked.stdout)
@@ -1948,6 +2009,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(writer.returncode, 0, writer.stderr)
             self.assertIn("`submission-draft`", writer.stdout)
@@ -1966,6 +2028,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(blind.returncode, 0, blind.stderr)
             self.assertIn("`blind-review`", blind.stdout)
@@ -1986,6 +2049,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(judge.returncode, 0, judge.stderr)
             self.assertIn("`judge-review`", judge.stdout)
@@ -2003,6 +2067,7 @@ class WorkflowToolTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
                 check=False,
+                encoding="utf-8",
             )
             self.assertEqual(typesetter.returncode, 0, typesetter.stderr)
             self.assertNotIn("# 内置 mcm Skill 运行协议", typesetter.stdout)

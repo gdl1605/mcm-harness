@@ -154,4 +154,8 @@ git diff --check
 
 单元测试和 `check_workspace.py` 仅验证对应工程行为，不证明模型、论文、引用或图形正确。发布前按 [发布清单](docs/releasing.md) 核对文件、第三方许可、敏感信息和历史记录，不要直接压缩含运行数据及本地技能的开发目录。
 
+辅助脚本的文件读写及命令行输出统一使用 UTF-8；其他程序捕获输出时也应显式按 UTF-8 解码。Windows 可将上述 `python3` 换为 `python`。元数据中的仓库相对路径统一使用 `/`，本地绝对路径仍保留系统格式。仓库通过 `.gitattributes` 固定文本换行为 LF，避免 Windows checkout 改写技能文件字节而触发 hash 漂移。
+
+CI 配置覆盖 Windows、macOS、Linux 的 Python 3.10 和 3.12。Windows 无符号链接权限时，只跳过需要创建真实链接的测试并显示原因；其他测试照常运行。初始化本身不要求创建符号链接，自动发现材料时仍拒绝跟随链接。若需执行这部分测试，可在支持的 Windows 环境启用开发者模式或使用具备创建链接权限的账户。
+
 本项目原创内容采用 [MIT License](LICENSE)，Copyright (c) 2026 gdl1605。内置及外部组件的来源、许可和分发边界见 [NOTICE.md](NOTICE.md)；贡献与安全报告分别遵循 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [SECURITY.md](SECURITY.md)。
